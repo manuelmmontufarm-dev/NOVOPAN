@@ -1,0 +1,134 @@
+/* Novopan Instructivos - standalone design tokens for the saved HTML app. */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --font-body: Inter, Arial, Helvetica, sans-serif;
+  --font-display: Inter, Arial, Helvetica, sans-serif;
+  --font-icon: 'Material Symbols Rounded';
+
+  --novopan-green: #004e38;
+  --novopan-green-600: #0b6b4f;
+  --novopan-yellow: #ffd33d;
+  --novopan-yellow-600: #e5b600;
+
+  --ink-900: #15221f;
+  --ink-800: #24332f;
+  --ink-700: #344641;
+  --ink-600: #53645f;
+  --ink-500: #687974;
+  --ink-400: #8c9995;
+  --ink-300: #aeb8b4;
+
+  --surface-page: #f2f5f1;
+  --surface-0: #ffffff;
+  --surface-50: #f8faf7;
+  --surface-card: #ffffff;
+  --surface-sunken: #eef3ef;
+  --line-100: #e2e8e3;
+  --line-200: #cad5cd;
+
+  --text-strong: var(--ink-900);
+  --text-body: var(--ink-700);
+  --text-muted: var(--ink-500);
+
+  --ok-bg: #eaf7ef;
+  --ok-border: #a8d8b7;
+  --ok-ink: #155b35;
+  --ok-accent: #1f8f4f;
+  --warn-bg: #fff6d7;
+  --warn-border: #f0cd61;
+  --warn-ink: #705312;
+  --warn-accent: #c89100;
+  --danger-bg: #ffeceb;
+  --danger-border: #eeaaa4;
+  --danger-ink: #8c261d;
+  --danger-accent: #c6372c;
+  --info-bg: #eaf3ff;
+  --info-border: #b8d3f3;
+  --info-ink: #1f527d;
+  --info-accent: #2f7fc1;
+
+  --fs-caption: 12px;
+  --fs-small: 14px;
+  --fs-body: 16px;
+  --fs-body-lg: 18px;
+  --fs-h4: 20px;
+  --fs-h3: 26px;
+  --fs-h2: 34px;
+  --fs-h1: clamp(38px, 6vw, 64px);
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 900;
+
+  --lh-tight: 1.08;
+  --lh-snug: 1.25;
+  --lh-normal: 1.45;
+  --lh-relaxed: 1.62;
+  --ls-wide: 0.04em;
+  --ls-caps: 0.08em;
+  --ls-tight: 0;
+
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+  --border-width-thick: 8px;
+  --touch-min: 48px;
+
+  --shadow-sm: 0 2px 8px rgba(21, 34, 31, 0.08);
+  --shadow-md: 0 8px 22px rgba(21, 34, 31, 0.12);
+  --shadow-lg: 0 18px 45px rgba(21, 34, 31, 0.22);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--surface-page);
+  color: var(--text-body);
+}
+
+button {
+  font-family: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+.factory-step-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 360px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --fs-body: 15px;
+    --fs-body-lg: 17px;
+    --fs-h3: 23px;
+  }
+
+  .factory-step-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guía de Campo - Recepción de Madera y Subproductos</title>
+  <link rel="stylesheet" href="./NOVOPNHTML1_files/styles.css?v=20260618-3">
+  <style>
+    #root {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media print {
+      @page { margin: 0.5cm; }
+      figure,
+      table {
+        break-inside: avoid;
+      }
+      *,
+      *::before,
+      *::after {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="./NOVOPNHTML1_files/react.development.js"></script>
+  <script src="./NOVOPNHTML1_files/react-dom.development.js"></script>
+  <script src="./NOVOPNHTML1_files/babel.min.js"></script>
+  <script src="./NOVOPNHTML1_files/_ds_bundle.js"></script>
+  <script type="text/babel" src="./NOVOPNHTML1_files/Screens.jsx?v=20260618-3"></script>
+  <script type="text/babel" src="./NOVOPNHTML1_files/GuiaApp.jsx?v=20260618-3"></script>
+  <script type="text/babel">
+    const GuiaApp = window.GuiaApp;
+    ReactDOM.createRoot(document.getElementById('root')).render(<GuiaApp />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOVOPAN - Guía de Recepción de Madera</title>
+  <link rel="stylesheet" href="./NOVOPNHTML1_files/styles.css?v=20260618-3">
+  <style>
+    body {
+      background: var(--surface-page);
+    }
+
+    #root {
+      min-height: 100vh;
+    }
+
+    .print-export {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 32px 28px 56px;
+    }
+
+    .print-cover {
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px;
+      margin-bottom: 28px;
+      border-radius: var(--radius-md);
+      background: var(--novopan-green);
+      color: #fff;
+      break-after: page;
+    }
+
+    .print-cover__brand {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 30px;
+      color: var(--novopan-yellow);
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .print-cover h1 {
+      max-width: 760px;
+      margin: 18px 0 0;
+      font-family: var(--font-display);
+      font-size: 52px;
+      line-height: 1.05;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .print-cover p {
+      max-width: 620px;
+      margin: 18px 0 0;
+      font-family: var(--font-body);
+      font-size: 20px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .print-section {
+      padding: 18px 0 36px;
+      break-before: page;
+    }
+
+    .screen-nav-button {
+      display: none !important;
+    }
+
+    @media print {
+      @page {
+        size: Letter;
+        margin: 0.45in;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .print-export {
+        max-width: none;
+        padding: 0;
+      }
+
+      .print-cover {
+        min-height: 9.2in;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .print-section {
+        padding-top: 0;
+        break-before: page;
+        break-inside: auto;
+      }
+
+      .print-section:first-of-type {
+        break-before: avoid;
+      }
+
+      .print-section h2,
+      .print-section h3,
+      .print-section h4 {
+        break-after: avoid-page;
+        break-inside: avoid;
+      }
+
+      figure,
+      table,
+      img,
+      figure img {
+        break-inside: avoid;
+        max-width: 100%;
+        page-break-inside: avoid;
+      }
+
+      ul, ol {
+        break-inside: avoid-page;
+      }
+
+      li {
+        break-inside: avoid;
+      }
+
+      [class*="Callout"], [class*="callout"],
+      [class*="card-"], .card, figure {
+        break-inside: avoid;
+      }
+
+      .factory-step-row {
+        break-inside: avoid;
+      }
+
+      *,
+      *::before,
+      *::after {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="./NOVOPNHTML1_files/react.development.js"></script>
+  <script src="./NOVOPNHTML1_files/react-dom.development.js"></script>
+  <script src="./NOVOPNHTML1_files/babel.min.js"></script>
+  <script src="./NOVOPNHTML1_files/_ds_bundle.js"></script>
+  <script type="text/babel" src="./NOVOPNHTML1_files/Screens.jsx?v=20260618-3"></script>
+  <script type="text/babel">
+    function ExportApp() {
+      const nav = window.GuiaScreens.nav;
+      return (
+        <main className="print-export">
+          <section className="print-cover">
+            <div className="print-cover__brand">NOVOPAN</div>
+            <h1>Recepción de Madera y Subproductos</h1>
+            <p>Guía de campo para operadores de balanza, recepción ANI, humedad, cierre, descarga y Factory Track.</p>
+            <p>IJP-REC-001 · Versión de capacitación · 18 de junio de 2026</p>
+          </section>
+          {nav.map((section) => {
+            const Component = section.Comp;
+            return (
+              <section className="print-section" key={section.id}>
+                <Component />
+              </section>
+            );
+          })}
+        </main>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<ExportApp />);
+  </script>
+</body>
+</html>
