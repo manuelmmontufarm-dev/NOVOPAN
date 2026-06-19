@@ -15,29 +15,39 @@
 
 ## Estado actual
 
-**Fecha:** 2026-06-18
+**Fecha:** 2026-06-19
 **Pasante:** Manuel Montúfar
 **Supervisor:** Daniel Sotalin (Encargado del Sistema de Gestión / ISO).
 
 **Objetivo activo:** documentar el proceso de **recepción de madera en balanza** en formato IJP ISO, dividido en tres documentos separados (Recepción, Descargas y Consumo, Inventario).
 
-**Documento vigente:** `instructivos/IJP_Recepcion_v2.md` (borrador).
+**Documentos vigentes:**
+- `instructivos/finales/IJP_FINAL_ACTUALIZADO_2026-06-19.docx` — IJP-REC-001 final con 3 fixes 2026-06-19.
+- `instructivos/finales/RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx` — guía rápida ANI con fix de altura ruma.
+- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf` — render para impresión.
+- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` — bundle estático (rebuild parcial, ver `notas/REBUILD_PENDING.md`).
+- `html-app/NOVOPNHTML1.html` + `html-app/NOVOPNHTML1_files/Screens.jsx` — app React activa con todos los fixes.
+- `instructivos/IJP_Recepcion_v2.md` — borrador md original (mantener como referencia).
 
 **Próximos pasos (orden de prioridad):**
-1. Validar IJP-Recepción v2 con Alejandro (operador de balanza) y Daniel Sotalin.
-2. Resolver los `[POR VALIDAR]` que quedan en el doc:
+1. **Insertar manualmente en Word** los 3 bloques de la adenda (`notas/ADENDA_2026-06-19_contenido-nuevo.md`): humedad como último filtro, verificación humedad salida Balanza 1, FIFO con excepción.
+2. **Validar con Daniel Sotalin** los `[POR VALIDAR]` de la adenda: punto exacto en ANI donde la humedad bloquea edición, procedimiento de anulación.
+3. **Rebuild del bundle estático** `NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` con babel para que recoja las 2 secciones nuevas del Screens.jsx (ver `notas/REBUILD_PENDING.md`).
+4. **Pasar Screens.jsx por Claude Design** usando `notas/CLAUDE_DESIGN_PROMPT.md` para mejora visual slide-by-slide token-optimizada.
+5. Validar IJP-Recepción con Alejandro (operador de balanza) y Daniel Sotalin.
+6. Resolver los `[POR VALIDAR]` que quedan del borrador v2:
    - Sistema ANI: nombre oficial y si es ANI Sistemas (Brasil).
    - Medición de diámetro: instrumento real (cinta vs calibrador) y si se anota en ANI o solo hoja de campo.
    - WhatsApp de asignación de patios: oficializar canal.
    - QR forestal: confirmar con Christian Villalba si es del SAF/MAATE.
-3. Empezar IJP **Descargas y Consumo** (Balanza 1 + grúa + Factory Track + ITMAD→PREMAD).
-4. Empezar IJP **Inventario** (basado en RJP-05 del IJP Rev9 original).
-5. Construir presentación HTML interactiva para guía de campo en tablet (audiencia: operadores rurales).
+7. Empezar IJP **Descargas y Consumo** (Balanza 1 + grúa + Factory Track + ITMAD→PREMAD).
+8. Empezar IJP **Inventario** (basado en RJP-05 del IJP Rev9 original).
 
 **Cosas que NO se han hecho aún:**
-- IJP-Recepción v2 no se ha exportado a `.docx` con tablas visibles (script existe en `/tmp/build_ijp_docx.py` pendiente de ejecutar).
-- No se ha validado con planta nada del v2 — todo es borrador.
-- Falta sección 1 "PROPÓSITO Y ALCANCE" formal (el documento empieza en 2. DEFINICIONES).
+- Pegar las 3 secciones nuevas (humedad-filtro, verif salida B1, FIFO) en los .docx finales — están en la adenda lista para copiar.
+- Rebuild completo del bundle estático con las 2 secciones nuevas.
+- Validar con planta los `[POR VALIDAR]` de la adenda.
+- Falta sección 1 "PROPÓSITO Y ALCANCE" formal en el v2 md (el documento empieza en 2. DEFINICIONES).
 
 ---
 
@@ -75,6 +85,35 @@
   5. Residuo (camión EMASEO)
 
 - **Tipos de proveedor:** Propio · Tercero · Transportista.
+
+---
+
+## Historial
+
+### 2026-06-19 — Sync masivo desde folder local + fixes de consistencia
+
+**Qué cambió:**
+- Se sincronizó todo el folder local `/Users/manue/Documents/NOVOPAN/` al repo. Antes solo había `.md` sueltos; ahora están los `.docx` finales, el PDF, la app React (`html-app/`), `reference/`, `glossary/`, `decisions-and-open-items/`, `technical-research/`.
+- Se aplicaron 3 fixes surgical a `instructivos/finales/IJP_FINAL_ACTUALIZADO_2026-06-19.docx`:
+  - Altura de ruma: `4-5 m` → `5 m máx (excepcional 6 m), patrón dos rumas + camino + dos rumas`.
+  - Tiempo análisis: `20-40 min` → `25-40 min (madera rolliza)`.
+  - Etiquetado Patio 5: `llenar manualmente` → `recibir etiqueta enviada desde balanza`.
+- Mismo fix de altura de ruma aplicado a `RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx`.
+- App React `html-app/NOVOPNHTML1_files/Screens.jsx`: los 3 fixes de arriba + 3 secciones nuevas (humedad como último filtro + verificación humedad salida Balanza 1 + FIFO con excepción justificada).
+- Bundle `NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` parcialmente actualizado (4 text-edits via find/replace; las 2 secciones nuevas requieren rebuild con babel — ver `notas/REBUILD_PENDING.md`).
+- Notas nuevas en `notas/`:
+  - `ADENDA_2026-06-19_contenido-nuevo.md` — 3 bloques listos para pegar manualmente en Word.
+  - `CLAUDE_DESIGN_PROMPT.md` — prompt token-optimizado para mejora visual del HTML slide-by-slide.
+  - `REBUILD_PENDING.md` — qué falta del bundle estático.
+
+**Por qué:**
+- Inconsistencias detectadas por Cursor cruzando los .docx finales, el HTML estático y los transcripts (recordings 26, 27, 29 con Gabriel/Iván).
+- Necesidad de trabajar contra el repo de GitHub para evitar que se sigan creando documentos sueltos en local.
+
+**Qué NO se hizo (intencional):**
+- Audios y `transcripts_audio_forestal/` NO se subieron al repo (82MB + 58MB; pesados, hostear aparte).
+- Las 3 secciones nuevas NO se insertaron en los .docx automáticamente (riesgo de corromper XML del archivo de 7MB); van en la adenda para pegar manualmente.
+- El bundle estático NO se rebuildeó completo (requiere babel + script de Codex que no está versionado).
 
 ---
 
