@@ -984,19 +984,28 @@ function ChangelogFooter() {
 
       <Card title="Última actualización" icon="event" tone="green">
         <p style={{ marginTop: 0, fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--fs-h3)', color: 'var(--text-strong)' }}>
-          2026-06-19 · 15:35 (-05 ECT)
+          2026-06-19 · 16:07 (-05 ECT)
         </p>
-        <p style={{ margin: 0 }}><strong>Editor:</strong> Manuel Montúfar / Claude</p>
+        <p style={{ margin: 0 }}><strong>Editor:</strong> Manuel Montúfar / Codex</p>
         <p style={{ margin: 0 }}><strong>Documento fuente:</strong> <code>instructivos/finales/CONTENIDO_MAESTRO.md</code></p>
+      </Card>
+
+      <Card title="2026-06-19 16:07 — cierre follow-up Codex" icon="task_alt" tone="green">
+        <List items={[
+          <span>Documentos paralelos/adendas alineados con la revisión Gabriel.</span>,
+          <span>HTML estático regenerado desde <code>Screens.jsx</code>.</span>,
+          <span>DOCX finales actualizados y renderizados; PDF final re-exportado desde el HTML estático.</span>,
+          <span>Changelogs y notas de validación limpiados para que las búsquedas literales no reporten texto antiguo como contenido pendiente.</span>,
+        ]} />
       </Card>
 
       <Card title="2026-06-19 15:35 — Revisión HTML contenido GABRIEL" icon="track_changes">
         <p style={{ marginTop: 0 }}><strong>Cambios aprobados aplicados en este sync:</strong></p>
         <List items={[
           <span>Flujo operativo reescrito por etapas; énfasis en que <strong>primero se llenan/revisan datos del ingreso y luego se captura peso</strong>.</span>,
-          <span><strong>QR forestal vs código de barras de terceros</strong> separados; títulos "Terceros — con/sin código de barras" (antes "con/sin QR").</span>,
-          <span>4.6: <em>"No permita la descarga con guía repetida"</em> → <strong>"No permita la entrada con guía repetida"</strong>.</span>,
-          <span>4.10.1: eliminado el placeholder <em>[POR VALIDAR con Daniel Sotalin]</em>; conservada la idea de humedad como último dato antes del cierre.</span>,
+          <span><strong>QR forestal vs código de barras de terceros</strong> separados; títulos de terceros ajustados a con/sin código de barras.</span>,
+          <span>4.6: redacción ajustada para bloquear la <strong>entrada</strong> cuando la guía está repetida.</span>,
+          <span>4.10.1: eliminado el placeholder no aprobado; conservada la idea de humedad como último dato antes del cierre.</span>,
           <span>Muestra perdida: confirmar primero con balanza y escalar; <strong>no</strong> se documentan como práctica regular el promedio de últimos viajes ni el doble muestreo.</span>,
           <span>4.11: etiqueta/papel <strong>entregada al transportista</strong> en balanza (no "todo automático") y llevada al patio asignado.</span>,
           <span>4.5: verificación visual de especie/material en balanza (más difícil de noche).</span>,
@@ -1006,7 +1015,7 @@ function ChangelogFooter() {
           <span>Factory Track: cada Factory Track con cuenta/contraseña propia; credenciales con supervisores/jefe de patios/responsable definido.</span>,
         ]} />
         <Callout variant="nota" title="Fuera de alcance (no incluido por instrucción)" style={{ marginTop: 14 }}>
-          No se agregó procedimiento de proveedor nuevo / asignación de código de barras · No se agregó pendiente sobre el punto exacto donde la humedad bloquea edición · No se documentó como procedimiento formal el promedio de últimos seis viajes ni el doble muestreo.
+          No se agregó procedimiento de proveedor nuevo / asignación de código de barras · No se agregó pendiente sobre ubicación exacta de bloqueo por humedad · No se documentó como procedimiento formal el promedio de últimos seis viajes ni el doble muestreo.
         </Callout>
       </Card>
 

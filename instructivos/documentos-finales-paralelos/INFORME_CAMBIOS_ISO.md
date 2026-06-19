@@ -67,12 +67,11 @@ Se ejecutó la misión de documentación ISO para recepción de madera (Balanza 
 | PV-03 | Etiquetado humedad (balanza envía vs manual Patio 5) | Gabriel, Franklin |
 | PV-04 | Vuelo forestal — campos y flujos ANI | Andrés, Daniel |
 | PV-05 | Recirculación — códigos precio cero | Daniel, Andrés |
-| PV-06 | Factory Track ITMADE/PREMADE ortografía | Daniel, Iván |
+| PV-06 | Factory Track ITMADE/PREMADE nomenclatura + cuentas por equipo | Daniel, Iván |
 | PV-07 | Reporte 0.001 — ¿solo señal o afecta stock/contabilidad? | Daniel, Iván |
 | PV-08 | Anulaciones ANI — procedimiento paso a paso | Daniel |
 | PV-09 | Priorización descarga FIFO vs excepciones | Gabriel, Iván |
 | PV-10 | Archivo y retención registros (años, custodia) | Daniel |
-| PV-11 | Punto ANI donde humedad bloquea edición | Daniel |
 | PV-12 | Documentos obligatorios por tipo proveedor (completo) | Andrés, Daniel |
 | PV-13 | Plantilla, Rev9, PROC-CD, matriz maestra SGC | Daniel |
 
@@ -106,4 +105,5 @@ Se ejecutó la misión de documentación ISO para recepción de madera (Balanza 
 
 | Versión | Fecha | Autor |
 |---------|-------|-------|
+| 0.1+GABRIEL | 19-jun-2026 16:07 (-05 ECT) | Manuel Montúfar / Codex — retirado pendiente no aprobado de humedad; Factory Track alineado a cuenta/equipo; QR forestal separado de código de barras terceros |
 | 0.1 | 19-jun-2026 | Manuel Montúfar / Cursor agent |

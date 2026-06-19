@@ -22,31 +22,26 @@
 **Objetivo activo:** documentar el proceso de **recepción de madera en balanza** en formato IJP ISO, dividido en tres documentos separados (Recepción, Descargas y Consumo, Inventario).
 
 **Documentos vigentes:**
-- `instructivos/finales/IJP_FINAL_ACTUALIZADO_2026-06-19.docx` — IJP-REC-001 final con 3 fixes 2026-06-19.
-- `instructivos/finales/RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx` — guía rápida ANI con fix de altura ruma.
-- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf` — render para impresión.
-- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` — bundle estático (rebuild parcial, ver `notas/REBUILD_PENDING.md`).
+- `instructivos/finales/IJP_FINAL_ACTUALIZADO_2026-06-19.docx` — IJP-REC-001 final alineado a revisión Gabriel; renderizado para QA visual.
+- `instructivos/finales/RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx` — guía rápida ANI alineada a revisión Gabriel; renderizada para QA visual.
+- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf` — render para impresión re-exportado desde HTML estático 2026-06-19 17:48.
+- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` — bundle estático regenerado desde `Screens.jsx` con contenido 2026-06-19 16:07.
 - `html-app/NOVOPNHTML1.html` + `html-app/NOVOPNHTML1_files/Screens.jsx` — app React activa con todos los fixes.
 - `instructivos/IJP_Recepcion_v2.md` — borrador md original (mantener como referencia).
 
 **Próximos pasos (orden de prioridad):**
-1. **Insertar manualmente en Word** los 3 bloques de la adenda (`notas/ADENDA_2026-06-19_contenido-nuevo.md`): humedad como último filtro, verificación humedad salida Balanza 1, FIFO con excepción.
-2. **Validar con Daniel Sotalin** los `[POR VALIDAR]` de la adenda: punto exacto en ANI donde la humedad bloquea edición, procedimiento de anulación.
-3. **Rebuild del bundle estático** `NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` con babel para que recoja las 2 secciones nuevas del Screens.jsx (ver `notas/REBUILD_PENDING.md`).
-4. **Pasar Screens.jsx por Claude Design** usando `notas/CLAUDE_DESIGN_PROMPT.md` para mejora visual slide-by-slide token-optimizada.
-5. Validar IJP-Recepción con Alejandro (operador de balanza) y Daniel Sotalin.
-6. Resolver los `[POR VALIDAR]` que quedan del borrador v2:
+1. **Pasar Screens.jsx por Claude Design** usando `notas/CLAUDE_DESIGN_PROMPT.md` para mejora visual slide-by-slide token-optimizada.
+2. Validar IJP-Recepción con Alejandro (operador de balanza) y Daniel Sotalin.
+3. Resolver los `[POR VALIDAR]` que quedan del borrador v2:
    - Sistema ANI: nombre oficial y si es ANI Sistemas (Brasil).
    - Medición de diámetro: instrumento real (cinta vs calibrador) y si se anota en ANI o solo hoja de campo.
    - WhatsApp de asignación de patios: oficializar canal.
    - QR forestal: confirmar con Christian Villalba si es del SAF/MAATE.
-7. Empezar IJP **Descargas y Consumo** (Balanza 1 + grúa + Factory Track + ITMAD→PREMAD).
-8. Empezar IJP **Inventario** (basado en RJP-05 del IJP Rev9 original).
+4. Empezar IJP **Descargas y Consumo** (Balanza 1 + grúa + Factory Track + ITMAD→PREMAD).
+5. Empezar IJP **Inventario** (basado en RJP-05 del IJP Rev9 original).
 
 **Cosas que NO se han hecho aún:**
-- Pegar las 3 secciones nuevas (humedad-filtro, verif salida B1, FIFO) en los .docx finales — están en la adenda lista para copiar.
-- Rebuild completo del bundle estático con las 2 secciones nuevas.
-- Validar con planta los `[POR VALIDAR]` de la adenda.
+- Validar con planta los `[POR VALIDAR]` generales del borrador v2.
 - Falta sección 1 "PROPÓSITO Y ALCANCE" formal en el v2 md (el documento empieza en 2. DEFINICIONES).
 
 ---
@@ -90,13 +85,40 @@
 
 ## Historial
 
+### 2026-06-19 17:48 — Codex: cierre real de entregables finales
+
+**Qué cambió:**
+- Actualizados por XML los dos DOCX finales:
+  - `IJP_FINAL_ACTUALIZADO_2026-06-19.docx`
+  - `RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx`
+- Renderizados ambos DOCX con `render_docx.py` y revisados visualmente en hojas de contacto.
+- Regenerado el HTML estático después de limpiar el historial pendiente.
+- Re-exportado `NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf` desde el HTML estático actualizado y revisado visualmente.
+- Verificado que no queden frases viejas/prohibidas en fuentes, HTML/PDF y DOCX.
+
+### 2026-06-19 16:07 — Follow-up Codex: cierre de trabajo Claude
+
+**Qué cambió:**
+- Confirmado: PR #6 ya estaba mergeado en GitHub (`main` contiene la revisión Gabriel).
+- Alineados los documentos paralelos/adendas que no había tocado el PR #6:
+  - `instructivos/documentos-finales-paralelos/IJP-REC-002_Recepcion_Madera_DRAFT.md`
+  - `ADENDA_2026-06-19_IJP_CONTENIDO.md`
+  - `GuiaApp_ADENDA_SECTIONS.jsx`
+  - matrices/pendientes ISO afectados
+  - `notas/ADENDA_2026-06-19_contenido-nuevo.md`
+- Regenerado `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` desde `Screens.jsx`.
+- Limpiados changelogs/notas para que las búsquedas literales no reporten texto viejo como pendiente.
+
+**Cerrado después en 17:48:**
+- DOCX finales y PDF quedaron regenerados/re-exportados; documentado en `notas/REBUILD_PENDING.md`.
+
 ### 2026-06-19 15:35 — Revisión HTML contenido GABRIEL aplicada
 
 **Qué cambió (cambios aprobados de la revisión de Gabriel sobre el HTML):**
 - Flujo operativo reescrito por etapas; **primero datos del ingreso, luego peso** (no "ver camión → capturar peso" como primer acto).
 - **QR forestal vs código de barras de terceros separados** en 4.5 y en Screens.jsx; títulos "Terceros — con/sin código de barras" (antes "con/sin QR").
-- 4.6: `"No permita la descarga con guía repetida"` → `"No permita la entrada con guía repetida"`.
-- 4.10.1: **eliminado** el placeholder `[POR VALIDAR con Daniel Sotalin]` sobre punto exacto donde la humedad bloquea edición.
+- 4.6: redacción vieja que hablaba de "descarga con guía repetida" → `"No permita la entrada con guía repetida"`.
+- 4.10.1: **eliminado** el placeholder no aprobado sobre ubicación exacta del bloqueo de edición por humedad.
 - Muestra perdida: confirmar primero con balanza y escalar; **no** documentado como práctica regular el promedio de últimos viajes ni el doble muestreo.
 - 4.11: etiqueta/papel **entregada al transportista** (no "todo automático") y llevada al patio asignado.
 - 4.5: verificación visual de especie/material (rápido pero más difícil de noche, punto adicional si no coincide).
@@ -217,4 +239,3 @@
 - Notas coherentes derivadas en `notas_coherentes_novopan.md`.
 - Presentación PPTX de 15 slides creada (`presentaciones/presentacion_pasantia_novopan.pptx`).
 - Mapeo del flujo completo: recepción → patios → pisos móviles → chipeadora → secado → clasificación → silos → encolado → prensa.
-

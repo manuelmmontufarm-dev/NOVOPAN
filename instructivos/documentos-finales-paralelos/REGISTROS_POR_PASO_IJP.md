@@ -27,7 +27,7 @@
 | **2** | Peso entrada F4 | Peso capturado ANI | REG-ANI-ING | Sí | Coincidir balanza física |
 | **3** | Documentos | Guías físicas + foto geo | REG-FOTO-GEO, guías MAATE | Sí rolliza | Archivo oficina |
 | **4** | Conductor | Cédula verificada; pase si externo | REG-PASE-CTL | Si patio externo | Retención cédula |
-| **5** | Datos ANI | Ingreso QR/manual | REG-ANI-ING | Sí | Anulación si QR/contrato mal |
+| **5** | Datos ANI | Ingreso con QR forestal, código de barras de terceros o manual | REG-ANI-ING | Sí | Anulación si QR forestal, código de barras o contrato queda mal |
 | **6** | Validación guía | Validación automática ANI | REG-ANI-ING | Sí | Rechazo si duplicada |
 | **7** | Verificar datos ingreso | Checklist datos (sin LEF en balanza) | REG-ANI-ING | Sí | Cambio vs IJP-REC-001 Paso 7 precios |
 | **8** | Humedad | Etiqueta, foto, archivo % | REG-ETQ-HUM, REG-FOTO-HUM, REG-HUM-001 | Según frecuencia | Último filtro pre-cierre |
@@ -71,4 +71,5 @@
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| 0.1+GABRIEL | 19-jun-2026 16:07 (-05 ECT) | Separado QR forestal de código de barras de terceros en registros |
 | 0.1-DRAFT | 19-jun-2026 | Creación inicial |

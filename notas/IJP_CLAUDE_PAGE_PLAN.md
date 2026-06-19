@@ -222,8 +222,8 @@ Use sections:
 
 - `Propios con QR`
 - `Propios sin QR`
-- `Terceros con QR`
-- `Terceros sin QR`
+- `Terceros con código de barras`
+- `Terceros sin código de barras`
 - `Vuelo Forestal con QR`
 - `Vuelo Forestal sin QR`
 - `Validacion y casos especiales`

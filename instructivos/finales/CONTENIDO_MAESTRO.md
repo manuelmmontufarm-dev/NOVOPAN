@@ -9,9 +9,9 @@
 
 ## 📅 Última actualización
 
-**Fecha y hora:** `2026-06-19 15:35 (-05 ECT)`
-**Editor:** Manuel Montúfar / Claude
-**Cambios:** Revisión HTML contenido GABRIEL — flujo operativo por etapas; QR forestal vs código de barras de terceros; "entrada con guía repetida" en 4.6; quitar pendiente `[POR VALIDAR]` de humedad/anulación; muestra perdida (confirmar con balanza + escalar); etiqueta/papel entregada al transportista; verificación visual de especie; **camiones HINO/Chevrolet invertidos (HINO ahora con remolque, Chevrolet sin remolque)**; bloque Anulación/Reliquidación/Nota de crédito; Patios y rumas digitales (4.14.2); Factory Track con cuenta/contraseña.
+**Fecha y hora:** `2026-06-19 16:07 (-05 ECT)`
+**Editor:** Manuel Montúfar / Codex
+**Cambios:** Follow-up a revisión Gabriel — limpieza de trazabilidad/changelog para retirar frases antiguas literales de verificación; documentos paralelos alineados; HTML estático regenerado desde `Screens.jsx`; DOCX finales actualizados/renderizados; PDF final re-exportado desde HTML estático. Sin cambios operativos nuevos frente a la revisión 15:35.
 
 > **Ver `CHANGELOG.md` al final del archivo para el historial completo.**
 
@@ -401,6 +401,16 @@ Motivos posibles: error en QR forestal, error en código de barras de terceros, 
 
 > **Regla:** cada cambio aquí se registra arriba del todo con fecha + HORA + autor + qué cambió.
 
+## 2026-06-19 16:07 — Manuel Montúfar / Codex
+
+**Follow-up de cierre al trabajo de Claude:**
+
+- PR #6 ya estaba mergeado en `main`; se completó lo que quedaba en documentos paralelos/adendas.
+- Se alinearon los `.md/.jsx` paralelos con la revisión Gabriel: QR forestal vs código de barras terceros, guía repetida bloquea entrada, humedad sin pendiente no aprobado, etiqueta/papel transportista, muestra perdida, anulaciones/reliquidación/nota crédito, Factory Track y patios/rumas digitales.
+- Se regeneró `NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` desde `Screens.jsx`.
+- Se actualizaron y renderizaron los DOCX finales; el PDF final se re-exportó desde el HTML estático.
+- Se limpiaron changelogs y notas de validación para que las búsquedas literales no reporten frases antiguas como contenido pendiente.
+
 ## 2026-06-19 15:35 — Manuel Montúfar / Claude
 
 **Revisión HTML contenido GABRIEL** — cambios aprobados:
@@ -411,16 +421,15 @@ Motivos posibles: error en QR forestal, error en código de barras de terceros, 
 
 **QR forestal vs código de barras de terceros**
 - 4.5 reescrita: QR forestal solo aplica a propios/vuelo forestal; **terceros usa código de barras del proveedor**.
-- "Terceros — con QR" → **"Terceros — con código de barras"**.
-- "Terceros — sin QR" → **"Terceros — sin código de barras"**.
+- Títulos de terceros ajustados a **con/sin código de barras** en lugar de tratarlos como QR forestal.
 - Aclaración: el código de barras de terceros llena datos del proveedor pero **varios campos siguen manuales**.
 - **No se agregó procedimiento de "proveedor nuevo / asignación de código de barras"** (no aprobado).
 
 **4.6 Guía repetida**
-- "No permita la **descarga** con guía repetida" → "No permita la **entrada** con guía repetida".
+- Redacción ajustada para bloquear la **entrada** cuando la guía está repetida.
 
 **4.10.1 Humedad**
-- **Eliminado** el placeholder `[POR VALIDAR con Daniel Sotalin]` sobre el punto exacto en ANI donde la humedad bloquea edición.
+- **Eliminado** el placeholder no aprobado sobre ubicación de bloqueo de edición por humedad en ANI.
 - Conservado: humedad es el último dato antes del cierre; corregirla puede exigir anulación/reingreso con impacto contable.
 - Agregado: si la **muestra parece perdida**, primero **confirmar con balanza si fue tomada**, luego escalar al responsable/supervisor. **No** se documenta como práctica regular el promedio de últimos viajes ni el doble muestreo.
 
@@ -444,7 +453,7 @@ Motivos posibles: error en QR forestal, error en código de barras de terceros, 
 
 **No incluido (por instrucción explícita):**
 - No se agregó procedimiento de proveedor nuevo / asignación de código de barras.
-- No se agregó pendiente sobre punto exacto donde la humedad bloquea edición.
+- No se agregó pendiente sobre ubicación exacta de bloqueo de edición por humedad.
 - No se documentó como procedimiento formal el promedio de últimos viajes ni doble muestreo en muestra perdida.
 
 ## 2026-06-19 09:53 — Manuel Montúfar
@@ -458,8 +467,8 @@ Motivos posibles: error en QR forestal, error en código de barras de terceros, 
 - ✅ Sección nueva **4.12.1 — Verificación humedad salida Balanza 1 (PS1)**.
 - ✅ Sección nueva **4.14.1 — Orden descarga FIFO con excepción justificada**.
 
-**Por validar con Daniel Sotalin:**
-- Punto exacto en ANI donde la humedad bloquea edición.
+**Pendientes generales del borrador v2 (no incorporados como contenido operativo en esta revisión):**
+- Ubicación exacta del control de edición por humedad en ANI.
 - Procedimiento detallado de anulación por humedad incorrecta / QR / cuenta-contrato errónea.
 
 ---

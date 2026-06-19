@@ -32,7 +32,7 @@
 | **REG-ETQ-HUM** | Etiqueta muestra humedad | Muestreo | Paso 8 | Impreso ANI / manual | Balanza / Patio 5 | [POR VALIDAR — Gabriel] | Flujo en transición |
 | **REG-FOTO-HUM** | Foto resultado analítica + etiqueta | Trazabilidad humedad | Paso 8 | Digital por ingreso | Operador balanza | [POR VALIDAR] | Transcript Gabriel |
 | **REG-WA-DESC** | Foto WhatsApp descarga terminada | Descarga patio | Post-descarga | WhatsApp grupo | Operador máquina | [POR VALIDAR] | Transcript NR29 |
-| **REG-FT-001** | Movimiento Factory Track 0.001 | Descarga digital | Factory Track | Sistema | Operador patio | [POR VALIDAR] | Ver NR29 |
+| **REG-FT-001** | Movimiento Factory Track 0.001 | Descarga digital | Factory Track | Sistema | Operador patio | [POR VALIDAR] | Cada Factory Track está asociado a un camión/equipo y usa cuenta/contraseña propia; credenciales administradas por supervisores / jefe de patios / responsable definido |
 | **REG-ANI-ING** | Registro ingreso ANI (nº ingreso) | Recepción | Paso 11 | ANI / INFOR | Sistemas | Permanente sistema | Operativo |
 | **REG-EMASEO** | Hoja residuos EMASEO | Excepción residuo | Manual | Google Sheet | Daniel Sotalin | [POR VALIDAR] | Excepción 7 |
 | **REG-PASE-CTL** | Pase control patio externo | Seguridad | Paso 4 | Físico | Control seguridad | Jornada | [POR VALIDAR] |
@@ -61,6 +61,8 @@ Guía/licencia → Proveedor → Placa → Peso (RJP-01) → Patio/ruma → Fact
 
 ## 3. Factory Track — registros pendientes de nomenclatura oficial
 
+Cada Factory Track se asocia a un camión/equipo y opera con cuenta/contraseña propia. Las credenciales las administran supervisores, jefe de patios o responsable definido.
+
 | Término en audio | Uso | Estado |
 |------------------|-----|--------|
 | ITMADE / IDMADE | Origen stock (patio/ruma) | [POR VALIDAR — Daniel] |
@@ -88,4 +90,5 @@ Para cada registro aprobado, completar con Daniel:
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| 0.1+GABRIEL | 19-jun-2026 16:07 (-05 ECT) | Aclaración Factory Track cuenta/equipo y credenciales |
 | 0.1-DRAFT | 19-jun-2026 | Matriz inicial desde IJP-REC-002 y transcripts |

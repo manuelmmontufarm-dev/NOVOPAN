@@ -2,7 +2,7 @@
 
 > **Por qué este archivo:** El contenido de abajo NO se pudo insertar automáticamente en los .docx sin riesgo de romper estilos. Te dejo el texto formateado listo para copiar y pegar en Word en las secciones indicadas.
 >
-> Ya están en los .docx ACTUALIZADO_2026-06-19: cambios de altura de rumas, tiempo de muestra rolliza, etiquetado desde balanza. Lo que falta son los 3 bloques de abajo.
+> Ya están en los .docx ACTUALIZADO_2026-06-19: cambios de altura de rumas, tiempo de muestra rolliza, etiquetado desde balanza. Esta adenda queda alineada con la revisión Gabriel del 19-jun-2026.
 
 ---
 
@@ -14,14 +14,19 @@
 
 ### 4.10.1  Humedad: último filtro antes del cierre
 
-El % de humedad es el **último dato que se digita en ANI antes del cierre del ingreso**. Una vez registrado, corregir el valor puede exigir **anular el ingreso y reingresarlo**, lo cual tiene impacto contable.
+El % de humedad es el **último dato que se digita en ANI antes del cierre del ingreso**. Sin humedad no se puede completar correctamente el registro cuando aplica. Una vez registrado, corregir el valor puede exigir **anular el ingreso y reingresarlo**, lo cual tiene impacto contable.
 
 Por esto el operador debe:
 
 - Confirmar el valor del equipo **antes** de digitarlo en ANI (lectura directa de la pantalla de la balanza analítica, sin estimaciones).
-- Si el QR del proveedor o la cuenta-contrato registrada son erróneos, **no digitar la humedad encima**: primero anular el ingreso y reingresarlo con los datos correctos.
-- El punto exacto en ANI donde la humedad bloquea la edición del registro queda **[POR VALIDAR con Daniel Sotalin / supervisor ANI]**.
-- El procedimiento detallado de anulación por humedad incorrecta o por QR/cuenta-contrato erróneos queda **[POR VALIDAR — escalar a supervisor]**.
+- Si el QR forestal, el código de barras de terceros o la cuenta-contrato registrada son erróneos, **no digitar la humedad encima**: primero anular el ingreso y reingresarlo con los datos correctos.
+
+**Si la muestra parece perdida o no procesada:**
+
+1. Confirmar con balanza si la muestra fue tomada.
+2. Si la muestra no se tomó o no se encuentra, escalar al responsable / supervisor definido.
+
+> No tratar promedios de viajes anteriores o doble muestra en viajes posteriores como práctica regular. Son medidas de excepción que decide el supervisor.
 
 ---
 
@@ -76,6 +81,6 @@ En la práctica, se puede descargar por **especie** o por **patio** cuando lo ju
 | Altura ruma 5m/6m + patrón | ✅ auto | ✅ auto | ✅ auto | ✅ auto |
 | Tiempo muestra rolliza 25-40 | ✅ auto | (no aplica) | ✅ auto | ✅ auto |
 | Etiqueta enviada desde balanza | ✅ auto | (no aplica) | ✅ auto | ✅ auto |
-| Humedad último filtro + anulación | ⚠️ adenda → pegar | ⚠️ adenda opcional | ✅ auto | ❌ rebuild |
+| Humedad último filtro + anulación / muestra perdida | ⚠️ adenda → pegar | ⚠️ adenda opcional | ✅ auto | ❌ rebuild |
 | Verificación humedad salida B1 | ⚠️ adenda → pegar | ⚠️ adenda opcional | ✅ auto | ❌ rebuild |
 | FIFO con excepción | ⚠️ adenda → pegar | ⚠️ adenda opcional | ✅ auto | ❌ rebuild |
