@@ -90,7 +90,26 @@
 
 ## Historial
 
-### 2026-06-19 — Sync masivo desde folder local + fixes de consistencia
+### 2026-06-19 09:58 — Policy obligatoria + CONTENIDO_MAESTRO + changelog en cada doc final
+
+**Qué cambió:**
+- Nueva **POLICY_DOCUMENTOS_FINALES.md** en la raíz del repo: regla obligatoria que cada actualización de doc final lleva fecha + HORA (con minuto) + autor + qué cambió, registrado dentro del archivo al final.
+- Nuevo **`instructivos/finales/CONTENIDO_MAESTRO.md`** — fuente única de verdad. Aquí se edita primero el contenido; después se propaga a docx/HTML/PDF. Resuelve el problema de "tengo 4 docs finales y no sé cuál es el bueno".
+- Cada doc final ahora tiene **changelog interno** al final:
+  - `IJP_FINAL_ACTUALIZADO_2026-06-19.docx` — sección "Historial de cambios" al final del documento.
+  - `RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx` — íd.
+  - `NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` — footer con timestamp visible.
+  - `html-app/NOVOPNHTML1_files/Screens.jsx` — nueva sección "7. Historial de cambios" navegable en la app.
+- `TODAY.md` (este archivo) actualizado con esta entrada.
+
+**Por qué:**
+- Usuario: "todos los documentos finales desde ahora deberían tener fecha y HORA con minuto de la última vez que se actualizaron y que se cambió en la parte de el final".
+- Necesidad de tener un solo archivo editable plano donde no preocuparse del formato.
+
+**Pendiente:**
+- PDF (`NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf`) NO tiene changelog interno — requiere re-exportar desde el HTML actualizado. Por ahora, su timestamp se infiere de la fecha de modificación del archivo en disco.
+
+### 2026-06-19 09:21 — Sync masivo desde folder local + fixes de consistencia
 
 **Qué cambió:**
 - Se sincronizó todo el folder local `/Users/manue/Documents/NOVOPAN/` al repo. Antes solo había `.md` sueltos; ahora están los `.docx` finales, el PDF, la app React (`html-app/`), `reference/`, `glossary/`, `decisions-and-open-items/`, `technical-research/`.
