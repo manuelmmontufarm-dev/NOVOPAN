@@ -95,6 +95,7 @@
 - `instructivos/finales/IJP_FINAL_ACTUALIZADO_2026-06-19.docx` y `instructivos/finales/RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx`: se insertó el marcador TEST al final, antes del historial, y se actualizó la última actualización a `12:25`.
 - `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html`: rebuild desde `Screens.jsx`.
 - `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf`: re-export desde el HTML estático actualizado.
+- HTML interactivo/print/estático: corrección responsive en el título de portada para evitar desborde horizontal en pantallas móviles.
 
 **Por qué:**
 - Push en `maestro/edits` modificó `instructivos/finales/CONTENIDO_MAESTRO.md`; el cambio fue el marcador `TEST — 2026-06-19 12:25 (-05 ECT)`.

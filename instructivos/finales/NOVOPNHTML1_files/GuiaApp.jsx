@@ -14,7 +14,7 @@ function Cover({ onStart }) {
       <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 'var(--fs-caption)', letterSpacing: 'var(--ls-caps)', textTransform: 'uppercase', color: 'var(--novopan-yellow)', marginBottom: 12 }}>
         Instructivo de Procedimiento · IJP-REC-001
       </div>
-      <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--fs-h1)', textTransform: 'uppercase', letterSpacing: '0', lineHeight: 1.04, maxWidth: 720 }}>
+      <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--fs-h1)', textTransform: 'uppercase', letterSpacing: '0', lineHeight: 1.04, maxWidth: 720, overflowWrap: 'anywhere' }}>
         Recepción de Madera y Subproductos
       </h1>
       <p style={{ margin: '16px 0 0', fontFamily: 'var(--font-body)', fontSize: 'var(--fs-body-lg)', color: 'rgba(255,255,255,0.85)', maxWidth: 560, lineHeight: 1.5 }}>
