@@ -73,10 +73,14 @@ Establece los pasos 1–11 de recepción en **Balanza 2 (BPS2)** para madera rol
 ## 4. FLUJO RESUMIDO
 
 ```
-Llegada → Tipo carga → F4 peso → Documentos → Conductor
-  → Datos ANI (QR/manual) → Validación guía → Verificar datos ingreso
-  → Humedad (si aplica) → Diámetro → Patio → F12/F5 → RJP-01 → Liberar
+Llegada → Tipo carga → Documentos / conductor
+  → Datos ANI (QR forestal / código de barras / manual)
+  → Captura peso F4 cuando los datos del ingreso están completos
+  → Validación guía → Verificar datos ingreso → Humedad (si aplica)
+  → Diámetro → Patio → F12/F5 → RJP-01 → Liberar
 ```
+
+> Regla operativa: no liberar a descarga sin número de ingreso ANI. En balanza se llenan/revisan datos del ingreso y se captura peso cuando corresponde en ANI; no tratar F4 como primer acto absoluto si faltan datos/documentos.
 
 ---
 
@@ -103,9 +107,10 @@ Llegada → Tipo carga → F4 peso → Documentos → Conductor
 
 **Sistema:** ANI | **Tecla:** `F4`
 
-1. Balanza en cero; camión totalmente sobre plataforma.
-2. Presionar `F4`; verificar coincidencia con balanza física (tolerancia >100 kg → supervisor).
-3. Checklist: cero ✓ | plataforma completa ✓ | peso razonable ✓
+1. Confirme que los datos mínimos del ingreso estén completos/revisados en ANI.
+2. Balanza en cero; camión totalmente sobre plataforma.
+3. Presionar `F4`; verificar coincidencia con balanza física (tolerancia >100 kg → supervisor).
+4. Checklist: datos ingreso ✓ | cero ✓ | plataforma completa ✓ | peso razonable ✓
 
 ---
 
@@ -135,19 +140,25 @@ Solicitar según tipo de proveedor:
 
 ### PASO 5 — Ingreso de datos en ANI
 
-**Referencia detallada:** IJP-REC-001 — secciones por proveedor y con/sin QR.
+**Referencia detallada:** IJP-REC-001 — secciones por proveedor, QR forestal y código de barras de terceros.
 
-#### Opción A — Con QR forestal
+#### Opción A — Propios / Vuelo Forestal con QR forestal
 1. Escanear QR con lector.
 2. Revisar campos prellenados (bosque, transporte, cosechador, categoría, especie).
 3. Completar campos verdes faltantes.
 4. → Paso 6.
 
-#### Opción B — Sin QR (común en terceros)
-Llenar manualmente: placa, proveedor, transportista, servicio explotación, especie, categoría, ubicación tentativa.
+#### Opción B — Propios / Vuelo Forestal sin QR forestal
+Llenar manualmente: placa, proveedor, transportista, servicio explotación, bosque/cosechador si aplica, especie, categoría y ubicación tentativa.
+
+#### Opción C — Terceros con código de barras
+Escanear el código de barras del proveedor. El código ayuda a llenar datos del proveedor, pero varios campos siguen manuales: placa, transportista, especie/material, categoría, ubicación y observación con aserradero de origen.
+
+#### Opción D — Terceros sin código de barras
+Llenar manualmente placa, proveedor, transportista, servicio explotación, producto, categoría, especie/material, ubicación y observación con aserradero.
 
 #### Anulaciones previas al cierre
-Si el QR está vinculado a **cuenta contrato incorrecta**, los campos pueden quedar bloqueados. **No continuar:** anular ingreso y rehacer manualmente.
+Si el QR forestal, el código de barras de terceros o la cuenta contrato quedan asociados a datos incorrectos, **no continuar:** anular ingreso y rehacer manualmente antes de digitar humedad o cerrar.
 
 > **[POR VALIDAR — procedimiento formal anulación ANI — responsable: Daniel Sotalin]**
 
@@ -160,7 +171,7 @@ ANI verifica que la guía **no esté duplicada**.
 | Resultado | Acción |
 |-----------|--------|
 | Guía nueva | Continuar → paso 7 |
-| Guía duplicada | Informar conductor; camión sale de balanza; proveedor emite nueva guía; **no descargar** |
+| Guía duplicada | Informar conductor; camión sale de balanza; proveedor emite nueva guía; **no permitir la entrada con guía repetida** |
 
 Ver **Excepción 5 — Guía duplicada**.
 
@@ -178,13 +189,15 @@ Verificar **antes de digitar humedad o cerrar ingreso:**
 | Campo / dato | Verificación |
 |--------------|--------------|
 | Categoría | Coincide con carga física y documentos |
-| Material / especie | Correcto para el embarque |
-| Proveedor y cuenta contrato | Coherentes con QR o ingreso manual |
-| QR forestal | Vinculado al contrato correcto; si no, anular y reingresar manual |
+| Material / especie | Correcto para el embarque y verificado visualmente en balanza |
+| Proveedor y cuenta contrato | Coherentes con QR forestal, código de barras de terceros o ingreso manual |
+| QR forestal / código de barras | Vinculado al contrato/proveedor correcto; si no, anular y reingresar manual |
 | Placa, transportista | Coinciden con documentos |
 | Ubicación / patio tentativo | Coherente con asignación del día |
 
 **Si hay discrepancia:** no digitar humedad; corregir o anular y reingresar; escalar a supervisor.
+
+**Verificación visual:** el operador revisa de forma rápida la especie/material observado en el camión. Este control puede ser más difícil de noche; si lo observado no coincide con lo ingresado, debe corregirse antes de continuar.
 
 **Precios y LEF-01:** responsabilidad de Departamento Forestal / Gerencia — no del operador de balanza en tiempo real.
 
@@ -212,8 +225,8 @@ Verificar **antes de digitar humedad o cerrar ingreso:**
 
 #### 8.3 Etiquetado
 
-- **Rolliza propia:** ANI imprime etiqueta desde balanza (ya no manual en Patio 5 para este flujo).
-- **Terceros/subproductos en Patio 5:** etiqueta manual o enviada desde balanza según operación actual.
+- **Rolliza propia:** ANI imprime etiqueta desde balanza.
+- **Terceros/subproductos:** balanza entrega etiqueta/papel al transportista; puede ser impresa o llenada a mano según el flujo del momento. El transportista la lleva al patio asignado y la entrega al responsable que toma la muestra.
 
 > **[POR VALIDAR — etiquetado humedad flujo definitivo — responsable: Gabriel / Franklin]**
 
@@ -221,14 +234,19 @@ Verificar **antes de digitar humedad o cerrar ingreso:**
 
 > Texto alineado a **ADENDA 2026-06-19** — insertar en IJP-REC-001 tras tiempo de análisis (25–40 min), antes de 4.11 Etiquetado.
 
-El % de humedad es el **último dato que se digita en ANI antes del cierre del ingreso**. Una vez registrado, corregir el valor puede exigir **anular el ingreso y reingresarlo**, lo cual tiene impacto contable.
+El % de humedad es el **último dato que se digita en ANI antes del cierre del ingreso**. Sin humedad no se puede completar correctamente el registro cuando aplica. Una vez registrado, corregir el valor puede exigir **anular el ingreso y reingresarlo**, lo cual tiene impacto contable.
 
 Por esto el operador debe:
 
 - Confirmar el valor del equipo **antes** de digitarlo en ANI (lectura directa de la pantalla de la balanza analítica, sin estimaciones).
-- Si el QR del proveedor o la cuenta-contrato registrada son erróneos, **no digitar la humedad encima**: primero anular el ingreso y reingresarlo con los datos correctos.
-- El punto exacto en ANI donde la humedad bloquea la edición del registro queda **[POR VALIDAR con Daniel Sotalin / supervisor ANI]**.
-- El procedimiento detallado de anulación por humedad incorrecta o por QR/cuenta-contrato erróneos queda **[POR VALIDAR — escalar a supervisor]**.
+- Si el QR forestal, el código de barras de terceros o la cuenta-contrato registrada son erróneos, **no digitar la humedad encima**: primero anular el ingreso y reingresarlo con los datos correctos.
+
+#### Si la muestra parece perdida o no procesada
+
+1. Confirmar con balanza si la muestra fue tomada.
+2. Si la muestra no se tomó o no se encuentra, escalar al responsable / supervisor definido.
+
+> No tratar promedios de viajes anteriores o doble muestra en viajes posteriores como práctica regular. Son medidas de excepción que decide el supervisor.
 
 #### 8.5 Si el análisis demora
 
@@ -271,6 +289,12 @@ En la práctica, se puede descargar por **especie** o por **patio** cuando lo ju
 - **Registrada** en el medio que defina el supervisor (WhatsApp del grupo de patios o nota en hoja de turno).
 
 > **[POR VALIDAR — priorización descarga — responsable: Gabriel / Iván]**
+
+#### 4.14.2 Patios y rumas digitales *(ref. IJP-REC-001 §4.14)*
+
+- Si el operador descarga en un patio o ruma que no sigue la secuencia indicada, debe avisar.
+- Si físicamente se crea una ruma nueva y no existe digitalmente, se debe pedir habilitación al jefe de patios o responsable definido.
+- La ruma digital funciona como histórico/control para verificar cambios físicos y mantener trazabilidad.
 
 ---
 
@@ -318,14 +342,15 @@ Material de planta devuelto a materia prima puede registrarse con **código sin 
 
 ---
 
-### Excepción 4 — Anulaciones en ANI
+### Excepción 4 — Anulación, reliquidación y nota de crédito
 
-Causas documentadas en transcripts: QR/cuenta contrato incorrecta, humedad mal digitada, error de digitación.
+Causas posibles: error en QR forestal, error en código de barras de terceros, ingreso mal digitado por balanza, precio mal ingresado, categoría/material incorrecto o integración fallida.
 
-| Paso | Acción |
-|------|--------|
-| Detectar error antes de humedad | Corregir campos editables o anular |
-| Error post-humedad / post-integración | Anular ingreso; solicitar autorización supervisor/contabilidad; reingreso manual |
+| Caso | Acción operativa | Escalar a |
+|------|------------------|-----------|
+| Anulación | Se anula el ingreso y se ingresa nuevamente con datos correctos | Supervisor / Daniel |
+| Reliquidación | Si se pagó de menos por mala categoría u otro dato, proveedor emite factura por faltante | Supervisor / Contabilidad |
+| Nota de crédito | Si se pagó de más, proveedor emite nota por el valor a descontar | Supervisor / Contabilidad |
 
 > **[POR VALIDAR — anulaciones ANI paso a paso — responsable: Daniel Sotalin]**
 
@@ -396,6 +421,7 @@ Ver `REGISTROS_POR_PASO_IJP.md` y `MATRIZ_REGISTROS_ISO.md`.
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| 0.1-DRAFT+GABRIEL | 19-jun-2026 16:07 (-05 ECT) | Alineado con revisión Gabriel: datos antes de peso, QR forestal vs código de barras terceros, guía repetida bloquea entrada, humedad sin pendiente no aprobado, muestra perdida escalar, etiqueta/papel transportista, verificación visual, anulaciones/reliquidación/nota crédito, patios y rumas digitales |
 | 0.1-DRAFT | 19-jun-2026 | Consolidación transcripts + gaps; Paso 7 → verificar datos ingreso; nomenclatura IJP-REC-002 |
 | 0.1-DRAFT+ADENDA | 19-jun-2026 | Integrados bloques ADENDA 4.10.1, 4.12.1, 4.14.1 (ref. IJP-REC-001) |
 

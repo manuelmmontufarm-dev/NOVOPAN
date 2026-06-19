@@ -18,13 +18,13 @@ function AdendaSection4101() {
     <Card title="4.10.1 Humedad: último filtro antes del cierre" icon="warning_amber" tone="red">
       <p style={{ marginTop: 0 }}>
         El % de humedad es el <strong>último dato que se digita en ANI antes del cierre del ingreso</strong>.
-        Una vez registrado, corregir el valor puede exigir <strong>anular el ingreso y reingresarlo</strong>, lo cual tiene impacto contable.
+        Sin humedad no se puede completar correctamente el registro cuando aplica. Una vez registrado, corregir el valor puede exigir <strong>anular el ingreso y reingresarlo</strong>, lo cual tiene impacto contable.
       </p>
       <List items={[
         'Confirme el valor del equipo ANTES de digitarlo en ANI (lectura directa de la pantalla de la balanza analítica, sin estimaciones).',
-        'Si el QR del proveedor o la cuenta-contrato registrada son erróneos, NO digite la humedad encima — primero anule el ingreso y reingreselo con los datos correctos.',
-        'El punto exacto en ANI donde la humedad bloquea la edición del registro: [POR VALIDAR con Daniel Sotalin / supervisor ANI].',
-        'Procedimiento detallado de anulación por humedad incorrecta o QR/cuenta-contrato erróneos: [POR VALIDAR — escalar a supervisor].',
+        'Si el QR forestal, el código de barras de terceros o la cuenta-contrato registrada son erróneos, NO digite la humedad encima — primero anule el ingreso y reingréselo con los datos correctos.',
+        'Si la muestra parece perdida o no procesada, primero confirme con balanza si fue tomada; si no aparece, escale al responsable / supervisor definido.',
+        'No tratar promedios de viajes anteriores o doble muestra en viajes posteriores como práctica regular.',
       ]} />
     </Card>
   );

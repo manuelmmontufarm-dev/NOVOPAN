@@ -33,7 +33,7 @@ Repo `manuelmmontufarm-dev/NOVOPAN-SLIDES` contiene instructivos y finales en `i
 | 2 | **Patios internos/externos** (5,6,7,8,21) | IJP_FINAL / IJP_CLAUDE_PAGE_PLAN | **Gabriel** |
 | 3 | **Etiquetado humedad** (balanza vs Patio 5) | Gabriel + ADENDA | **Gabriel / Franklin** |
 | 4 | **Vuelo forestal** — campos ANI exactos | Andrés revisión forestal | **Andrés / Daniel** |
-| 5 | **Factory Track** ITMADE/PREMADE, reporte **0.001** | NR29, NR31 | **Daniel / Iván** |
+| 5 | **Factory Track** ITMADE/PREMADE, reporte **0.001**, cuentas por equipo | NR29, NR31 + revisión Gabriel 19-jun | **Daniel / Iván** |
 | 6 | **Anulaciones ANI** — flujo formal | Gabriel, gaps | **Daniel Sotalin** |
 | 7 | **Priorización descarga** (FIFO vs especie/patio) | NR27, ADENDA | **Gabriel / Iván** |
 | 8 | **Archivo registros / retención** años y custodia | gaps_informacion | **Daniel Sotalin** |
@@ -44,7 +44,7 @@ Repo `manuelmmontufarm-dev/NOVOPAN-SLIDES` contiene instructivos y finales en `i
 
 | Item | Responsable |
 |------|-------------|
-| Pantallas ANI: QR, sin QR, vuelo forestal, anulaciones | **Daniel** (acceso ANI) o operador balanza |
+| Pantallas ANI: QR forestal, ingreso manual, código de barras de terceros, vuelo forestal, anulaciones | **Daniel** (acceso ANI) o operador balanza |
 | Pantallas Factory Track: transferencia, 0.001, consumo | **Iván / Gabriel** |
 | Confirmar API/integración ANI | **Daniel / IT** |
 
@@ -73,4 +73,5 @@ Repo `manuelmmontufarm-dev/NOVOPAN-SLIDES` contiene instructivos y finales en `i
 
 | Versión | Fecha |
 |---------|-------|
+| 0.1+GABRIEL | 19-jun-2026 16:07 (-05 ECT) |
 | 0.1 | 19-jun-2026 |
