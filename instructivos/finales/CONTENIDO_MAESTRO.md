@@ -357,7 +357,14 @@ En la práctica se puede descargar por **especie** o por **patio** cuando lo jus
 >
 > Si ves la palabra **TEST** al final de cada uno de esos documentos, el agent de sincronización está funcionando correctamente. Este marcador se elimina después de validar el test.
 
-**TEST**
+**TEST — 2026-06-19 12:25 (-05 ECT)**
+
+Este marcador fue añadido en la edición del 2026-06-19 a las 12:25 para verificar que el agent de sincronización propaga cambios reales del maestro a los 4 derivados. Si ves esta línea con el timestamp `2026-06-19 12:25` al final de los siguientes archivos, el sistema funciona:
+
+- `html-app/NOVOPNHTML1_files/Screens.jsx`
+- `instructivos/finales/IJP_FINAL_ACTUALIZADO_2026-06-19.docx`
+- `instructivos/finales/RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx`
+- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html`
 
 ---
 
