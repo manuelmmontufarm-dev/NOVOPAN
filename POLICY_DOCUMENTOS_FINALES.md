@@ -3,6 +3,20 @@
 > **Status:** Obligatoria · Aplica desde **2026-06-19**
 > Esta política se aplica a TODO archivo en `docs-finales/` y a `html-app/NOVOPNHTML1_files/Screens.jsx`.
 
+## Regla #0 — Workflow de edición (con AI agent)
+
+Todo cambio al contenido del IJP se hace en este orden:
+
+1. **Crear o cambiar a la branch `maestro/edits`** (es la branch persistente para ediciones del maestro).
+2. **Editar SOLO `instructivos/finales/CONTENIDO_MAESTRO.md`** con el cambio nuevo.
+3. **Commit y push a `maestro/edits`** — esto dispara el AI agent de Cursor.
+4. El AI agent lee `AGENT_INSTRUCTIONS.md` (en raíz del repo), propaga el cambio a los 4 documentos derivados, y abre PR a `main`.
+5. Manuel revisa el PR y lo mergea.
+
+**No editar archivos derivados directamente.** Si necesitas un fix urgente que no pase por el agent, documenta por qué en la entrada del CHANGELOG y notifícalo en el PR.
+
+Ver `AGENT_INSTRUCTIONS.md` para detalles del workflow del agent.
+
 ## Regla #1 — Toda actualización lleva fecha + HORA (con minuto)
 
 Cada vez que se modifique un documento final, **dentro del archivo** debe quedar registrado:
