@@ -96,6 +96,7 @@
 - `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html`: rebuild desde `Screens.jsx`.
 - `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf`: re-export desde el HTML estático actualizado.
 - HTML interactivo/print/estático: corrección responsive en el título de portada para evitar desborde horizontal en pantallas móviles.
+- HTML/PDF estático: fallback visual para ocultar textos de íconos Material Symbols cuando la fuente externa no carga en modo offline.
 
 **Por qué:**
 - Push en `maestro/edits` modificó `instructivos/finales/CONTENIDO_MAESTRO.md`; el cambio fue el marcador `TEST — 2026-06-19 12:25 (-05 ECT)`.

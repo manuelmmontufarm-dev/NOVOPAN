@@ -104,6 +104,7 @@ body {
   font-family: var(--font-body);
   background: var(--surface-page);
   color: var(--text-body);
+  overflow-x: hidden;
 }
 
 button {
@@ -112,6 +113,10 @@ button {
 
 img {
   max-width: 100%;
+}
+
+.print-export .material-symbols-rounded {
+  display: none !important;
 }
 
 .factory-step-row {
@@ -130,5 +135,20 @@ img {
 
   .factory-step-row {
     grid-template-columns: 1fr;
+  }
+
+  table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  figure {
+    max-width: 100%;
+  }
+
+  .material-symbols-rounded {
+    display: none !important;
   }
 }
