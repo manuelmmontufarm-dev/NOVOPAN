@@ -924,6 +924,41 @@ function DescargaFactoryTrack() {
   );
 }
 
+function ChangelogFooter() {
+  return (
+    <Stack>
+      <SectionHeader number="7" eyebrow="Versión" title="Historial de cambios" icon="history" />
+      <Lead>Cada actualización del contenido se registra aquí con fecha, hora exacta (minuto) y autor. Esto permite saber qué se modificó y cuándo, sin tener que cruzar varios documentos.</Lead>
+
+      <Card title="Última actualización" icon="event" tone="green">
+        <p style={{ marginTop: 0, fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--fs-h3)', color: 'var(--text-strong)' }}>
+          2026-06-19 · 09:53 (-05 ECT)
+        </p>
+        <p style={{ margin: 0 }}><strong>Editor:</strong> Manuel Montúfar</p>
+        <p style={{ margin: 0 }}><strong>Documento fuente:</strong> <code>docs-finales/CONTENIDO_MAESTRO.md</code></p>
+      </Card>
+
+      <Card title="2026-06-19 09:53 — fixes de consistencia + 3 secciones nuevas" icon="track_changes">
+        <p style={{ marginTop: 0 }}><strong>Cambios al contenido existente:</strong></p>
+        <List items={[
+          <span>Altura de ruma: <em>4-5 m</em> → <strong>hasta 5 m (excepcionalmente 6 m), patrón dos rumas + camino + dos rumas (~1 m hueco)</strong>.</span>,
+          <span>Tiempo análisis muestra rolliza: <em>20-40 min</em> → <strong>25-40 min</strong>.</span>,
+          <span>Etiquetado Patio 5: <em>llenar manualmente</em> → <strong>la balanza imprime y envía la etiqueta al punto de muestra</strong>.</span>,
+        ]} />
+        <p style={{ marginTop: 14 }}><strong>Secciones nuevas:</strong></p>
+        <List items={[
+          <span><strong>4.10.1</strong> Humedad: último filtro antes del cierre + procedimiento anulación.</span>,
+          <span><strong>4.12.1</strong> Verificación de humedad en salida — Balanza 1 (PS1).</span>,
+          <span><strong>4.14.1</strong> Orden de descarga: FIFO con excepción justificada.</span>,
+        ]} />
+        <Callout variant="nota" title="Por validar con Daniel Sotalin" style={{ marginTop: 14 }}>
+          Punto exacto en ANI donde la humedad bloquea edición · Procedimiento detallado de anulación por humedad incorrecta o QR/cuenta-contrato errónea.
+        </Callout>
+      </Card>
+    </Stack>
+  );
+}
+
 window.GuiaScreens = {
   nav: [
     { id: 'antes', n: '1', label: 'Antes de recibir', icon: 'menu_book', Comp: AntesDeRecibir },
@@ -932,5 +967,6 @@ window.GuiaScreens = {
     { id: 'humedad', n: '4', label: 'Humedad y muestras', icon: 'science', Comp: HumedadMuestras },
     { id: 'cierre', n: '5', label: 'Cierre y excepciones', icon: 'assignment_turned_in', Comp: CierreExcepciones },
     { id: 'descarga', n: '6', label: 'Descarga y Factory Track', icon: 'phone_android', Comp: DescargaFactoryTrack },
+    { id: 'changelog', n: '7', label: 'Historial de cambios', icon: 'history', Comp: ChangelogFooter },
   ],
 };

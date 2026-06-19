@@ -1,0 +1,114 @@
+Los camiones se dirigen a la...
+Para cuando es consumo.
+Cuando es consumo.
+Ya, para cuando es consumo.
+Cuando es consumo, tienes los dos camiones, yo por ejemplo mando todita las 10 rumas que vienen a ser seguidas de consumo.
+Eso lo mando al supervisor y el supervisor debería saber igual balanza.
+Entonces balanza, ellos tienen el listado también como visto, cuál es el consumo y todo lo demás y con eso saben dónde consumir.
+entonces se dirigen allá, se parquean al lado y comienzan a cargar
+traca traca traca igual, ellos no reportan nada al whatsapp de que cogieron tantas toneladas de esto
+ellos netamente lo que hacen es reportar en el factory
+ya, ahí se usan bien
+si, entonces en el factory lo que hacen es así mismo
+buscan la ruma o el número de ruma en el factory
+primero colocan idmade, colocan la especie que es de M-MAT-003, es del Uro Grandis,
+y ponen aperemade.
+Después cogen qué cantidad de toneladas va a reportar.
+Que es básicamente decir de inventario a consumo.
+Exacto, entonces, como te dije, más o menos ellos tienen,
+o se sabe que un camión lleva 11 toneladas secas por vía.
+entonces cargan en el este
+ponen 11 y mandan
+entonces lo que te dice en el click
+yo veo que todos los que tengan
+11, 8, 4 porque a veces se va
+acabando y solo pueden reportar 4
+es correspondiente a consumo
+pero cuando reportan
+con 0.001 yo distingo
+que eso es descarga
+y tu manualmente tienes que estar haciendo
+esa distribución
+no eso ya está hecho
+entonces tengo
+en el uno que es movimiento de descarga
+y el otro que es
+consumo
+¿y reportan en el factory apenas
+cargan o una vez que esté
+descargado el consumo?
+ese no te puedo decir la verdad
+bueno no
+ese no me he dado cuenta pero yo creo que deberían reportar
+cuando cargan al camión
+en los patios
+y eso ya le llevan abajo
+al patio que necesiten
+al chip, al triturador
+puede ser que haya dos casos, un caso que reporten una vez ya tengan un camión lleno, se suben al vehículo, reportan 11 toneladas y se dirigen a planta
+o el otro caso, cargan, llevan el camión a planta, descargan el material ahí y reportan que se consumió 11 toneladas
+Claro.
+O sea, hay esos dos casos.
+Ahora, ¿cuál sería el ideal?
+No sé por qué este del factor ya hacían antes del reporte de consumo, pero el de las cargas es nuevo.
+Claro, claro.
+Esas son las dos diferencias.
+Ahora, hay otro conflicto internamente en consumo.
+Porque, digamos, ellos tienen que...
+Esta ruma, digamos, yo en inventario tengo el 50 toneladas según las mediciones.
+eso implica que cinco viajes de 11 toneladas debería acabar
+cubrir, sí, pero a veces nos hacen, como no es preciso, a veces resulta que digamos se terminan en 10 viajes
+y ellos al reportar 11, 11, 11 significa que se acaban primero en digital pero en físico mantengo
+Entonces ellos lo que hacen es coger
+Y buscar al azar otra ruma
+Que tenga pino y descargan de ese
+Entonces se comienzan a robar
+Para igualar las medidas
+Para que no les jodan
+Entonces comienzan a robarse el stock digital
+De otra ruma
+Para reportar el consumo
+Esa es la cuestión
+Entonces
+Yo ya les cambié
+O les estoy tratando de cambiar esa mentalidad
+No siempre es donce
+tienen que reportar
+según el físico
+entonces si yo les digo
+que esa tiene 50 toneladas
+y voy consumiendo la mitad
+debería haber 25
+eso me toca a mi reportar
+tal vez viajes de 8, 5
+o otra vez voy a 10
+o así
+o abrirtear un campo en el factory
+que digo del tipo de cosas que se pueden hacer con API facilito
+que diga
+un criterio que diga porcentaje de lleno
+¿me entiendes?
+Simón, para comparar
+Claro, entonces en vez de que tenga que ser la mate
+De que está a tres cuartos
+Ponen 75%
+Después de multiplicar su ingresa
+Mismo de Aina
+Entonces, sí, por ejemplo
+Para que vean ellos en porcentaje en relación a física
+Pero esos inconvenientes
+Desde el mismo pasado teniendo yo
+¿Por qué?
+Porque luego cuando se cambian de turno
+Resulta que siguen construyendo la misma ruma
+Y en el digital ya no hay como reportar
+Claro
+Entonces a mi me toca mover de perimade otra vez de inmadre
+y no debería estar así
+Eso no debería existir
+Entonces, ¿qué es lo que se llama?
+Retiriendo madera
+Sacando del monedador poliante de la novia
+Entonces, eso es lo que se llama
+Si, supe
+Más es que portería, más es que hagan bien el...

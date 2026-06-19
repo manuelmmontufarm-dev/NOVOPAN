@@ -90,7 +90,50 @@
 
 ## Historial
 
-### 2026-06-19 — Sync masivo desde folder local + fixes de consistencia
+### 2026-06-19 10:10 — ESTATICO rebuilt + paridad git==local
+
+**Qué cambió:**
+- **`NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html`**: rebuild completo con babel. Ahora es **TRULY self-contained** (277KB, todo inline: React + ReactDOM + DS bundle + Screens.compiled + CSS). Tiene TODAS las secciones nuevas (4.10.1, 4.12.1, 4.14.1, sección 7 Historial). Abre sin internet y sin servidor.
+- Sincronizado al repo: `instructivos/documentos-finales-paralelos/` (10 markdowns de otra sesión paralela: CHECKLIST_AUDITORIA, INFORME_CAMBIOS_ISO, MATRIZ_DOCUMENTOS_SGC, MATRIZ_REGISTROS_ISO, PROCEDIMIENTO_NO_CONFORMIDAD_DRAFT, IJP-REC-002 DRAFT, etc).
+- Sincronizado: `transcripciones/extra/` con transcripts/2026-06-17_batch.
+- Sincronizado: `notas/SETUP_COMPLETE.md` + `notas/iso documentation.pdf`.
+
+**Estado de paridad git ↔ local:**
+- ✅ Todos los docs finales tienen mismo hash SHA-256 en local y git.
+- ✅ La app React (`html-app/`) sincronizada al 100%.
+- ✅ Policy y CONTENIDO_MAESTRO sincronizados.
+- ⚠ NO se subió al repo (intencional, demasiado pesado): `audios/` 82MB, `transcripts_audio_forestal/` 58MB, `work/` 149MB, `_archive/` 89MB.
+
+**Por qué:**
+- Usuario: "ultimo paso es todos los documentos finales de el archivo local novopan sean los mismos que en el git". Cumplido.
+- Usuario: "asegurate que la version estatica este congruente con esta version". Cumplido — rebuild con babel.
+- Usuario: "tal vez deberia dejar de usar el folder novopan y solo download el zip cada vez". Sí, ahora es viable.
+
+**Cómo usar el repo a partir de ahora:**
+1. Trabaja directo en GitHub vía web/codespaces/clone — el repo tiene todo.
+2. Para los archivos pesados (audios/transcripts forestales), mantén una referencia en Drive/Box.
+3. El folder local de NOVOPAN puede quedar congelado o eliminarse después de verificar.
+
+### 2026-06-19 09:58 — Policy obligatoria + CONTENIDO_MAESTRO + changelog en cada doc final
+
+**Qué cambió:**
+- Nueva **POLICY_DOCUMENTOS_FINALES.md** en la raíz del repo: regla obligatoria que cada actualización de doc final lleva fecha + HORA (con minuto) + autor + qué cambió, registrado dentro del archivo al final.
+- Nuevo **`instructivos/finales/CONTENIDO_MAESTRO.md`** — fuente única de verdad. Aquí se edita primero el contenido; después se propaga a docx/HTML/PDF. Resuelve el problema de "tengo 4 docs finales y no sé cuál es el bueno".
+- Cada doc final ahora tiene **changelog interno** al final:
+  - `IJP_FINAL_ACTUALIZADO_2026-06-19.docx` — sección "Historial de cambios" al final del documento.
+  - `RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx` — íd.
+  - `NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` — footer con timestamp visible.
+  - `html-app/NOVOPNHTML1_files/Screens.jsx` — nueva sección "7. Historial de cambios" navegable en la app.
+- `TODAY.md` (este archivo) actualizado con esta entrada.
+
+**Por qué:**
+- Usuario: "todos los documentos finales desde ahora deberían tener fecha y HORA con minuto de la última vez que se actualizaron y que se cambió en la parte de el final".
+- Necesidad de tener un solo archivo editable plano donde no preocuparse del formato.
+
+**Pendiente:**
+- PDF (`NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf`) NO tiene changelog interno — requiere re-exportar desde el HTML actualizado. Por ahora, su timestamp se infiere de la fecha de modificación del archivo en disco.
+
+### 2026-06-19 09:21 — Sync masivo desde folder local + fixes de consistencia
 
 **Qué cambió:**
 - Se sincronizó todo el folder local `/Users/manue/Documents/NOVOPAN/` al repo. Antes solo había `.md` sueltos; ahora están los `.docx` finales, el PDF, la app React (`html-app/`), `reference/`, `glossary/`, `decisions-and-open-items/`, `technical-research/`.

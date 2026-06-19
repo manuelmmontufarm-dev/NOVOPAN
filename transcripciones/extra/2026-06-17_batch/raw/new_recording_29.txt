@@ -1,0 +1,153 @@
+Manda la foto al whatsapp, manda al grupo indicando que fue descargado tal placa, etc.
+Y ya está.
+Sube, descarga y manda la foto al whatsapp y ahí se hace algo con el factory, tal.
+Y de ahí, ahí sí, coge el factory y debería reportar lo que te digo. Ellos tienen una partecita que ingresan uno que dice stock inventario y ponen de idmade a primade, seleccionan el, como te digo, o escanean el código o ponen manualmente mmat0005 o la especie que sea.
+y reporta con 0.001.
+Que es para no mover nada, solo es para recibir la señal.
+Exacto.
+Esa señal nos da para saber si han descargado o no han descargado.
+¿Ya?
+¿Y no pueden reemplazar eso con la foto?
+Ya no necesitas la foto, es que me des prácticamente.
+Sí, en cierto sentido sí.
+Pero...
+Te estás diciendo dos veces la misma cosa.
+¿Cómo evidencias tú
+Que en el factory no reportan
+Antes de descarga?
+Pero ahí sí tuvieran que decirles
+Que para después de ley
+Pero que no sabes quién cumple
+Pues por eso en el whatsapp yo me asesorio
+Que manden la foto cuando el camión
+Realmente está descargado
+Porque si no ellos, claro ya se descargó
+Que no se tomó, es culpa del proveedor
+Ellos por barajarse y no tener la culpa
+Culpan a los proveedores que se demoran en salir
+Cuando a veces no es así
+Oye, y ahí cuando
+Cambian del
+ITMADE al
+PREMADE
+¿Cómo se sabe? Ah, bueno
+Eso ya se asocia con el peso
+Que calcula balanza para saber exactamente
+A ver, verás, ah ya, ahí te explico
+Otra cosa
+Porque eso al final del día es inventario, ¿no?
+Como tú viste, en el ITMADE yo tengo
+La ubicación que es el P11001
+Sí, que es la
+La ruma y el patio, efectivamente
+Si, digamos, comienzan a formar una nueva rumba, ellos vienen y a ellos no les reflejan el inventario en el factory porque no está creado ese espacio.
+Entonces, a mí es cuando ya se les pidió, deberían avisarme, se va a crear una nueva rumba, por favor verificar si hay en el...
+A mí me toca hacer una transferencia de una rumba a una rumba, de una tonelada nomás.
+esa una tonelada a ellos les va a reflejar en el sistema para poder reportar el 0.001
+que sólo se va a habilitar otra ruma en el factory track para que se detecte
+entonces si ellos tienen en el inventario digital todas las rumas como les dije a ellos
+si se van a consumir esa ruma deberían dejarme al menos 0.5 para que cuando nuevamente se forme
+esa ruma puedan reportar la descarga no sé si me hago entenderlo
+Sí, sí, sí, para que exista la ruma.
+Si no, estás poniendo madera.
+Si ellos se consumen todo, desaparece el factory
+y cuando quieren reportarlos, que descargan, no hay.
+Y tienen que llamarme a mí para que yo les crezca.
+Para habilitar una...
+Para que tú le hagas...
+¿Le crees?
+Sí, no, no.
+Sí te cacho.
+Sí te cacho, y es un buen método.
+Y este factory track es validado en otras empresas de...
+Utaí, sí, lo conozco.
+Yo también primera vez que le veo ese factory.
+Por ejemplo, sistema ANI, sistema INFO.
+ANI es muy poco común.
+Es de aquí.
+Yo estaba investigando un poco.
+Ani yo he visto que, o sea, es de Brasil
+Pero el problema que tuvieron con Ani es que compraron
+Y la empresa tuvo que adaptarse a Ani
+Por eso es que hay muchos conflictos aún en Ani
+Y comprar, son bien viejos los sistemas, me parece a mí
+Ajá, ¿y cuál es el problema?
+Que debería ser al revés
+Nosotros desarrollar un sistema que se adapte a nosotros
+No nosotros adaptarnos al sistema
+Porque si no vamos a tener conflictos
+O sea, 100%
+Y no es tan difícil desarrollar un sistema
+Entonces, eso es lo que yo hago
+Hasta ahorita no me cabe en la cabeza
+Más barato creo que va a ser desarrollar un sistema
+Entonces, ¿cómo es que terminan comprando?
+Porque tengo entendido que Ani les costó millones
+No te creo
+Entonces, no entiendo cómo es que compran ese sistema
+En vez de hacer un sistema
+Claro
+Entonces, no sé, los Juega ya creo que fue conflicto
+O por lo menos que los de Ani puedan hacer
+Parámetros
+Si cuesta tanto, individuales
+¿Cuál es el problema con Ani?
+Que ellos, digamos, si nosotros
+compramos que se compró, digamos, la aplicación
+y se dan cuenta que
+nosotros debemos adaptarnos a la esta.
+Simplemente es una modificación para que se adapte
+el programa a nosotros.
+¿Cuál es la cuestión? Que cuando nosotros pedimos
+alguna modificación que nos sirva a nosotros,
+nos cobran. Encima más.
+Entonces, encima más que
+nosotros les compramos, nos siguen cobrando por cada
+modificación que es necesario para nosotros.
+Entonces, por eso te digo, es ilógico
+que haya comprado yo un programa así que esté adaptado
+para nosotros y que nosotros nos estemos
+adaptando a eso.
+Lo que se podría hacer, yo no sé que tanto tú sabes de desarrollo, pero sabes si Ani tiene buenas integraciones API
+Porque si tienen, yo he estado desarrollando una aplicación
+y lo que se puede ahí hacer
+es
+no necesariamente puedes cambiar
+exactamente que se ingresa
+al ANI
+pero puedes cambiar la pantalla
+frontal que si te puede
+full cosas puedes mover desde ahí
+entonces al final del día todo se presenta por ANI
+pero tú puedes diseñar desde cero
+como quieres que se vea, structure
+sea el flujo
+yo no sé si eso ayuda
+en algo
+yo creo que sí les puede ayudar
+Porque es bien confuso
+Es como
+O sea no se ve muy amigable
+Para un operador nuevo
+Recién aprender en un solo día
+Tenaz
+Yo hice algunos ingresos en balanzos
+Si ves unos errores
+Ya sabes a quien culpar
+A quien te pedir
+Yo también cuando recién ingresé acá
+Puta también estar sentado con los manes
+A cada rato les molestaba
+Claro, tener una guía hasta puede estar pegado.
+Ahí está bien.
+Mira cómo están formados.
+Obviamente aquí han pegado tres porque si hubiesen separado uno más no tienen acceso a buscar.
+A meter el camión ahí.
+Entonces esto es bien formado.
+Esto es lo que buscas.
+Recto, tengo dos continuas, un espacio.
+Dos continuas, un espacio.
+y como ves es todo igual, es simétrico, bueno aquí ya digamos se han comido la altura, pero no es mucho, o sea ya no es tan representativo como cuando dejo muy atrás
+bien formado, todo recto, taca taca taca, aquí ya sale la girada en chanza pero no le veo tanto conflicto y así sucesivamente
+así se debería hacer, así se debería ver todo
+pero no hay problema

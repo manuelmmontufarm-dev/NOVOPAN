@@ -1,0 +1,348 @@
+Documento empezado.
+Ahorita lo que fuera chévere, ¿qué es lo que me falta? Vea lo que tengo hecho. Es un instructivo, es lo que me mandaron a hacer.
+Entonces, tiene las definiciones al principio, después responsabilidad y autoridad.
+entonces operador de balanza
+recibir el camión, capturar el peso
+registrar ingreso en NANI
+tomar las muestras de humedad cuando corresponda
+y se va más a detalle aquí abajo
+actividades 4.1
+llega el camión
+el camión entra y se ubica en balanza 2
+el operador identifica el tipo de carga
+registra su producto, combustible, reciclado, residuo
+si la carga es un caso especial
+combustible, residuo, transbordo
+continúa la sección 5 excepciones
+porque son diferentes
+dígame entonces
+si le parece que algo está fuera de lugar
+4.2 captura de peso de entrada
+verificar que la balanza muestre
+0 y que el camión esté totalmente
+sobre la plataforma, presionar F4 en AN
+y capturar automáticamente el peso de entrada
+verificar visualmente que el peso capturado
+coincida con el que muestre la balanza
+4.3 recepción de documentos
+solicitar al conductor los documentos según el tipo de proveedor
+entonces si es propio
+Madera Rolliza, se pide la guía de circulación
+forestal, la guía de
+madera y la guía de remisión
+¿correcto?
+Tercero, Madera Rolliza
+solo guía de circulación forestal
+su producto de terceros, documentación
+según normativa, más factura para el
+departamento de contabilidad
+¿en esta de aquí?
+¿en cuál?
+¿en su producto de terceros?
+bueno en este caso le especifica
+o sea claro los documentos que entran los terceros son con el código del proveedor
+y el documento que viene a hacer la guía de
+en todos
+en todos
+en este caso aquí
+en la parte de arriba en el rellizo
+aquí sería de especificar si es que
+en este caso si entra con cuero
+no se piden
+el código de varas
+de cada transportista
+son los codiguinos
+con eso se llena
+o eso se pide
+en caso de que no venga con el QR
+cuando viene con QR ya llena toda la información
+claro, pero igual necesita usted pedir
+la guía de circulación forestal
+eso va después
+para serrín
+solicitar también fotografía
+bueno eso va después, eso es una excepción
+4.4
+identificación del conductor
+si el camión va a patio externo
+retener la cédula y entregar el pase
+control
+4.5 ingreso a sistemas ANI
+eso le estoy haciendo
+otro documento
+más específico
+con los, esto ya le empezó
+Gabriel
+pero eso ya te circula y todo, pero bueno, lo que está aquí es opción A, el camión trae QR forestal, escanea el QR con lector,
+ANI prellena automáticamente bosque, transporte, cosechador, categoría y especie, revisar los campos prellenados,
+si alguno estaba haciendo incorrecto, completarlo manualmente, opción B, el camión no trae forestal,
+Llenar manualmente ANI, placa de vehículo, proveedor, transportista, servicio de explotación, especie, categoría, ubicación de descarga.
+Aplica sobre todo a proveedores terceros.
+4.6. Validación de la guía.
+ANI verifica automáticamente que la guía no esté duplicada en el sistema.
+Se verifica que no sea duplicada antes de dejar entrar.
+Si ANI rechaza la guía, informar al conductor que el camión debe salir de la balanza, el proveedor debe remitir una nueva guía.
+No se debe permitir la descarga.
+Por ahí es todo bien, ¿no?
+Sí.
+Muy buenas.
+Muy bien.
+¿Cómo le va?
+Siemprele, por favor.
+¿Qué es el código?
+Por favor.
+cargado demasiado
+31 toneladas
+9 300
+mucho
+no sé cargar y a ese precio
+yo 27, 26
+en la lista un montón
+...
+¿A dónde va?
+¿Ya se acabó el Los Ángeles o todavía hay leyes?
+¿No está quedando en Pedernales?
+
+
+
+
+
+
+
+
+¿No está quedando en Pedernales?
+¿No está quedando en Pedernales?
+¿No está quedando en Pedernales?
+¿No está quedando en Pedernales?
+¿No está quedando en Pedernales?
+¿No está quedando en Pedernales?
+¿No está quedando en Pedernales?
+Patio 12, por favor.
+¿A qué patio toca?
+Patio 12.
+¿Abajo la planadita, diga?
+Sí.
+Disculpa.
+¿Qué?
+Ah, sí, claro.
+La Baja
+¿Qué máquina le descargó?
+La chevrode?
+Si
+¿Qué?
+Gracias.
+¿Qué pasa?
+Gracias.
+Gracias.
+¿Qué es lo que se hace?
+En este caso también hacemos ingresos por ejemplo de esos de lo que decía de los retazos
+tableros, salen también recortes de acá dentro de ciertas áreas que recolectan también.
+Entonces todo eso se recircula y sube para arriba.
+Pero sale de la planta?
+Claro.
+Y vuelve a entrar?
+Claro, o sea vuelve a recircular y sube arriba los molines.
+pero eso ya se categoriza como registro interno
+también se mete al sistema pero es un registro interno
+buenos días
+¿cuántos tienen?
+¿Cuántos tienen?
+Dos.
+Dos.
+¿Laminado?
+Sí.
+Gracias.
+Buenos días.
+Buenos días.
+Por ejemplo, este material lo que le saco.
+¿Tem?
+Ah, pero él mismo va y recoge del lado de allá las que tienen fallas.
+¿Y usted le deja entrar nomás?
+O sea, sin registro.
+O sea, sí, es lo que estoy haciendo el registro aquí.
+Ah, ya, ese es el registro.
+Hay un código que, por ejemplo, este código no tiene precio.
+Claro.
+Registren el sistema, pero no tiene precio. Tiene precio a cero.
+Déjame tomar una foto para incluirle.
+Ya ves.
+¡Flaja!
+¿De dónde?
+¿De qué?
+¿Qué trae?
+¿De dónde?
+¿De qué trae?
+¿De dónde?
+¿De qué trae?
+¿De dónde trae?
+¿De dónde trae?
+¿De dónde trae?
+¿De dónde trae?
+¿De dónde trae?
+¿De dónde trae?
+¿De dónde trae?
+¿Qué es el primer?
+Gracias.
+No sabes que todo es para cálculo de cuánta cantidad entra para materia prima para producción.
+Por eso es pesado.
+Ok, ok, pero se pesa.
+Claro.
+Pero es con un código que no tiene arubro de cópito.
+Ya, claro.
+No tiene arubro.
+Tiene sentido.
+Bueno, y para esta recepción de madera
+Que le tengo al específico
+Lo único que falta es los ingresos
+Vuelo forestal
+Que es diferente
+Para forestal propios
+Claro, en este caso entraría como terceros
+Claro, pero para forestal
+Hay que ver como fuera
+Necesito que me explique el proceso
+Con I5R
+Para poder anotar
+Y hacerle la guía
+¡Ay, no, no, no, no!
+¡Dé, lo último!
+Gracias.
+¿Puedo ver la limión?
+La placa por favor
+La PAA
+3791
+Transbuana Ulisa
+Si
+¿Qué pasa?
+¿Qué paso sería primero en la placa?
+A ver.
+¿El tipo de proveedor?
+Primero tipo de proveedor, sí.
+Y ahí la placa.
+Para vuelo forestal
+La placa
+El número de la guía de remisión
+Código de proveedor
+Código de transporte
+Pero esto es con QR o el QR de auto llenable
+El auto llenable ya se llena
+Claro
+Claro, claro, a ver ya
+Tendríamos que hacerle una captura
+Sí, a ver, hagamos del manual
+Ya, eso es lo que le dije
+Con un código de proveedor
+Código de transporte
+Y código de mano de obra
+Ahí sería
+El campo de provincia
+Sí, claro
+Cantón
+El tipo de material
+en este caso
+relliza o su producto
+no, relliza sería
+pero este está para propios
+sí, está para vuelos también
+para vuelos también
+ahí sería
+la ubicación
+la ubicación
+el sitio de descarga
+ahí sería la categoría
+y ahí sería el campo
+de
+operador de entrada
+operador quien registra
+el registro
+y ahí sería
+el peso de
+registrar peso
+de entrada
+¿Está vacío?
+¿Está vacío?
+Gracias.
+La Baja
+Gracias.
+¿Qué pasa?
+este material es de vuelo
+¿Ves el ajustes en la derecha?
+Buenas.
+Ahí está.
+Ese dice.
+Ya.
+Chéder, hágale lentito.
+Ahí también me va diciendo
+Pongan el código QR
+Lleno el QR
+Simplemente
+Es salir a la puerta
+Número de placa
+TBL
+7886
+Timbrele nuevamente al puero
+¿Qué máquina le ayudó a descargar?
+La 3
+La X2
+La X2
+No, no va a tirar nada
+No, no va a tirar nada
+No va a tirar nada
+No va a tirar nada
+No va a tirar nada
+3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 15, 16, 17, 18, 19, 20, 20, 21, 21, 22, 22, 23, 24, 25, 26, 27, 28, 29, 29, 30, 29, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30
+Claro, eso le ponen arriba.
+Y si no, ese producto le deja guardar sin humedad o no le deja.
+Sí.
+Por si acaso.
+Ahí ya le escaneó el QR.
+Sí.
+Se autosnino toda la parte de arriba.
+Ahí le escanea la guía forestal.
+¿Es la guía forestal esa?
+Sí
+Después vas a ver la guía de madera
+Verifica
+Mano de obra
+Código de transporte y proveedor
+Código de transporte y proveedor
+Y anote el número de ingreso
+con la guía de madera.
+Salida?
+Salida?
+Un segundo
+¿Qué?
+Salida
+¿Cuál es su número de placa?
+¿Un número de placa?
+TBK 8692
+Chévere
+¿Máquina de descarga?
+La fija
+¿Cuál es la fija?
+Case 2
+Ah, la Case 2
+Chévere
+no sé qué no como
+sí
+sí
+ciento
+Sí, por qué.
+¿Ahí queda?
+Sí.
+Ya, síganme.
+Ahí, ya, se puso solo.
+Póngale, enviar.
+Ya, sí.
+Ya, me dio.
+No.
+Llega, lo estoy entrando a la fábrica de salvar.
+Y la única diferencia es que si no tiene QR todo se llena manual
+Pero la guía forestal esa de ley tiene que tener QR
+Claro
+Si no, no sirve.
+Por lo menos de esa parte siempre es automático.
+¿Ese es el número del código?
+¿De la guía?
+Este es el código QR.
+Ah, ya, chevere.
