@@ -9,9 +9,9 @@
 
 ## 📅 Última actualización
 
-**Fecha y hora:** `2026-06-19 09:53 (-05 ECT)`
-**Editor:** Manuel Montúfar
-**Cambios:** Creación inicial del archivo maestro a partir de Screens.jsx. Incluye los 3 fixes (altura ruma, tiempo muestra rolliza, etiquetado Patio 5) + 3 secciones nuevas (humedad como filtro, verificación salida B1, FIFO con excepción).
+**Fecha y hora:** `2026-06-19 15:35 (-05 ECT)`
+**Editor:** Manuel Montúfar / Claude
+**Cambios:** Revisión HTML contenido GABRIEL — flujo operativo por etapas; QR forestal vs código de barras de terceros; "entrada con guía repetida" en 4.6; quitar pendiente `[POR VALIDAR]` de humedad/anulación; muestra perdida (confirmar con balanza + escalar); etiqueta/papel entregada al transportista; verificación visual de especie; **camiones HINO/Chevrolet invertidos (HINO ahora con remolque, Chevrolet sin remolque)**; bloque Anulación/Reliquidación/Nota de crédito; Patios y rumas digitales (4.14.2); Factory Track con cuenta/contraseña.
 
 > **Ver `CHANGELOG.md` al final del archivo para el historial completo.**
 
@@ -23,9 +23,19 @@
 
 Esta guía explica cómo recibir un camión, registrar el ingreso, tomar muestras, asignar patio, cerrar el ingreso y registrar la descarga.
 
-**Flujo:** Llega camión (BPS2) → Peso entrada (F4 en ANI) → Documentos (guía y QR) → Humedad (muestra) → Patio asignado → Cierre (F12 + F5) → Descarga (foto vacío) → Factory Track (transferencia).
+**Flujo operativo por etapas:**
+
+1. **Antes de recibir** — Llega camión a Balanza 2 (BPS2). Operador identifica tipo de carga y proveedor.
+2. **Documentos e ingreso de datos** — Revise documentos. Escanee QR forestal (propios/vuelo forestal) o código de barras (terceros). Llene los campos que falten en ANI.
+3. **Peso de entrada** — Capture peso con `F4` cuando los datos del ingreso están completos en ANI y la balanza está en cero.
+4. **Humedad / muestra** — Tome la muestra según material; balanza entrega etiqueta/papel al transportista para llevarla al punto de muestreo (patio asignado).
+5. **Cierre** — Confirme con `F12`, guarde con `F5`. ANI genera número de ingreso. Entregue RJP-01.
+6. **Descarga** — Camión va al patio asignado. Operador de máquina descarga, toma foto del camión vacío y la manda al grupo.
+7. **Factory Track** — Operador de descarga registra la transferencia de stock en su Factory Track (ver sección 6).
 
 > ⚠️ **Regla de oro:** el camión NO puede pasar a descargar hasta que ANI genere el número de ingreso.
+>
+> El orden real en balanza es **llenar/revisar datos del ingreso primero y capturar peso cuando corresponda en ANI**, no "ver el camión y capturar peso" como primer acto.
 
 ## Definiciones
 
@@ -98,14 +108,23 @@ Si el camión va a un patio diferente de 5, 6, 7, 8 o 21 → **patio externo**: 
 
 **Tipos de proveedor:** Propios · Terceros · Vuelo Forestal.
 
-- **Con QR:** escanee el QR, revise lo que ANI llenó solo, complete campos verdes que falten.
-- **Sin QR / QR falla:** llene manualmente placa, proveedor, transportista, servicio de explotación (mano de obra), categoría, especie, ubicación de descarga, operador de entrada. Si hace ingreso manual → avise a supervisores.
+- **Propios / Vuelo Forestal con QR forestal:** escanee el QR, revise lo que ANI llenó solo, complete campos verdes que falten.
+- **Terceros con código de barras del proveedor:** escanee el código de barras; ayuda a llenar datos del proveedor, pero **varios campos siguen manuales** (placa, transportista, especie, categoría, ubicación, observación con aserradero).
+- **Sin QR (propios/vuelo) o sin código de barras (terceros) / QR falla:** llene manualmente placa, proveedor, transportista, servicio de explotación (mano de obra), categoría, especie, ubicación de descarga, operador de entrada. Si hace ingreso manual → avise a supervisores.
+
+> ⚠️ **No confundir:** "QR forestal" aplica solo a propios y vuelo forestal. **Terceros usa código de barras del proveedor**, no QR. No todos los casos "sin QR" son terceros — forestal también tiene rutas con QR y sin QR.
+
+### Verificación visual de especie/material
+
+Antes y durante la captura del peso, el operador de balanza verifica visualmente que la **especie/material** observado en el camión coincida con lo ingresado manualmente. Es un control rápido pero **puede ser más difícil de noche**.
+
+- Si lo observado **no coincide** con el ingreso manual, debe haber un punto adicional de revisión/corrección **antes de continuar** (escalar al supervisor/responsable definido).
 
 ## 4.6 Validar guía
 
 ANI verifica automáticamente que la guía no esté duplicada.
 
-> 🚫 **Si ANI rechaza la guía:** informe al conductor, baje el camión de la balanza, proveedor debe reemitir guía nueva, NO permita descarga con guía repetida.
+> 🚫 **Si ANI rechaza la guía:** informe al conductor, baje el camión de la balanza, proveedor debe reemitir guía nueva, **NO permita la entrada con guía repetida**.
 
 ---
 
@@ -129,12 +148,12 @@ ANI verifica automáticamente que la guía no esté duplicada.
 
 Seleccione Propios. Llene manualmente todos los datos que normalmente vendrían del QR: placa, proveedor, transportista, servicio de explotación, bosque, cosechador, categoría, especie, ubicación. Capture peso, escanee QR de guía forestal (es obligatorio por MAATE), guarde con F5.
 
-## Terceros — con QR
+## Terceros — con código de barras
 
-1. Tipo de proveedor: **Terceros**. El código de barras ayuda con el proveedor, pero varios datos se completan a mano: placa, transportista, especie, categoría, ubicación descarga + **observación con el aserradero de origen** (ejemplo: EDINCA).
+1. Tipo de proveedor: **Terceros**. **Terceros usa código de barras del proveedor (no QR forestal).** El código ayuda a llenar datos del proveedor, pero **varios campos siguen manuales**: placa, transportista, especie, categoría, ubicación descarga + **observación con el aserradero de origen** (ejemplo: EDINCA).
 2. Capture peso (F4) verificando balanza en cero. Guarde con F5.
 
-## Terceros — sin QR
+## Terceros — sin código de barras
 
 Llene a mano: placa, proveedor, transportista, servicio de explotación, producto, categoría, especie, ubicación. Escriba aserradero en Observación. Capture peso y guarde.
 
@@ -205,21 +224,26 @@ Madera del bosque, ligada al programa de aprovechamiento forestal. Camión debe 
 - % Humedad = ((Peso inicial húmedo − Peso final seco) / Peso final seco) × 100
 - Peso seco = Peso húmedo / ((% Humedad / 100) + 1)
 
-## 4.10.1 Humedad: último filtro antes del cierre ⚠️ NUEVO
+## 4.10.1 Humedad: último filtro antes del cierre
 
-El % de humedad es el **último dato que se digita en ANI antes del cierre del ingreso**. Una vez registrado, corregir el valor puede exigir **anular el ingreso y reingresarlo**, con impacto contable.
+El % de humedad es el **último dato que se digita en ANI antes del cierre del ingreso**. Sin humedad no se puede completar correctamente el registro cuando aplica. Una vez registrado, corregir el valor puede exigir **anular el ingreso y reingresarlo**, con impacto contable.
 
 El operador debe:
 
-- Confirmar el valor del equipo **antes** de digitarlo en ANI.
-- Si el QR o la cuenta-contrato son erróneos → **NO digite la humedad encima**; primero anule y reingrese con datos correctos.
-- Punto exacto en ANI donde la humedad bloquea edición: **[POR VALIDAR con Daniel Sotalin]**.
-- Procedimiento de anulación detallado: **[POR VALIDAR]**.
+- Confirmar el valor del equipo **antes** de digitarlo en ANI (lectura directa de la pantalla de la balanza analítica).
+- Si el QR o la cuenta-contrato del proveedor son erróneos → **NO digite la humedad encima**; primero anule y reingrese con datos correctos.
+
+### Si la muestra parece perdida o no procesada
+
+1. **Confirmar con balanza** si la muestra fue tomada.
+2. Si la muestra no se tomó o no se encuentra, **escalar al responsable / supervisor** definido para decidir el siguiente paso.
+
+> No tratar promedios de viajes anteriores o doble muestra en viajes posteriores como práctica regular. Son medidas de excepción que decide el supervisor.
 
 ## 4.11 Etiqueta y registro
 
 - **A. En balanza** — Para rolliza propios, ANI imprime la etiqueta. Campos: Item, Fecha, N° ingreso, Placa, Humedad, Especie, Instrumento. Tome foto del resultado + etiqueta impresa y guárdela con el número de ingreso.
-- **B. En Patio 5** — Para rolliza de terceros y subproductos, **la balanza imprime y envía la etiqueta al punto de muestra (Patio 5)**. Ya NO se llena manualmente. Campos: Item, N° ingreso, Placa, Producto. La prueba se hace en Control Room Secadero 2.
+- **B. Etiqueta/papel para muestra (terceros y subproductos)** — Para rolliza de terceros y subproductos, **balanza entrega una etiqueta/papel al transportista** (puede ser impresa o llenada a mano según el flujo del momento). El **transportista lleva la etiqueta/papel al patio asignado** y la entrega al responsable que toma la muestra. Campos: Item, N° ingreso, Placa, Producto. La prueba se hace en Control Room Secadero 2.
 - **C. Registro digital** — Registre el resultado en el archivo compartido "14 % HUMEDADES DE INGRESO-REVXX", carpeta PRODUCCIÓN del OneDrive del Control Room del Secadero 2.
 
 ## 4.12 Si el análisis demora
@@ -255,7 +279,7 @@ Mida diámetro por especie en un área representativa de 1 m² del total de la c
 
 > El operador de balanza comunica el patio. El Jefe de Patios y auxiliar de inventario definen la asignación.
 
-## 4.14.1 Orden de descarga: FIFO con excepción justificada ⚠️ NUEVO
+## 4.14.1 Orden de descarga: FIFO con excepción justificada
 
 Como regla general la descarga sigue **FIFO** (primero en entrar, primero en descargar).
 
@@ -263,6 +287,12 @@ En la práctica se puede descargar por **especie** o por **patio** cuando lo jus
 - **Justificada** (motivo claro).
 - **Comunicada al supervisor** antes de ejecutarse.
 - **Registrada** en el medio que defina el supervisor (WhatsApp del grupo de patios o nota en hoja de turno).
+
+## 4.14.2 Patios y rumas digitales
+
+- Si el operador descarga en un **patio o ruma que no sigue la secuencia** definida, **debe avisar** al jefe de patios o responsable definido.
+- Si **físicamente se crea una ruma nueva** que **no existe digitalmente**, hay que **pedir habilitación** al jefe de patios o responsable definido antes de seguir.
+- La **ruma digital** funciona como **histórico/control**: permite verificar cambios físicos en el patio contra el sistema.
 
 ## 4.15 Cerrar el ingreso (F12 / F5)
 
@@ -273,6 +303,18 @@ En la práctica se puede descargar por **especie** o por **patio** cuando lo jus
 5. Libere el camión hacia su patio.
 
 > 🚫 El camión NO puede pasar a descargar hasta que exista número de ingreso.
+
+## Anulación, reliquidación y nota de crédito
+
+Aplica cuando un ingreso ya cerrado tiene datos incorrectos o problemas de integración.
+
+| Caso | Cuándo aplica | Acción | A quién escalar |
+|---|---|---|---|
+| **Anulación** | Datos del ingreso quedaron mal (QR forestal erróneo, código de barras de terceros mal, ingreso mal digitado por balanza, ANI no se integró con INFOR). | Se **anula el ingreso y se ingresa nuevamente** con los datos correctos. | Supervisor de balanza / contabilidad (Daniel Aguilar). |
+| **Reliquidación** | Se pagó **de menos** por mala categoría/material u otro dato. | El proveedor **emite factura por el faltante** que debe pagarse. | Contabilidad / Departamento Forestal. |
+| **Nota de crédito** | Se pagó **de más**. | El proveedor **emite nota de crédito** por el valor que debe descontarse. | Contabilidad. |
+
+Motivos posibles: error en QR forestal, error en código de barras de terceros, ingreso mal digitado por balanza, precio mal ingresado, categoría/material incorrecto, integración fallida con INFOR.
 
 ## Excepciones principales
 
@@ -303,8 +345,10 @@ En la práctica se puede descargar por **especie** o por **patio** cuando lo jus
 
 ## 8. Tipos de camiones
 
-- **Chevrolet (con remolque)** — capacidad típica lleno ~11 t. Más espacio para maniobra. Puede requerir desenganchar remolque según patio.
-- **HINO (sin remolque)** — capacidad típica lleno ~8-9 t. Maniobra más ágil. Llega más cerca de la ruma.
+- **HINO (con remolque)** — capacidad típica lleno ~11 t. Más espacio para maniobra. Puede requerir desenganchar remolque según patio.
+- **Chevrolet (sin remolque)** — capacidad típica lleno ~8-9 t. Maniobra más ágil. Llega más cerca de la ruma.
+
+> ⚠️ Verifique siempre la marca del camión real antes de asumir capacidad — la asignación HINO/Chevrolet a "con/sin remolque" se corrigió en esta revisión.
 
 **Referencia:** si no baja llena → ajustar proporcional.
 
@@ -331,6 +375,12 @@ En la práctica se puede descargar por **especie** o por **patio** cuando lo jus
 > - Siga la misma línea de la ruma anterior: debe quedar recta y alineada.
 > - Si la ruma de al lado quedó baja o corta, termine de llenarla antes de empezar una nueva.
 
+## Factory Track — cuentas y equipos
+
+- Cada **Factory Track está asociado a un camión/equipo** y tiene **cuenta y contraseña propia**.
+- Las **credenciales las conocen/administran** supervisores, jefe de patios y responsable definido.
+- El nombre oficial es **Factory Track** (no "Factori Track").
+
 ## Factory Track — paso a paso
 
 | Paso | Pantalla | Acción |
@@ -350,6 +400,52 @@ En la práctica se puede descargar por **especie** o por **patio** cuando lo jus
 # CHANGELOG — historial de cambios al contenido maestro
 
 > **Regla:** cada cambio aquí se registra arriba del todo con fecha + HORA + autor + qué cambió.
+
+## 2026-06-19 15:35 — Manuel Montúfar / Claude
+
+**Revisión HTML contenido GABRIEL** — cambios aprobados:
+
+**Flujo y formato**
+- Flujo general reescrito por etapas (antes de recibir / documentos e ingreso / peso / humedad / cierre / descarga / Factory Track) con énfasis en que **primero se llenan/revisan datos y luego se captura peso** (no "ver camión → capturar peso").
+- Se mantiene la regla de oro: no descargar hasta que ANI genere número de ingreso.
+
+**QR forestal vs código de barras de terceros**
+- 4.5 reescrita: QR forestal solo aplica a propios/vuelo forestal; **terceros usa código de barras del proveedor**.
+- "Terceros — con QR" → **"Terceros — con código de barras"**.
+- "Terceros — sin QR" → **"Terceros — sin código de barras"**.
+- Aclaración: el código de barras de terceros llena datos del proveedor pero **varios campos siguen manuales**.
+- **No se agregó procedimiento de "proveedor nuevo / asignación de código de barras"** (no aprobado).
+
+**4.6 Guía repetida**
+- "No permita la **descarga** con guía repetida" → "No permita la **entrada** con guía repetida".
+
+**4.10.1 Humedad**
+- **Eliminado** el placeholder `[POR VALIDAR con Daniel Sotalin]` sobre el punto exacto en ANI donde la humedad bloquea edición.
+- Conservado: humedad es el último dato antes del cierre; corregirla puede exigir anulación/reingreso con impacto contable.
+- Agregado: si la **muestra parece perdida**, primero **confirmar con balanza si fue tomada**, luego escalar al responsable/supervisor. **No** se documenta como práctica regular el promedio de últimos viajes ni el doble muestreo.
+
+**4.11 Etiqueta y registro (terceros/subproductos)**
+- Reescrito sin afirmar "balanza imprime y envía automáticamente": **balanza entrega una etiqueta/papel al transportista**; el transportista la lleva al **patio asignado** y la entrega al responsable que toma la muestra.
+
+**Verificación visual de especie/material (4.5)**
+- Agregado: operador verifica visualmente especie/material; control rápido pero más difícil de noche; si no coincide con el ingreso manual, punto adicional de revisión/corrección antes de continuar.
+
+**Anulación / Reliquidación / Nota de crédito**
+- Nuevo bloque operativo con cuadro caso/acción/escalamiento.
+
+**Camiones HINO/Chevrolet (sección 8)**
+- **Corrección importante:** estaban invertidos. Ahora HINO = con remolque (~11 t), Chevrolet = sin remolque (~8-9 t).
+
+**Patios y rumas digitales (4.14.2)**
+- Nuevo: avisar si descarga fuera de secuencia; pedir habilitación si se crea ruma física sin registro digital; ruma digital como histórico/control.
+
+**Factory Track**
+- Agregado: cada Factory Track asociado a un camión/equipo, cuenta/contraseña propias, credenciales con supervisores/jefe de patios/responsable definido. Nombre oficial: Factory Track.
+
+**No incluido (por instrucción explícita):**
+- No se agregó procedimiento de proveedor nuevo / asignación de código de barras.
+- No se agregó pendiente sobre punto exacto donde la humedad bloquea edición.
+- No se documentó como procedimiento formal el promedio de últimos viajes ni doble muestreo en muestra perdida.
 
 ## 2026-06-19 09:53 — Manuel Montúfar
 

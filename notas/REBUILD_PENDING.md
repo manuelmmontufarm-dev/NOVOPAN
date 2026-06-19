@@ -1,56 +1,79 @@
-# Rebuild pendiente del bundle estático
+# Rebuild pendiente — entregables finales
 
-**Fecha:** 2026-06-19
-**Causa:** Se editó `NOVOPNHTML1_files/Screens.jsx` con fixes de contenido. El bundle `NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` se actualizó parcialmente vía find/replace, pero **2 secciones nuevas** requieren rebuild completo con babel.
+**Última edición de contenido:** 2026-06-19 15:35 (-05 ECT) — Revisión HTML contenido GABRIEL.
+**Fuente de verdad:** `instructivos/finales/CONTENIDO_MAESTRO.md`.
 
-## Estado actual
+## Qué se editó directamente (ya quedó actualizado)
 
 | Archivo | Estado |
 |---|---|
-| `NOVOPNHTML1_files/Screens.jsx` | ✅ Completo (todos los fixes) |
-| `NOVOPAN_Guia_Recepcion_Madera_FINAL.html` (print template) | ✅ Funciona (referencia Screens.jsx vía script) |
-| `NOVOPNHTML1.html` (runtime React) | ✅ Funciona (referencia Screens.jsx vía script) |
-| `NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` (bundle) | ⚠️ Parcial — falta rebuild para 2 secciones nuevas |
+| `instructivos/finales/CONTENIDO_MAESTRO.md` | ✅ Actualizado con todos los cambios aprobados de Gabriel. |
+| `instructivos/finales/NOVOPNHTML1_files/Screens.jsx` | ✅ Actualizado (gemelo de html-app). |
+| `html-app/NOVOPNHTML1_files/Screens.jsx` | ✅ Actualizado (gemelo de instructivos/finales). |
+| `TODAY.md` | ✅ Entrada nueva en Historial. |
 
-## Backup
-`NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html.bak` = versión previa a los find/replace.
+## Qué falta regenerar (NO se regeneró en este sync)
 
-## Cambios aplicados a Screens.jsx (Fase 2)
-1. ✅ Tiempo muestra rolliza: `20 a 40 min` → `25 a 40 min` (también en ESTATICO)
-2. ✅ Etiquetado Patio 5: ahora balanza envía la etiqueta (también en ESTATICO)
-3. ✅ Altura ruma: 5 m máx (excepcional 6 m), patrón 2+camino+2 (también en ESTATICO)
-4. ✅ Checklist ruma alineado a altura nueva (también en ESTATICO)
-5. ⚠️ **NUEVO**: Card "Humedad: último filtro antes del cierre" + Callout verificación salida Balanza 1 — **NO está en ESTATICO** (requiere rebuild)
-6. ⚠️ **NUEVO**: Callout "FIFO con excepción justificada" en 4.14 — **NO está en ESTATICO** (requiere rebuild)
+| Archivo | Acción requerida |
+|---|---|
+| `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` | Re-bundle con babel desde `NOVOPNHTML1_files/Screens.jsx`. Sin esto el HTML estático **no refleja** los cambios de Gabriel. |
+| `html-app/NOVOPAN_Guia_Recepcion_Madera_FINAL.html` | Solo shell — no requiere edición de contenido si se sirve con servidor local (carga Screens.jsx en runtime). |
+| `instructivos/finales/IJP_FINAL_ACTUALIZADO_2026-06-19.docx` | Edición XML quirúrgica o regeneración desde el maestro. Requiere proceso del Cursor agent o intervención manual en Word. |
+| `instructivos/finales/RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx` | Igual que arriba. |
+| `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf` | Re-exportar desde HTML o DOCX una vez que cualquiera de los dos esté actualizado. |
 
-## Cómo regenerar el bundle estático
+## Cambios de contenido que el rebuild debe propagar
 
-El proceso que usaste con Codex es lo más confiable. Si no lo recuerdas, los pasos manuales serían:
+Los siguientes textos deben quedar presentes (en HTML estático, DOCX y PDF) cuando se regenere:
+
+- **Flujo operativo por etapas** (Antes de recibir / Documentos e ingreso / Peso / Humedad / Cierre / Descarga / Factory Track) con énfasis en "primero datos, después peso".
+- **Terceros usa código de barras del proveedor (no QR forestal)** — títulos "Terceros — con/sin código de barras".
+- 4.6: `"No permita la entrada con guía repetida"` (antes "descarga").
+- 4.10.1 sin el placeholder `[POR VALIDAR con Daniel Sotalin]`.
+- Muestra perdida: confirmar con balanza → escalar (sin convertir promedio/doble muestra en procedimiento formal).
+- 4.11: etiqueta/papel entregada al transportista, llevada al patio asignado.
+- 4.5: verificación visual de especie/material.
+- Bloque "Anulación / Reliquidación / Nota de crédito" con cuadro caso/acción/escalar.
+- **HINO con remolque (~11 t)** y **Chevrolet sin remolque (~8-9 t)** — antes estaban invertidos.
+- 4.14.2 Patios y rumas digitales (aviso si descarga fuera de secuencia + habilitación de ruma física nueva).
+- Factory Track con cuenta/contraseña por equipo y nombre oficial.
+
+## Cómo regenerar el bundle estático (HTML)
+
+El proceso confiable es el de Codex/Cursor agent. Pasos manuales si fuera necesario:
 
 ```bash
 # 1. Transpilar Screens.jsx con babel
-cd /Users/manue/Documents/NOVOPAN/NOVOPNHTML1_files
+cd instructivos/finales/NOVOPNHTML1_files
 npx -y @babel/cli@7 Screens.jsx \
   --presets=@babel/preset-react,@babel/preset-env \
   -o Screens.compiled.js
 
-# 2. Hidratar el SSR (esto es lo que probablemente hace tu script de Codex):
+# 2. Hidratar el SSR con ReactDOMServer (similar al script previo de Codex):
 #    - Toma NOVOPAN_Guia_Recepcion_Madera_FINAL.html como template
-#    - Inyecta Screens.compiled.js inline (sin el <script type="text/babel">)
+#    - Inyecta Screens.compiled.js inline
 #    - Ejecuta React server-render para llenar <div id="root">
 #    - Escribe NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html
-
-# Si no tienes el script de Codex a mano, lo más fácil:
-# - Abre NOVOPNHTML1.html en Chrome
-# - Inspecciona, copia el <div id="root"> completo (con HTML hidratado)
-# - Pégalo en _ESTATICO.html reemplazando el <div id="root">...</div> existente
-# - Reemplaza también el <script>...transpiled JS...</script> con Screens.compiled.js inline
 ```
 
-## Validación visual mínima
-Antes de considerar el rebuild OK, verifica que en ESTATICO aparezcan estos strings:
-- `"Humedad: último filtro antes del cierre"`
-- `"Verificación de humedad en salida"`
-- `"FIFO con excepción justificada"`
+## Validación visual mínima (después del rebuild)
 
-Si no aparecen, el rebuild no recogió los cambios.
+Verificar que en el HTML estático aparezcan estos strings:
+
+- `"Terceros - con código de barras"`
+- `"No permita la entrada con guía repetida"`
+- `"HINO — con remolque"` y `"Chevrolet — sin remolque"`
+- `"Si la muestra parece perdida o no procesada"`
+- `"4.14.2 Patios y rumas digitales"`
+- `"Factory Track — cuentas y equipos"`
+
+Y verificar que **no** aparezcan:
+
+- `"POR VALIDAR con Daniel Sotalin"`
+- `"No permita la descarga con guía repetida"`
+- `"Terceros - con QR"` / `"Terceros sin QR"`
+- `"Chevrolet (con remolque)"` (antiguo) / `"HINO (sin remolque)"` (antiguo)
+
+## Pendientes anteriores (de la sesión 2026-06-19 10:10) — ya regenerados
+
+Las 3 secciones nuevas (4.10.1, 4.12.1, 4.14.1) que estaban marcadas como pendientes ya quedaron en el bundle estático previo. Lo de esta sesión (2026-06-19 15:35) se monta encima.

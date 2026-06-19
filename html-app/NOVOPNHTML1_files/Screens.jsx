@@ -159,14 +159,17 @@ function AntesDeRecibir() {
         <p style={{ marginTop: 0 }}>Esta guía explica cómo recibir un camión, registrar el ingreso, tomar muestras, asignar patio, cerrar el ingreso y registrar la descarga.</p>
         <FlowGrid steps={[
           { label: 'Llega camión', icon: 'local_shipping', caption: 'BPS2' },
-          { label: 'Peso entrada', icon: 'balance', caption: 'F4 en ANI' },
-          { label: 'Documentos', icon: 'description', caption: 'Guía y QR' },
+          { label: 'Documentos', icon: 'description', caption: 'Guía y QR / código' },
+          { label: 'Datos ANI', icon: 'edit_note', caption: 'Llenar primero' },
+          { label: 'Peso entrada', icon: 'balance', caption: 'F4 cuando aplica' },
           { label: 'Humedad', icon: 'science', caption: 'Muestra' },
-          { label: 'Patio', icon: 'warehouse', caption: 'Asignado' },
           { label: 'Cierre', icon: 'save', caption: 'F12 + F5' },
-          { label: 'Descarga', icon: 'forklift', caption: 'Foto vacío' },
-          { label: 'Factory Track', icon: 'phone_android', caption: 'Transferencia' },
+          { label: 'Patio', icon: 'warehouse', caption: 'Asignado' },
+          { label: 'Descarga + FT', icon: 'phone_android', caption: 'Foto + transferencia' },
         ]} />
+        <Callout variant="nota" title="Orden real">
+          Primero se llenan/revisan los datos del ingreso y luego se captura el peso cuando corresponde en ANI. No es "ver camión → capturar peso" como primer acto absoluto.
+        </Callout>
       </ProcessCard>
 
       <Callout variant="advertencia" title="Regla de oro">
@@ -254,11 +257,14 @@ function IngresoBalanza() {
           <Card title="Tipo de proveedor" icon="person_search">
             <PillGrid tone="info" items={['Propios', 'Terceros', 'Vuelo Forestal']} />
           </Card>
-          <Card title="Si trae QR" icon="qr_code_2" tone="green">
-            Escanee el QR, revise lo que ANI llenó solo y complete los campos verdes que falten.
+          <Card title="Propios / Vuelo Forestal: QR forestal" icon="qr_code_2" tone="green">
+            Escanee el <strong>QR forestal</strong> (propios y vuelo forestal). Revise lo que ANI llenó solo y complete los campos verdes que falten.
           </Card>
-          <Card title="Si no trae QR o falla" icon="edit_note" tone="yellow">
-            Llene manualmente <strong>placa, proveedor, transportista, servicio de explotación (mano de obra), categoría, especie, ubicación de descarga y operador de entrada</strong>. Aplica sobre todo a terceros (eucalipto, pino, ciprés). Si hace ingreso manual, avise a supervisores; el flujo ideal es por QR. Entre otros campos pueden variar — consultar la guía ANI.
+          <Card title="Terceros: código de barras" icon="qr_code_scanner" tone="blue">
+            <strong>Terceros usa código de barras del proveedor, no QR forestal.</strong> El código ayuda a llenar datos del proveedor, pero varios campos siguen manuales (placa, transportista, especie, categoría, ubicación, observación con aserradero).
+          </Card>
+          <Card title="Sin QR / sin código / falla" icon="edit_note" tone="yellow">
+            Llene manualmente <strong>placa, proveedor, transportista, servicio de explotación (mano de obra), categoría, especie, ubicación de descarga y operador de entrada</strong>. Si hace ingreso manual, avise a supervisores. <strong>No todos los casos "sin QR" son terceros</strong> — propios y vuelo forestal también pueden venir sin QR.
           </Card>
         </Grid>
         <Checklist title="Puntos que no se saltan" items={[
@@ -286,7 +292,7 @@ function IngresoBalanza() {
             'Informe al conductor.',
             'Baje el camión de la balanza.',
             'El proveedor debe reemitir una guía nueva.',
-            'No permita la descarga con guía repetida.',
+            'No permita la entrada con guía repetida.',
           ]} />
         </Callout>
       </Card>
@@ -388,10 +394,10 @@ function RecepcionMaderaDetalle() {
       </div>
 
       <div>
-        <InlineTitle icon="local_shipping">Terceros - con QR</InlineTitle>
+        <InlineTitle icon="local_shipping">Terceros - con código de barras</InlineTitle>
         <Stack gap={16}>
           <Card title="1. Seleccione Tipo de Proveedor: Terceros" icon="person_search">
-            <p style={{ marginTop: 0 }}>En terceros, el código de barras ayuda con el proveedor, pero varios datos se completan a mano: <strong>placa, transportista, especie, categoría, ubicación de descarga</strong> y la <strong>observación</strong> con el aserradero de origen.</p>
+            <p style={{ marginTop: 0 }}><strong>Terceros usa código de barras del proveedor (no QR forestal).</strong> El código ayuda con los datos del proveedor, pero varios datos se completan a mano: <strong>placa, transportista, especie, categoría, ubicación de descarga</strong> y la <strong>observación</strong> con el aserradero de origen.</p>
             <Grid min={400}>
               <RMFigure src="image6.png" caption="Tipo de proveedor: Terceros." />
               <RMFigure src="image16.png" caption="Placa ingresada manualmente." />
@@ -423,7 +429,7 @@ function RecepcionMaderaDetalle() {
               <RMFigure src="image19.png" caption="Ingreso guardado en ANI." tall />
             </Grid>
           </Card>
-          <Card title="Terceros sin QR" icon="edit_note" tone="yellow">
+          <Card title="Terceros - sin código de barras" icon="edit_note" tone="yellow">
             <List ordered items={[
               'Seleccione Tipo de Proveedor: Terceros.',
               <span>Llene a mano: <strong>placa, proveedor, transportista, servicio de explotación (mano de obra), producto, categoría, especie y ubicación de descarga</strong>.</span>,
@@ -479,6 +485,14 @@ function RecepcionMaderaDetalle() {
           </Card>
         </Stack>
       </div>
+
+      <Card title="Verificación visual de especie / material" icon="visibility" tone="yellow">
+        <p style={{ marginTop: 0 }}>Antes y durante la captura del peso, el operador de balanza <strong>verifica visualmente</strong> que la especie/material observado en el camión coincida con lo ingresado manualmente.</p>
+        <List items={[
+          'Es un control rápido pero puede ser más difícil de noche.',
+          <span>Si lo observado <strong>no coincide</strong> con el ingreso manual, debe haber un <strong>punto adicional de revisión/corrección</strong> antes de continuar (escalar al supervisor / responsable definido).</span>,
+        ]} />
+      </Card>
 
       <Card title="Validaciones y casos especiales" icon="report">
         <Grid min={280} gap={12}>
@@ -617,8 +631,8 @@ function HumedadMuestras() {
             <PillGrid tone="ok" items={['Item', 'Fecha', 'Número ingreso', 'Placa', 'Humedad', 'Especie', 'Instrumento']} />
             <p><strong>Lo principal: anote el % de humedad que muestra el equipo.</strong> Luego tome foto del resultado de la balanza analítica junto con la etiqueta impresa y guárdela con el número de ingreso.</p>
           </Card>
-          <Card title="B. Patio 5" icon="edit" tone="blue">
-            <p style={{ marginTop: 0 }}>Para rolliza de terceros y subproductos, <strong>la balanza imprime y envía la etiqueta al punto de muestra (Patio 5)</strong>. En Patio 5 ya NO se llena manualmente: el transportista recibe la etiqueta enviada desde balanza.</p>
+          <Card title="B. Etiqueta/papel para muestra (terceros y subproductos)" icon="edit" tone="blue">
+            <p style={{ marginTop: 0 }}>Para rolliza de terceros y subproductos, <strong>balanza entrega una etiqueta/papel al transportista</strong> (puede ser impresa o llenada a mano según el flujo del momento). El <strong>transportista lleva la etiqueta/papel al patio asignado</strong> y la entrega al responsable que toma la muestra.</p>
             <PillGrid tone="info" items={['Item', 'Número ingreso', 'Placa', 'Producto']} />
             <p>La prueba se hace en Control Room Secadero 2.</p>
           </Card>
@@ -629,14 +643,20 @@ function HumedadMuestras() {
       </Card>
 
       <Card title="Humedad: último filtro antes del cierre" icon="warning_amber" tone="red">
-        <p style={{ marginTop: 0 }}>El % de humedad es el <strong>último dato que se digita en ANI antes del cierre</strong>. Una vez registrado, corregir el valor puede exigir <strong>anular el ingreso y reingresarlo</strong>, lo cual tiene impacto contable. Por eso:</p>
+        <p style={{ marginTop: 0 }}>El % de humedad es el <strong>último dato que se digita en ANI antes del cierre</strong>. <strong>Sin humedad no se puede completar correctamente el registro</strong> cuando aplica. Una vez registrado, corregir el valor puede exigir <strong>anular el ingreso y reingresarlo</strong>, con impacto contable. Por eso:</p>
         <List items={[
           'Confirme el valor del equipo ANTES de digitarlo en ANI (lectura directa de la pantalla de la balanza analítica).',
           'Si el QR o la cuenta-contrato del proveedor están equivocados, NO digite la humedad encima — primero anule y reingrese con los datos correctos.',
-          'El punto exacto en ANI donde la humedad bloquea la edición del registro está [POR VALIDAR con Daniel Sotalin / supervisor ANI].',
-          'Procedimiento detallado de anulación por humedad incorrecta o QR/cuenta-contrato errónea: [POR VALIDAR — escalar a supervisor].',
         ]} />
       </Card>
+
+      <Callout variant="nota" title="Si la muestra parece perdida o no procesada">
+        <List ordered items={[
+          'Confirme primero con balanza si la muestra fue tomada.',
+          'Si no se tomó o no se encuentra, escale al responsable / supervisor definido.',
+        ]} />
+        <p style={{ marginTop: 8, marginBottom: 0 }}>No tratar promedios de viajes anteriores ni doble muestra en un viaje posterior como práctica regular: son medidas de excepción que decide el supervisor.</p>
+      </Callout>
 
       <Callout variant="nota" title="Verificación de humedad en salida — Balanza 1 (PS1)">
         Antes de cerrar la salida del camión en Balanza 1, el operador debe verificar que el % de humedad esté digitado en ANI. Si quedó en blanco (caso del 4.12 abajo), búsquelo por número de ingreso o placa, ingrese el valor manualmente, y solo entonces libere el cierre de salida. Para patios externos, la humedad en salida es obligatoria.
@@ -711,6 +731,27 @@ function CierreExcepciones() {
       <Callout variant="prohibido" title="No deje pasar antes de tiempo">
         El camión NO puede pasar a descargar hasta que exista número de ingreso.
       </Callout>
+
+      <Card title="Anulación, reliquidación y nota de crédito" icon="receipt_long" tone="yellow">
+        <p style={{ marginTop: 0 }}>Aplica cuando un ingreso ya cerrado tiene datos incorrectos o problemas de integración.</p>
+        <InfoTable
+          columns={[{ label: 'Caso', width: '22%' }, { label: 'Cuándo aplica', width: '34%' }, { label: 'Acción', width: '26%' }, 'Escalar a']}
+          rows={[
+            ['Anulación', 'Datos del ingreso quedaron mal (QR forestal erróneo, código de barras de terceros mal, ingreso mal digitado por balanza, ANI no se integró con INFOR).', 'Se anula el ingreso y se ingresa nuevamente con los datos correctos.', 'Supervisor de balanza / contabilidad (Daniel Aguilar).'],
+            ['Reliquidación', 'Se pagó de menos por mala categoría/material u otro dato.', 'El proveedor emite factura por el faltante que debe pagarse.', 'Contabilidad / Departamento Forestal.'],
+            ['Nota de crédito', 'Se pagó de más.', 'El proveedor emite nota de crédito por el valor que debe descontarse.', 'Contabilidad.'],
+          ]}
+        />
+        <p style={{ marginTop: 10, marginBottom: 0 }}><strong>Motivos posibles:</strong> error en QR forestal, error en código de barras de terceros, ingreso mal digitado por balanza, precio mal ingresado, categoría/material incorrecto, integración fallida con INFOR.</p>
+      </Card>
+
+      <Card title="4.14.2 Patios y rumas digitales" icon="warehouse" tone="blue">
+        <List items={[
+          <span>Si el operador descarga en un <strong>patio o ruma que no sigue la secuencia</strong> definida, <strong>debe avisar</strong> al jefe de patios o responsable definido.</span>,
+          <span>Si <strong>físicamente se crea una ruma nueva</strong> que <strong>no existe digitalmente</strong>, se debe <strong>pedir habilitación</strong> al jefe de patios o responsable definido antes de seguir.</span>,
+          <span>La <strong>ruma digital</strong> funciona como <strong>histórico/control</strong>: permite verificar cambios físicos en el patio contra el sistema.</span>,
+        ]} />
+      </Card>
 
       <div>
         <InlineTitle icon="report">Excepciones principales</InlineTitle>
@@ -836,18 +877,21 @@ function DescargaFactoryTrack() {
 
       <Card title="8. Tipos de camiones" icon="local_shipping">
         <Callout variant="nota" title="Dos marcas, dos procedimientos">
-          Los camiones que llegan a NOVOPAN son <strong>Chevrolet (con remolque)</strong> o <strong>HINO (sin remolque)</strong>. La capacidad típica y la maniobra de descarga dependen del tipo.
+          Los camiones que llegan a NOVOPAN son <strong>HINO (con remolque)</strong> o <strong>Chevrolet (sin remolque)</strong>. La capacidad típica y la maniobra de descarga dependen del tipo.
         </Callout>
         <Grid min={320} gap={16} style={{ marginTop: 14 }}>
-          <Card title="Chevrolet — con remolque" icon="local_shipping" tone="blue">
+          <Card title="HINO — con remolque" icon="local_shipping" tone="blue">
             <p style={{ marginTop: 0 }}>Capacidad típica lleno: <strong>~11 t</strong>.</p>
             <p>Necesita más espacio para maniobra. La descarga puede requerir desenganchar el remolque según el patio.</p>
           </Card>
-          <Card title="HINO — sin remolque" icon="forklift" tone="blue">
+          <Card title="Chevrolet — sin remolque" icon="forklift" tone="blue">
             <p style={{ marginTop: 0 }}>Capacidad típica lleno: <strong>~8 a 9 t</strong>.</p>
             <p>Maniobra más ágil. Llega más cerca de la ruma.</p>
           </Card>
         </Grid>
+        <Callout variant="advertencia" title="Corrección en esta revisión" style={{ marginTop: 12 }}>
+          Las marcas HINO y Chevrolet estaban invertidas en versiones anteriores. Verifique siempre la marca real del camión antes de asumir capacidad.
+        </Callout>
       </Card>
 
       <Card title="8.1 Antes y después de descargar" icon="forklift">
@@ -887,11 +931,19 @@ function DescargaFactoryTrack() {
 
       <Card title="Referencia para toneladas" icon="scale">
         <Grid min={300}>
-          <MiniFact label="Chevrolet (con remolque) llena" value="~11 t" icon="local_shipping" />
-          <MiniFact label="HINO (sin remolque) llena" value="~8 a 9 t" icon="forklift" />
+          <MiniFact label="HINO (con remolque) llena" value="~11 t" icon="local_shipping" />
+          <MiniFact label="Chevrolet (sin remolque) llena" value="~8 a 9 t" icon="forklift" />
           <MiniFact label="Si no baja llena" value="Ajustar proporcional" icon="rule" />
         </Grid>
       </Card>
+
+      <Callout variant="nota" title="Factory Track — cuentas y equipos">
+        <List items={[
+          <span>Cada <strong>Factory Track está asociado a un camión / equipo</strong> y tiene <strong>cuenta y contraseña propia</strong>.</span>,
+          <span>Las credenciales las conocen y administran <strong>supervisores, jefe de patios y responsable definido</strong>.</span>,
+          <span>Nombre oficial: <strong>Factory Track</strong> (no "Factori Track").</span>,
+        ]} />
+      </Callout>
 
       <div>
         <InlineTitle icon="phone_android">Factory Track - paso a paso</InlineTitle>
@@ -932,28 +984,34 @@ function ChangelogFooter() {
 
       <Card title="Última actualización" icon="event" tone="green">
         <p style={{ marginTop: 0, fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'var(--fs-h3)', color: 'var(--text-strong)' }}>
-          2026-06-19 · 09:53 (-05 ECT)
+          2026-06-19 · 15:35 (-05 ECT)
         </p>
-        <p style={{ margin: 0 }}><strong>Editor:</strong> Manuel Montúfar</p>
-        <p style={{ margin: 0 }}><strong>Documento fuente:</strong> <code>docs-finales/CONTENIDO_MAESTRO.md</code></p>
+        <p style={{ margin: 0 }}><strong>Editor:</strong> Manuel Montúfar / Claude</p>
+        <p style={{ margin: 0 }}><strong>Documento fuente:</strong> <code>instructivos/finales/CONTENIDO_MAESTRO.md</code></p>
       </Card>
 
-      <Card title="2026-06-19 09:53 — fixes de consistencia + 3 secciones nuevas" icon="track_changes">
-        <p style={{ marginTop: 0 }}><strong>Cambios al contenido existente:</strong></p>
+      <Card title="2026-06-19 15:35 — Revisión HTML contenido GABRIEL" icon="track_changes">
+        <p style={{ marginTop: 0 }}><strong>Cambios aprobados aplicados en este sync:</strong></p>
         <List items={[
-          <span>Altura de ruma: <em>4-5 m</em> → <strong>hasta 5 m (excepcionalmente 6 m), patrón dos rumas + camino + dos rumas (~1 m hueco)</strong>.</span>,
-          <span>Tiempo análisis muestra rolliza: <em>20-40 min</em> → <strong>25-40 min</strong>.</span>,
-          <span>Etiquetado Patio 5: <em>llenar manualmente</em> → <strong>la balanza imprime y envía la etiqueta al punto de muestra</strong>.</span>,
+          <span>Flujo operativo reescrito por etapas; énfasis en que <strong>primero se llenan/revisan datos del ingreso y luego se captura peso</strong>.</span>,
+          <span><strong>QR forestal vs código de barras de terceros</strong> separados; títulos "Terceros — con/sin código de barras" (antes "con/sin QR").</span>,
+          <span>4.6: <em>"No permita la descarga con guía repetida"</em> → <strong>"No permita la entrada con guía repetida"</strong>.</span>,
+          <span>4.10.1: eliminado el placeholder <em>[POR VALIDAR con Daniel Sotalin]</em>; conservada la idea de humedad como último dato antes del cierre.</span>,
+          <span>Muestra perdida: confirmar primero con balanza y escalar; <strong>no</strong> se documentan como práctica regular el promedio de últimos viajes ni el doble muestreo.</span>,
+          <span>4.11: etiqueta/papel <strong>entregada al transportista</strong> en balanza (no "todo automático") y llevada al patio asignado.</span>,
+          <span>4.5: verificación visual de especie/material en balanza (más difícil de noche).</span>,
+          <span>Anulación / reliquidación / nota de crédito — bloque operativo con caso/acción/escalamiento.</span>,
+          <span><strong>Camiones HINO/Chevrolet corregidos (estaban invertidos):</strong> HINO con remolque (~11 t), Chevrolet sin remolque (~8-9 t).</span>,
+          <span>4.14.2: Patios y rumas digitales — avisar si descarga fuera de secuencia; pedir habilitación si se crea ruma física sin registro digital.</span>,
+          <span>Factory Track: cada Factory Track con cuenta/contraseña propia; credenciales con supervisores/jefe de patios/responsable definido.</span>,
         ]} />
-        <p style={{ marginTop: 14 }}><strong>Secciones nuevas:</strong></p>
-        <List items={[
-          <span><strong>4.10.1</strong> Humedad: último filtro antes del cierre + procedimiento anulación.</span>,
-          <span><strong>4.12.1</strong> Verificación de humedad en salida — Balanza 1 (PS1).</span>,
-          <span><strong>4.14.1</strong> Orden de descarga: FIFO con excepción justificada.</span>,
-        ]} />
-        <Callout variant="nota" title="Por validar con Daniel Sotalin" style={{ marginTop: 14 }}>
-          Punto exacto en ANI donde la humedad bloquea edición · Procedimiento detallado de anulación por humedad incorrecta o QR/cuenta-contrato errónea.
+        <Callout variant="nota" title="Fuera de alcance (no incluido por instrucción)" style={{ marginTop: 14 }}>
+          No se agregó procedimiento de proveedor nuevo / asignación de código de barras · No se agregó pendiente sobre el punto exacto donde la humedad bloquea edición · No se documentó como procedimiento formal el promedio de últimos seis viajes ni el doble muestreo.
         </Callout>
+      </Card>
+
+      <Card title="2026-06-19 09:53 — fixes de consistencia + 3 secciones nuevas (entrada previa)" icon="history">
+        <p style={{ marginTop: 0 }}>Altura de ruma → hasta 5 m (excep. 6 m), patrón 2+camino+2. Tiempo muestra rolliza 25-40 min. Etiquetado Patio 5. Secciones nuevas 4.10.1 / 4.12.1 / 4.14.1.</p>
       </Card>
     </Stack>
   );

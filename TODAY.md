@@ -90,6 +90,36 @@
 
 ## Historial
 
+### 2026-06-19 15:35 — Revisión HTML contenido GABRIEL aplicada
+
+**Qué cambió (cambios aprobados de la revisión de Gabriel sobre el HTML):**
+- Flujo operativo reescrito por etapas; **primero datos del ingreso, luego peso** (no "ver camión → capturar peso" como primer acto).
+- **QR forestal vs código de barras de terceros separados** en 4.5 y en Screens.jsx; títulos "Terceros — con/sin código de barras" (antes "con/sin QR").
+- 4.6: `"No permita la descarga con guía repetida"` → `"No permita la entrada con guía repetida"`.
+- 4.10.1: **eliminado** el placeholder `[POR VALIDAR con Daniel Sotalin]` sobre punto exacto donde la humedad bloquea edición.
+- Muestra perdida: confirmar primero con balanza y escalar; **no** documentado como práctica regular el promedio de últimos viajes ni el doble muestreo.
+- 4.11: etiqueta/papel **entregada al transportista** (no "todo automático") y llevada al patio asignado.
+- 4.5: verificación visual de especie/material (rápido pero más difícil de noche, punto adicional si no coincide).
+- Nuevo bloque **Anulación / Reliquidación / Nota de crédito** (caso / acción / a quién escalar).
+- **Camiones HINO/Chevrolet invertidos en versiones anteriores — corregido**: HINO con remolque (~11 t), Chevrolet sin remolque (~8-9 t).
+- 4.14.2 Patios y rumas digitales: avisar si descarga fuera de secuencia; pedir habilitación si se crea ruma física sin registro digital; ruma digital como histórico/control.
+- Factory Track: cada equipo con cuenta/contraseña propia; credenciales con supervisores/jefe de patios/responsable definido; nombre oficial Factory Track.
+
+**Archivos modificados:**
+- `instructivos/finales/CONTENIDO_MAESTRO.md` (fuente de verdad).
+- `instructivos/finales/NOVOPNHTML1_files/Screens.jsx` y `html-app/NOVOPNHTML1_files/Screens.jsx` (gemelos sincronizados).
+
+**Pendientes de regeneración (ver `notas/REBUILD_PENDING.md`):**
+- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL_ESTATICO.html` (bundle estático con babel).
+- `instructivos/finales/IJP_FINAL_ACTUALIZADO_2026-06-19.docx`.
+- `instructivos/finales/RECEPCION_DE_MADERA_guia_v2_ACTUALIZADO_2026-06-19.docx`.
+- `instructivos/finales/NOVOPAN_Guia_Recepcion_Madera_FINAL.pdf`.
+
+**Fuera de alcance (no incluido por instrucción explícita):**
+- No se agregó procedimiento de proveedor nuevo / asignación de código de barras.
+- No se agregó pendiente sobre el punto exacto donde la humedad bloquea edición.
+- No se documentó como procedimiento formal el promedio de últimos seis viajes ni el doble muestreo.
+
 ### 2026-06-19 10:10 — ESTATICO rebuilt + paridad git==local
 
 **Qué cambió:**
