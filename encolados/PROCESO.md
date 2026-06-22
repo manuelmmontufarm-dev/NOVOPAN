@@ -2,6 +2,7 @@
 
 > Fuentes: resúmenes 2026-06-22 + transcripciones completas (new_recording_35, new_recording_36, reunion_angeloncipales) + research externo.
 > **Última actualización:** 2026-06-22
+> **Base maestra ampliada:** [`BASE_INFO_ENCOLADOS.md`](BASE_INFO_ENCOLADOS.md)
 
 ---
 
