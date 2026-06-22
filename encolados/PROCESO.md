@@ -1,20 +1,18 @@
 # Área — Encolados (Línea 1)
 
-> Documento técnico del área. Fuentes: descripción inicial + recorrido técnico 2026-06-22 (Marco Villalba, Juan Carlos, Emanuel, supervisor de producción).
-> Se le van añadiendo observaciones, mediciones, fotos y diagramas conforme avanza el proyecto.
->
+> Fuentes: resúmenes 2026-06-22 + transcripciones completas (new_recording_35, new_recording_36, reunion_angeloncipales) + research externo.
 > **Última actualización:** 2026-06-22
 
 ---
 
 ## Entrada del área
 
-**Silos** cargados desde el área de preparación con dos calidades de partícula clasificada:
+**Silos** cargados desde preparación con dos calidades de partícula:
 
-| Calidad | Destino | Características |
-|---------|---------|-----------------|
-| Fina | Capas externas (top + bottom) | Partícula más pequeña → mejor acabado superficial |
-| Media (biruta + polvo) | Capa central (core) | Partícula más gruesa → da grosor y estructura |
+| Calidad | Destino |
+|---------|---------|
+| Fina | Capas externas (top + bottom) |
+| Media (biruta + polvo) | Capa central (core) |
 
 ---
 
@@ -22,265 +20,328 @@
 
 ### 1. Silos
 
-Punto de entrada del área. Almacenan partícula fina y media por separado hasta que los dosing bins los demandan.
+Almacenan partícula fina y media por separado. Material descarga hacia los dosimbuncas mediante **tornillos de descarga** (2 tornillos por silo).
 
-**Instrumentación:**
+**Cómo funciona la descarga:**
+- Cada tornillo gira → mueve material hacia abajo.
+- El cálculo teórico es: 1 revolución = cantidad fija de descarga.
+- En la práctica el llenado del tornillo varía (punto bajo / punto alto) → la descarga real oscila.
+
+**Sensores en silos:**
 
 | Sensor | Tipo | Función |
 |--------|------|---------|
-| Ultrasónicos | Continuo | Nivel de material (insensibles al polvo); calibración por interpolación lineal 0–100 |
-| Paletas on/off | Discreto | Mínimos y máximos como redundancia de seguridad ante falla del ultrasónico |
+| Ultrasónico | Continuo | Nivel (0–100); calibración: señal vacío = 0, señal lleno = 100, interpolación lineal |
+| Paletas on/off | Discreto | Mínimo y máximo como redundancia de seguridad |
+| Inductivos | Pulsos | Cuentan rotaciones del tornillo de descarga (metal pasa frente al sensor) |
 
-> _Pendiente documentar:_ capacidad de cada silo, cuántos silos por calidad, lógica de selección de silo activo.
+> _Pendiente:_ capacidad y cantidad exacta de silos por calidad; lógica de selección de silo activo.
 
 ---
 
-### 2. Dosing bins + clasificación
+### 2. Dosimbuncas (bunkers dosificadores)
 
-Los dosing bins reciben la partícula desde los silos y descargan cantidad controlada hacia el encolador. Hay un bin por tipo de capa (interna fina, externa fina, media).
+**Nombre en planta:** "dosimbuncas" (audio: "dosimil", "dosibunker"). Un bunker por tipo de capa (interna fina, externa fina, media).
+
+Reciben la partícula de los silos y calculan la descarga con exactitud antes de pasar al encolador.
 
 **Cálculo de descarga:**
-- Combina **peso (kg)** en la celda de carga del bin con **velocidad de banda (m/min)** → flujo másico resultante.
-- El setpoint de flujo lo comanda la báscula central (ver §Parámetros clave).
+```
+Descarga (kg/min) = peso en celda de carga × velocidad de rotación del motor
+```
+- Sensor de volumen (nivel) → mantiene llenado constante.
+- Celda de carga → mide cuántos kg hay en el bin.
+- Encoder / inductivo → cuenta rotaciones del motor de descarga.
+- Combinando los tres se obtiene el flujo másico en kg/min.
 
-**Clasificación por rodillos moleteados:**
-- Los rodillos tienen perfiles moleteados con profundidades entre **0.3 y 1.3 mm**.
-- Función: separar finos de gruesos; garantizar que solo la partícula del tamaño correcto pase a cada línea de encolado.
-
-> _Pendiente documentar:_ número de rodillos, tipo de accionamiento, criterio para ajustar profundidad de moleteado, flujo másico típico por capa.
+> _Pendiente:_ nombre exacto en HMI/PLC (tag), capacidad de cada bunker, setpoints de llenado.
 
 ---
 
-### 3. Encolador + caja de dosificación
+### 3. Clasificación (camas de rodillos moleteados)
 
-Dos líneas paralelas, una por tipo de capa. Cada línea mezcla la partícula con resina y parafina.
+Entre los dosimbuncas y el encolador, el material pasa por **camas de rodillos moleteados** que clasifican la partícula por tamaño.
 
-- **Línea capas externas:** dosifica partícula fina → mezcla con **resina + parafina**.
-- **Línea capa media:** dosifica biruta + polvo → mezcla con **resina + parafina**.
+- **2 camas de rodillos:** una para capa externa (fina), otra para capa media.
+- Los rodillos tienen perfiles moleteados con profundidades entre **0.3 y 1.3 mm**; el tamaño del moleteado determina qué partícula pasa.
+- Material que cae por debajo de la cama → partícula clasificada correcta.
+- Proceso mecánico, sin control PID.
 
-**Función de cada químico:**
-- **Resina (aglomerante):** se activa con calor en la prensa y une las partículas. Define la resistencia mecánica del tablero.
-- **Parafina:** repelente de humedad. Reduce hinchamiento del tablero terminado (clave para MDP-RH).
+> _Pendiente:_ número de rodillos, tipo de accionamiento, criterio para ajustar profundidad.
 
-**Control PID de dosificación (resina y parafina):**
+---
 
-Las bombas de resina y parafina trabajan en lazo cerrado PID:
+### 4. Encolador
 
-| Variable PID | Descripción |
+Dos líneas paralelas (una por tipo de capa) mezclan la partícula con **resina + parafina (+ agua)**.
+
+**Sistema de enfriamiento del encolador:**
+- Agua circula en la parte inferior del encolador.
+- Evita que la resina reaccione prematuramente con el calor ambiente antes de llegar a la prensa.
+
+**Control PID de bombas (resina y parafina):**
+
+| Variable | Descripción |
 |---|---|
-| SP (Set Point) | Objetivo de flujo (L/min) |
-| PV (Process Value) | Medición real del flujómetro (electromagnético o Coriolis) |
-| LMN | Señal de salida del controlador a la bomba |
+| SP | Setpoint de flujo (L/min) |
+| PV | Medición del flujómetro |
+| LMN | Señal de salida → velocidad de bomba |
 
-**Estado observado (2026-06-22):** la línea azul (PV) nunca se estabiliza sobre la roja (SP) — oscilación persistente por retardos de señal y mala sintonía del lazo. En pantalla: sube, corrige, baja, corrige.
+Azul (PV) debe estar sobre roja (SP). Si el controlador trabaja al 100% sostenido: problema. Punto de trabajo sano: **40–50 %** nominal.
 
-**Rango de operación recomendado para bombas:** **40–50 % de capacidad nominal** como punto de trabajo estable. Evitar 100 % sostenido (solo picos breves) — fuerza equipos y degrada el control.
+**Estado observado (2026-06-22):** PV oscila continuamente (sube, corrige, baja, corrige) — mala sintonía PID + retardos de señal.
 
 **Instrumentación de dosificación:**
 
 | Instrumento | Tipo | Función |
 |---|---|---|
-| Flujómetros electromagnéticos | Continuo | Miden L/min de resina y parafina |
-| Coriolis ("pitómetro electromagnético") | Continuo | Integrado con lazo PID; mayor precisión |
-| Sensores de presión con membrana | Continuo | Protegidos de medios agresivos; requieren limpieza periódica |
+| Flujómetros electromagnéticos | Continuo | L/min de resina/parafina (requiere fluido conductivo) |
+| Coriolis ("pitómetro") | Continuo | Flujo másico directo; también entrega densidad y temperatura |
+| Sensores de presión con membrana | Continuo | Protegidos de medios agresivos; se ensucian con resina/parafina — limpiar en mantenimiento |
+| Actuadores neumáticos + electroválvulas | Acción on/off | Abren/cierran válvulas de resina automáticamente desde el control room |
 
-> _Pendiente documentar:_ tipo de resina (¿UF / MUF / PMDI?), dosificación g/kg de partícula, temperatura de la caja de mezcla, tiempos de residencia en el encolador, proveedor de resina/parafina.
+> _Pendiente:_ tipo de resina (UF / MUF / PMDI), dosificación g/kg de partícula, qué líneas usan magnético vs Coriolis.
 
 ---
 
-### 4. Tres esparcidores (forming heads)
+### 5. Tres esparcidores (forming heads)
 
-Depositan las partículas encoladas en orden sobre la banda formadora, armando el "mat" (colchón o mesa cruda):
+Depositan el material encolado sobre la banda formadora armando el colchón (mat):
 
 ```
-          esparcidor 3  →  ▒▒▒▒▒▒▒▒▒▒▒▒  (capa fina superior — top)
-          esparcidor 2  →  ████████████  (capa media — core, la más gruesa, biruta)
-          esparcidor 1  →  ▒▒▒▒▒▒▒▒▒▒▒▒  (capa fina inferior — bottom)
-                            ───────────  (banda formadora)
+     Esparcidor 3 →  ▒▒▒▒▒▒  capa fina superior (TOP)    — 53% del externo
+     Esparcidor 2 →  ████████  capa media (CORE)           — 70% del total
+     Esparcidor 1 →  ▒▒▒▒▒▒  capa fina inferior (SL1)    — 43% del externo
+                      ──────   banda formadora
 ```
 
-Resultado: sandwich **fino / medio / fino**. Las capas externas dan acabado, la media da estructura.
+**Setpoint de proporciones:**
 
-**Setpoint de proporción de capas:**
+| Capa | % del peso total | Reparto interno |
+|------|-----------------|-----------------|
+| Externas (top + bottom) | **30 %** | Top: **53 %** del externo / Bottom: **43 %** del externo ⚠ verificar (53+43=96) |
+| Core (capa media) | **70 %** | — |
 
-| Capa | Proporción objetivo |
-|------|-------------------|
-| Externas (top + bottom) | **30 %** del peso total |
-| Central (core) | **70 %** del peso total |
-| Reparto externo (top / bottom) | **53 % / 43 %** (⚠ verificar: 53+43=96 — confirmar si es 53/47 con transcripción) |
+**Por qué top ≠ bottom:** el desequilibrio intencional controla el **pandeo** del tablero. Más material arriba → el tablero curva hacia arriba. El ajuste 53/43 busca que salga recto de la prensa.
 
-**Estado observado:** prueba de papel en 2026-06-22 muestra ~33 % externas cuando se pide 30 % → problema de pesaje dinámico real.
+**Prueba de papel (testigos):**
+- Se coloca papel entre esparcidoras para separar capas físicamente.
+- Se pesa cada capa → se calcula % real.
+- Resultado 2026-06-22: se pide 30 % externas → sale **33 %** → problema de pesaje dinámico.
 
-**Celdas de carga en esparcidoras:**
-- **2 celdas por esparcidora** (izquierda / derecha), acopladas a un rodillo.
-- Calibración estática OK (pesos patrón), pero en dinámico falla.
-- Linealización típica: **3–20 mV → 0–20 kg**. El offset en mV con peso muerto determina el escalado y es difícil de establecer correctamente.
+**Instrumentación de esparcidoras:**
 
-**Perfilómetro de densidad:**
-- Instrumento que lee la densidad a lo largo del tablero después de los esparcidores.
-- Evidencia anomalías puntuales de distribución (manchas de alta/baja densidad).
-- Relacionado con la variación cíclica de peso detectada por la báscula central.
+| Instrumento | Dónde | Función |
+|---|---|---|
+| Celdas de carga (×2 por esparcidora) | Izq / Der sobre rodillo | Fuerza del material sobre la banda |
+| Celdas de carga (×4) | Báscula central | Peso total del colchón → **variable maestra** |
+| Perfilómetro ("tomatito") | Post-esparcidores | Escanea densidad a lo largo del tablero — detecta anomalías de distribución |
 
-**Variable maestra — peso del colchón en banda:**
-- La báscula central tiene **4 celdas de carga**.
-- Es la realimentación maestra de dosificación de toda la línea.
-- **No intervenir sin justificación técnica** — cualquier ajuste manual se propaga a todos los lazos aguas arriba.
+**Parámetro TAU (τ):**
+```
+τ = Σ(descarga de esparcidoras) − lo que mide / pide la báscula central
+Setpoint: τ = 0  |  Estado actual: τ = +5 constante  (problema sin resolver ~6 meses)
+```
+Si τ > 0: esparcidoras mandan más de lo pedido.
+Si τ < 0: esparcidoras mandan menos.
 
-> _Pendiente documentar:_ velocidad de banda, gramaje objetivo por m², mecanismo de distribución cruzada del esparcidor, ajuste mecánico de compuertas de cada esparcidor.
+**Calibración de celdas — problema activo:**
+- Con pesos patrón en parada: marca bien.
+- En producción (banda moviéndose): falla.
+- Causa probable: el punto de referencia (mV con peso muerto) queda mal ajustado → escalamiento incorrecto.
+- Linealización típica: **3 mV → 0 kg / 20 mV → 20 kg**. El offset con peso muerto es difícil de encontrar.
+- Proceso de tara: la esparcidora arranca vacía → marca referencias a lo largo de toda la banda → promedio = cero dinámico.
+
+**Cuando la báscula central detecta caída:**
+1. Controlador acelera bandas para compensar.
+2. Sobreoscilación: caída brusca → subida brusca.
+3. Perfilómetro muestra la anomalía resultante.
+
+> _Pendiente:_ velocidad de banda, gramaje objetivo (kg/m²), ajuste de compuertas mecánicas de cada esparcidor.
 
 ---
 
-### 5. Preprensa hidráulica
+### 6. Preprensa hidráulica
 
-Etapa entre los esparcidores y la prensa principal.
+Entre esparcidores y prensa principal.
 
-- **Presión:** ~**153 bar** (hidráulico).
-- **Función:** compactar levemente el colchón para expulsar el aire atrapado entre las partículas antes de entrar a la prensa caliente.
-- Sin preprensa, el aire atrapado genera defectos de presión interna al calentarse en la prensa principal.
+- **Presión:** ~**153 bar** hidráulico.
+- **Función:** sube y baja sobre el colchón → compacta ligeramente → expulsa el exceso de aire → deja el colchón uniforme en altura antes de entrar a la prensa caliente.
+- Sin preprensa, el aire atrapado genera defectos al calentarse.
 
-> _Pendiente documentar:_ longitud de la preprensa, tiempo de residencia, temperatura (¿ambiente o calefaccionada?), marca/modelo.
+> _Pendiente:_ longitud, marca/modelo, ¿tiene calefacción propia o solo compacta en frío?
 
 ---
 
-### 6. Prensa caliente continua
+### 7. Prensa caliente continua (máster de la línea)
 
-Prensa larga de acero inoxidable. **Es el máster de la línea**: su velocidad determina el ritmo de toda la producción aguas arriba y aguas abajo.
+**La prensa determina el ritmo de toda la línea.** Su velocidad afecta el lazo completo aguas arriba.
 
-**Parámetros de proceso observados (2026-06-22):**
+**Parámetros observados (2026-06-22):**
 
-| Variable | Valor observado |
+| Variable | Valor |
 |---|---|
-| Temperatura de platos | **220 – 220 – 220 – 215 °C** (presión mayor a la entrada, menor a la salida) |
-| Temperatura aceite térmico | ~**285 °C** |
+| Temperatura de platos | **220 – 220 – 220 – 215 °C** |
+| Aceite térmico | ~**285 °C** |
+| Perfil de presión | Mayor a la entrada, menor a la salida |
 
-**Principio:** el calor activa la resina y la presión compacta la mesa al espesor objetivo. La continuidad de la prensa permite producción sin paradas intermedias.
+**Cómo funciona:**
+- El colchón entra grueso (aire + partícula suelta) y sale al espesor objetivo.
+- La presión decrece a lo largo de la prensa en múltiples zonas → compactación progresiva.
+- El calor activa la resina → une las partículas permanentemente.
+- Producción continua, sin paradas para cargar/descargar.
 
-**⚠ Sistema de vapor:** fuera de servicio al 2026-06-22.
+**⚠ Sistema de vapor:** mencionado como etapa, pero **fuera de servicio** al 2026-06-22. No se sabe si es temporal o instalado pero no habilitado.
 
-> _Pendiente documentar:_ marca/modelo (Siempelkamp / Dieffenbacher / Metso?), longitud de la prensa, presión específica (N/mm²), velocidad de prensado (m/min), factor de prensado (s/mm), espesor de entrada vs. salida del colchón.
+> _Pendiente:_ marca/modelo (Siempelkamp / Dieffenbacher / Metso?), longitud, factor de prensado (s/mm), espesor entrada/salida del colchón, número de zonas de presión.
 
 ---
 
-### 7. Corte angular en movimiento
+### 8. Corte angular en movimiento
 
-A la salida de la prensa, la sierra corta el tablero a la medida **mientras la banda sigue avanzando**.
+A la salida de la prensa, la sierra corta mientras la banda avanza.
 
-- El corte es en ángulo (diagonal) para compensar la velocidad de avance de la banda y que el corte resulte perpendicular al tablero.
+- **Corte angular (diagonal):** compensa la velocidad de avance para que el resultado sea perpendicular.
 - **Sierras longitudinales:** sincronizan distancia y velocidad con la línea.
-- Requieren calibración de **diagonales (ortoángulo)** para garantizar escuadría del tablero.
+- **Control de diagonales (ortoángulo):** verifica que el tablero resultante sea cuadrado (ángulos a 90°). Requiere calibración periódica.
 
-> _Pendiente documentar:_ formato de corte estándar (mm), tipo de sierra, mecanismo de sincronización (servo / leva), tolerancia de escuadría.
+**Post-corte:**
+- **Medición de espesor:** sensor ultrasónico u óptico mide el espesor de cada tablero recién cortado.
+- **Pesaje individual:** cada tablero se pesa antes del enfriamiento.
 
----
-
-### 8. Enfriadoras tipo estrella (star coolers)
-
-- Estructura: brazos rotativos en forma de estrella.
-- Capacidad: **3 tableros simultáneos por estrella**.
-- Movimiento: rotación de **180°** durante el ciclo.
-- Enfriamiento: **tubos metálicos** que retiran calor por contacto directo.
-
-**Por qué se rotan:** nivelar la temperatura entre ambas caras del tablero y dejar escapar el calor residual uniformemente — evita alabeo (warping) y desbalance de humedad interna.
-
-> _Pendiente documentar:_ número total de estrellas, tiempo de residencia, temperatura de entrada/salida del tablero, velocidad de rotación.
+> _Pendiente:_ formato estándar de corte (mm), tipo de sierra, mecanismo de sincronización (servo / leva), tolerancia de escuadría.
 
 ---
 
-### 9. Estacado (grouping)
+### 9. Enfriadoras tipo estrella (star coolers)
 
-Los tableros enfriados se agrupan y apilan. **Punto de salida del área de encolados.**
+- Brazos rotativos en forma de estrella.
+- **3 tableros simultáneos** por estrella.
+- Rotación de **180°** por ciclo.
+- **Tubos metálicos** retiran calor por contacto.
 
-**Mecanismo de agrupamiento:**
-- Agrupa tableros de **3 en 3**.
-- Sensores ópticos (emisor–receptor) para conteo y detección de presencia.
-- Sistema neumático para el apilado físico.
+**Por qué se rotan:** nivela temperatura entre ambas caras → evita alabeo y desbalance de humedad interna.
 
-> _Pendiente documentar:_ altura de estaca estándar, tiempo de reposo antes de la siguiente área (lijado), control de calidad en este punto (espesor, densidad, defectos visuales).
-
----
-
-## Parámetros clave del área
-
-| Parámetro | Descripción | Setpoint | Estado actual |
-|-----------|-------------|----------|---------------|
-| **Tau** | Diferencia entre lo que suman las esparcidoras y lo demandado por la báscula central. Mide el balance global del sistema de formación. | **0** (pequeña oscilación alrededor) | **+5 constante** → desajuste persistente sin resolver (~medio año) |
-| **Proporción capas** | Externas / central | 30 % / 70 % | ~33 % / 67 % (problema de pesaje dinámico) |
-| **Peso colchón en banda** | Variable maestra de realimentación (báscula central, 4 celdas) | Según receta | Variación cíclica — sobreoscilaciones cuando se corrige |
-| **Bombas resina/parafina** | Punto de trabajo | 40–50 % nominal | Oscilación persistente en PV |
+> _Pendiente:_ número total de estrellas, tiempo de residencia, temperatura entrada/salida.
 
 ---
 
-## Instrumentación general del área
+### 10. Estacado (agrupamiento)
 
-| Tipo | Aplicación | Notas |
-|------|------------|-------|
-| Ultrasónicos | Nivel en silos | Insensibles a polvo; calibración 0–100 lineal |
-| Paletas on/off | Mín/máx silos como redundancia | |
-| Celdas de carga | Peso en esparcidoras (×2/esparcidora) y báscula central (×4) | Calibración estática OK; dinámico con problemas |
-| Flujómetros electromagnéticos | L/min resina/parafina | |
-| Coriolis | Flujo másico resina (lazo PID) | |
-| Sensores de presión con membrana | Líneas de dosificación | Protegidos; necesitan limpieza |
-| Inductivos | Detección metales, pulsos de rotación banda/motores | |
-| Ópticos (emisor–receptor) | Presencia, altura/espesor, conteo tableros | |
-| Finales de carrera mecánicos | Respaldo a inductivos | |
-| **Sensores de mariposa** | **Detección de taponamientos** (giro trabado = tapón) | Relacionados con los 4 taponamientos del 2026-06-22 |
-| Perfilómetro de densidad | Lee densidad a lo largo del tablero post-esparcidores | Evidencia anomalías puntuales |
+Agrupa tableros de **3 en 3** y los apila.
+
+- Sensores ópticos (emisor–receptor): cuentan y detectan presencia de tableros.
+- Sistema neumático: ejecuta el apilado físico.
+- **Encoders** en el mecanismo de agrupamiento — problemas conocidos: encoders se dañan, agrupamiento falla.
+
+> _Pendiente:_ altura de estaca estándar, tiempo de reposo antes del área siguiente (lijado).
+
+---
+
+## Parámetros clave
+
+| Parámetro | Fórmula / Descripción | Setpoint | Estado actual |
+|-----------|----------------------|----------|---------------|
+| **Tau (τ)** | Σ esparcidoras − báscula central | 0 (oscilación pequeña ok) | **+5 constante** (~6 meses sin resolver) |
+| **Proporción capas** | % externas / % core | 30 % / 70 % | ~33 % / 67 % (pesaje dinámico incorrecto) |
+| **Reparto externo** | Top / Bottom del 30 % | 53 % / 43 % ⚠ | A confirmar (suma 96 %) |
+| **Bombas resina/parafina** | Punto de trabajo | 40–50 % nominal | Oscilación persistente |
+| **Peso colchón** | Báscula central (4 celdas) — variable maestra | Según receta | Variaciones cíclicas |
+
+---
+
+## Instrumentación general
+
+| Tipo | Dónde | Función |
+|------|-------|---------|
+| Ultrasónicos | Silos | Nivel continuo 0–100 |
+| Paletas on/off | Silos | Mín/máx de seguridad |
+| Inductivos | Tornillos de descarga, encoders de motores | Pulsos de rotación |
+| Celdas de carga (×2) | Cada esparcidora | Peso de material en banda |
+| Celdas de carga (×4) | Báscula central | Peso total del colchón |
+| Flujómetros electromagnéticos | Líneas resina/parafina | L/min |
+| Coriolis | Líneas resina (lazo PID) | Flujo másico + densidad + temperatura |
+| Sensores de presión con membrana | Líneas de dosificación | Presión; se ensucian — limpiar en mantenimiento |
+| Actuadores neumáticos + electroválvulas | Válvulas de resina/parafina | Control automático de paso |
+| Sensores de mariposa (butterfly) | Transportadores | Detección de taponamientos (giro trabado = tapón) |
+| Ópticos (emisor–receptor) | Estacado, medición post-corte | Presencia, conteo, espesor |
+| Inductivos / finales de carrera mecánicos | Varios | Respaldo; los mecánicos casi nunca pagan pero requieren contacto físico |
+| Perfilómetro ("tomatito") | Post-esparcidores | Densidad a lo largo del tablero |
+| Sensor espesor (ultrasónico u óptico) | Post-corte | Espesor individual de cada tablero |
+| Encoders | Agrupamiento / estacado | Posición y conteo; pueden dañarse |
 
 ---
 
 ## Estado actual del sistema (2026-06-22)
 
-**Tres frentes de problema simultáneos:**
-1. **Esparcidoras** — distribución incorrecta (tau +5, capas fuera de setpoint).
-2. **Dosificadoras** — consumos con oscilación persistente en lazos PID.
-3. **Tau** — balance global fuera de cero desde hace ~medio año; a la espera del instructivo del fabricante para calibración mecánica y eléctrica.
+**3 problemas abiertos (~6 meses):**
+1. **Esparcidoras** — distribución incorrecta; tau +5; capas 33 % vs 30 %.
+2. **Dosimbuncas / dosificadoras** — consumos con oscilación PID persistente.
+3. **Tau / TAM** — balance global fuera de cero. En espera de instructivo del fabricante para calibración mecánica + eléctrica.
 
 **Sistema de vapor:** fuera de servicio.
 
-**Incidente 2026-06-22 madrugada (~04:00):** 4 taponamientos consecutivos.
-- Evento 1: causa raíz no determinada.
-- Eventos 2 y 3: sensor de máximo marcó ~120 (límite ≤85, alarma a 130) pero la señal no llegó al controlador → no hubo parada.
-- Evento 4: consecuencia de reinicios sucesivos; acumulación en transportador.
-- Hipótesis: interlock aguas arriba/aguas abajo amplifica el problema (sin material aguas arriba → se detiene el envío → aguas abajo demanda más → al destaponarse, sobrealimentación → nuevo tapón).
-- **Mala práctica detectada:** resetear fallas sin análisis → reenciende sobre condiciones no resueltas.
+**Incidente madrugada 2026-06-20/21 (aprox. 2:15–3:20):**
+- 2:15 → alarma de rodillos de encoladora (parada para limpieza); velocidad de línea cae; nivel sube por inercia.
+- Al reanudar: descargas elevadas (110–120) y variaciones.
+- 4 taponamientos consecutivos.
+- Variaciones persistieron 2 días.
+- Hipótesis: sensor de máximo entregó señal correcta pero no llegó al controlador → no se ejecutó parada → sobrealimentación al destaponarse.
+- **Mala práctica:** reset de falla sin análisis → rearrancar sobre condición no resuelta.
 
 ---
 
-## Personas en esta área
+## Personas en el área
 
 | Rol | Nombre | Tema |
 |-----|--------|------|
 | Gerente de mantenimiento | Marco Villalba | Instrumentación, interlocks, incidentes |
 | Gerente de producción | Juan Carlos | Indicadores, recetas, decisiones |
-| Jefe de aglomerado | Emanuel | Operación diaria del área |
-| Supervisor de producción | _por confirmar nombre_ | Línea y recorrido técnico |
-| Control de calidad (Área 1) | _por confirmar_ | Laboratorio asociado |
-| Jefe de producción | Jorge | Indicadores globales |
-| Control de calidad | Franklin | Criterios de aceptación, densidad |
+| Jefe de aglomerado | Emanuel (audio: "Angelo") | Operación diaria |
+| Supervisor de producción | _confirmar nombre_ | Recorrido técnico |
+| Control de calidad (Área 1) | _confirmar_ | Laboratorio |
 
 ---
 
 ## Pendientes
 
-### Datos para confirmar
-- [ ] Split exacto externas: ¿53/47 o 53/43? (53+43=96, debe ser error)
-- [ ] Cronología exacta del incidente de madrugada (alarmas: ¿2:52 o 3:00–3:30?)
-- [ ] Nombre oficial del área en Novopan (¿"Encolados", "Línea de formación", otro?)
-- [ ] Nombre del supervisor de producción del recorrido
+### Por confirmar en planta
+- [ ] Reparto externo: ¿53/47 o 53/43? (53+43=96, falta el 4%)
+- [ ] TAM vs tau: ¿mismo parámetro o distintos?
+- [ ] "dosimbuncas" → tag exacto en HMI/PLC
+- [ ] SL1: confirmar si es el nombre en HMI para la capa inferior
+- [ ] Perfilómetro: marca/modelo (¿GreCon u otro?)
+- [ ] Sistema de vapor: ¿temporal o no instalado?
+- [ ] Nombre oficial del área ("Encolados", "Aglomerados", "Línea de formación"?)
+- [ ] Nombre del supervisor del recorrido técnico
 
-### Datos técnicos por medir/documentar
-- [ ] Capacidad y cantidad de silos por calidad de partícula
-- [ ] Flujo másico típico por capa (kg/min)
-- [ ] Marca/modelo de la prensa principal (Siempelkamp / Dieffenbacher / Metso?)
-- [ ] Longitud de la prensa y factor de prensado (s/mm)
-- [ ] Velocidad de línea actual (m/min)
-- [ ] Espesor de entrada/salida del colchón en prensa
-- [ ] Temperatura de entrada/salida del tablero en enfriadoras
-- [ ] Formato de corte estándar (mm)
+### Datos técnicos por medir
+- [ ] Velocidad de línea (m/min)
+- [ ] Gramaje objetivo del colchón (kg/m²)
+- [ ] Longitud y zonas de presión de la prensa
+- [ ] Marca/modelo de la prensa
+- [ ] Tiempos de tránsito entre etapas (para Opción A — trazabilidad)
+- [ ] Distancias entre sensor banda y cada esparcidora
 
-### Documentos que se esperan
-- [ ] Transcripciones completas de los 3 audios del 2026-06-22 → `encolados/transcripts/`
-- [ ] Instructivo del fabricante para calibración mecánica y eléctrica de esparcidoras
+### Documentos esperados
+- [ ] Instructivo del fabricante para calibración de esparcidoras (pendiente de respuesta)
+- [ ] Transcripciones completas → `encolados/transcripts/`
+- [ ] SOP prueba de papel/testigos (punto, tiempo, pesaje, criterio)
+
+---
+
+## Glosario rápido del área
+
+| Término | Significado |
+|---------|------------|
+| Tau (τ) / TAM | Diferencia entre descarga de esparcidoras y demanda de báscula central |
+| Dosimbuncas | Bunkers dosificadores (dosing bins) — uno por tipo de capa |
+| SL1 | Capa inferior (bottom layer) |
+| Nariz | Apertura al inicio del encolado; genera desperdicio hasta cerrarse |
+| Perfilómetro / tomatito | Sensor que escanea densidad a lo largo del tablero |
+| Prueba de papel | Testigos físicos entre capas para medir % real de cada capa |
+| LMN | Salida del controlador PID a la bomba (manipulated variable) |
+| Pandeo | Alabeo/curvatura del tablero; se controla con reparto asimétrico top/bottom |
 
 ---
 
@@ -288,9 +349,10 @@ Los tableros enfriados se agrupan y apilan. **Punto de salida del área de encol
 
 ```
 encolados/
-├── PROCESO.md              ← este archivo (descripción técnica del flujo)
-├── notas/                  ← notas de campo y resúmenes de reuniones
-│   └── 2026-06-22-resumenes-reuniones.md
-├── transcripts/            ← transcripciones completas de audios
-└── technical-research/     ← investigación técnica externa (por crear)
+├── PROCESO.md              ← este archivo
+├── notas/                  ← notas de campo y resúmenes
+│   ├── 2026-06-22-resumenes-reuniones.md
+│   └── CLAUDE_DESIGN_PROMPT_ENCOLADOS.md
+├── transcripts/            ← transcripciones completas (pendiente subir)
+└── technical-research/     ← investigación técnica externa (pendiente)
 ```
