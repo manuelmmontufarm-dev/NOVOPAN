@@ -1,6 +1,8 @@
 # Prompt para Claude Design — Simulador Trazabilidad L1
 
-## Objetivo
+> **Rediseño v2 (línea horizontal tipo HMI):** ver [`CLAUDE_DESIGN_PROMPT_V2_LINEA.md`](CLAUDE_DESIGN_PROMPT_V2_LINEA.md) — prompt nuevo con flujo esparcidoras → blanca → roja → prensa → sensores.
+
+## Objetivo (v1 — pulido CSS sobre P&ID actual)
 
 Mejorar **look & feel**, **animaciones** y **jerarquía visual** del simulador sin romper la lógica de simulación. El resultado debe ser fácil de pegar de vuelta en el repo como **diffs pequeños**.
 

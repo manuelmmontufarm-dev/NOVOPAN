@@ -297,6 +297,29 @@ export class TrackRenderer {
     }
   }
 
+  _getMarker(layer, key) {
+    const sel = `[data-marker-key="${CSS.escape(key)}"]`;
+    let dot = layer.querySelector(sel);
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.dataset.markerKey = key;
+      layer.appendChild(dot);
+    }
+    return dot;
+  }
+
+  _pruneMarkers(layer, keepKeys) {
+    layer.querySelectorAll('[data-marker-key]').forEach((el) => {
+      if (!keepKeys.has(el.dataset.markerKey)) el.remove();
+    });
+  }
+
+  _paintDemoClass() {
+    return this.injectionId === 'enc-all'
+      || this.injectionId === 'enc-fine'
+      || this.injectionId === 'enc-thick';
+  }
+
   update(state) {
     if (!this.built) return;
 
@@ -310,10 +333,12 @@ export class TrackRenderer {
 
     let scrollTarget = null;
 
+    const paintDemo = this._paintDemoClass();
+
     for (const [nodeId, el] of this.nodeEls) {
       el.classList.remove('is-active');
       const layer = el.querySelector('.path-markers');
-      if (layer) layer.innerHTML = '';
+      const keepKeys = new Set();
 
       const isDone = completed.has(nodeId);
       el.classList.toggle('is-done', isDone);
@@ -334,18 +359,23 @@ export class TrackRenderer {
       }
 
       const markers = byNode.get(nodeId);
-      if (!markers?.length) continue;
+      if (!markers?.length) {
+        if (layer) this._pruneMarkers(layer, keepKeys);
+        continue;
+      }
 
       el.classList.add('is-active');
       scrollTarget = el;
 
-      const layer2 = el.querySelector('.path-markers');
+      if (!layer) continue;
+
       markers.forEach((m, idx) => {
-        const dot = document.createElement('div');
-        const paintDemo = this.injectionId === 'enc-all'
-          || this.injectionId === 'enc-fine'
-          || this.injectionId === 'enc-thick';
+        const key = `${nodeId}:${m.pathId ?? 'x'}:${idx}`;
+        keepKeys.add(key);
+        const dot = this._getMarker(layer, key);
         dot.className = `path-marker path-marker--board${paintDemo ? ' path-marker--paint' : ''}`;
+        dot.classList.remove('path-marker--retention', 'path-marker--colchon');
+        dot.style.opacity = '';
         const tint = m.pathColor ?? PATH_COLORS[m.pathId] ?? '#8B6914';
         dot.style.setProperty('--path-tint', tint);
         dot.title = m.nodeLabel;
@@ -376,8 +406,9 @@ export class TrackRenderer {
           dot.style.left = `${pct}%`;
           dot.style.top = `calc(50% + ${offset}px)`;
         }
-        layer2?.appendChild(dot);
       });
+
+      this._pruneMarkers(layer, keepKeys);
     }
 
     requestAnimationFrame(() => this._drawConnectors());

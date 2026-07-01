@@ -2,7 +2,7 @@
  * SimulationClock — reloj de simulación (setInterval, fiable en todos los navegadores).
  */
 
-const TICK_MS = 50;
+const TICK_MS = 33;
 
 export class SimulationClock {
   #timeSec = 0;

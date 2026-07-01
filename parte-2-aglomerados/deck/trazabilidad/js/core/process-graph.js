@@ -280,6 +280,118 @@ export const PATHS = {
   },
 };
 
+/**
+ * ── Sub-segmentos medidos en planta (jul-2026) ──
+ *
+ * Las bandas acopladas a prensa (blanca, roja, prensa metálica) se modelan como
+ * una CADENA ordenada de sub-segmentos con longitud medida (flexómetro / campo),
+ * en vez de un solo bloque de transporte.
+ *
+ *   - transport → tramo de banda corriendo (colchón vacío / formándose / manta)
+ *   - zone      → tramo con equipo que ocupa longitud (esparcido SL/CL, pre-prensa, vapor)
+ *   - waypoint  → punto sin extensión (imán, sprays, detector, cuchillas, marcos)
+ *
+ * Física: todos usan t = L / v_prensa × 60. La SUMA de longitudes = lengthM del
+ * contenedor, así que los tiempos totales no cambian; los sub-segmentos solo
+ * añaden granularidad (posición por metro, waypoints, desglose).
+ */
+export const WHITE_SEGMENTS = [
+  { id: 'gap-pre-sl1', type: 'transport', lengthM: 1.42, label: 'Entrada → SL1' },
+  { id: 'zone-sl1', type: 'zone', lengthM: 6.94, label: 'Zona SL1 · capa inferior' },
+  { id: 'gap-sl1-cl', type: 'transport', lengthM: 3.35, label: 'SL1 → CL' },
+  { id: 'zone-cl', type: 'zone', lengthM: 4.38, label: 'Zona CL · core' },
+  { id: 'gap-cl-sl2', type: 'transport', lengthM: 1.37, label: 'CL → SL2' },
+  { id: 'zone-sl2', type: 'zone', lengthM: 6.39, label: 'Zona SL2 · capa superior' },
+  { id: 'gap-sl2-iman', type: 'transport', lengthM: 2.81, label: 'SL2 → imán' },
+  { id: 'gap-iman-preprensa', type: 'transport', lengthM: 2.40, label: 'Imán → pre-prensa' },
+  { id: 'zone-preprensa', type: 'zone', lengthM: 4.69, label: 'Pre-prensa' },
+  { id: 'gap-preprensa-sprays', type: 'transport', lengthM: 2.22, label: 'Pre-prensa → sprays' },
+  { id: 'gap-sprays-detector', type: 'transport', lengthM: 1.70, label: 'Sprays → detector' },
+  { id: 'gap-detector-cuchillas', type: 'transport', lengthM: 1.86, label: 'Detector → cuchillas' },
+  { id: 'gap-post-cuchillas', type: 'transport', lengthM: 5.41, label: 'Cuchillas → nariz #1' },
+];
+export const WHITE_WAYPOINTS = [
+  { id: 'point-iman', atM: 26.68, label: 'Imán' },
+  { id: 'point-sprays', atM: 35.99, label: 'Sprays anti-pegado' },
+  { id: 'point-detector', atM: 37.69, label: 'Detector metales' },
+  { id: 'point-cuchillas', atM: 39.56, label: 'Cuchillas / nariz' },
+];
+
+export const RED_SEGMENTS = [
+  { id: 'gap-pre-vapor', type: 'transport', lengthM: 1.86, label: 'Entrada → vapor' },
+  { id: 'zone-vapor', type: 'zone', lengthM: 2.29, label: 'Zona vapor · Dynasteam' },
+  { id: 'gap-post-vapor', type: 'transport', lengthM: 5.88, label: 'Vapor → prensa' },
+];
+export const RED_WAYPOINTS = [
+  { id: 'point-vapor-start', atM: 1.86, label: 'Vapor start' },
+  { id: 'point-vapor-end', atM: 4.15, label: 'Vapor end' },
+];
+
+/** Prensa metálica: 0.10 + 6×0.75 + 12×0.90 + 1.20 = 16.60 m (19 marcos). */
+function buildPressSegments() {
+  const segs = [{ id: 'gap-pre-m1', type: 'transport', lengthM: 0.10, label: 'Entrada → marco 1' }];
+  for (let i = 1; i <= 18; i++) {
+    const L = i <= 6 ? 0.75 : 0.90; // pitch denso marcos 1–7, estándar 7–19
+    segs.push({ id: `gap-m${i}-m${i + 1}`, type: 'transport', lengthM: L, label: `Marco ${i} → ${i + 1}` });
+  }
+  segs.push({ id: 'gap-decompress', type: 'transport', lengthM: 1.20, label: 'Descompresión + salida' });
+  return segs;
+}
+export const PRESS_SEGMENTS = buildPressSegments();
+const PRESS_FRAME_M = [0.10, 0.85, 1.60, 2.35, 3.10, 3.85, 4.60, 5.50, 6.40, 7.30,
+  8.20, 9.10, 10.00, 10.90, 11.80, 12.70, 13.60, 14.50, 15.40];
+export const PRESS_WAYPOINTS = PRESS_FRAME_M
+  .map((atM, i) => ({ id: `point:m${i + 1}`, atM, label: `Marco ${i + 1}` }))
+  .concat([{ id: 'point:end', atM: 16.60, label: 'Fin zona activa' }]);
+
+const BAND_SEGMENTS = { white: WHITE_SEGMENTS, red: RED_SEGMENTS, press: PRESS_SEGMENTS };
+const BAND_WAYPOINTS = { white: WHITE_WAYPOINTS, red: RED_WAYPOINTS, press: PRESS_WAYPOINTS };
+
+/** Sub-segmentos de una banda (o null si no es banda downstream con cadena). */
+export function bandSegments(bandId) {
+  return BAND_SEGMENTS[bandId] ?? null;
+}
+export function bandWaypoints(bandId) {
+  return BAND_WAYPOINTS[bandId] ?? null;
+}
+/** Sub-segmentos con startM/endM acumulados. */
+export function bandSegmentsWithBounds(bandId) {
+  const segs = bandSegments(bandId);
+  if (!segs) return null;
+  let acc = 0;
+  return segs.map((s) => {
+    const startM = acc;
+    acc += s.lengthM;
+    return { ...s, startM: +startM.toFixed(3), endM: +acc.toFixed(3) };
+  });
+}
+/** Longitud total (m) de una banda por su cadena de sub-segmentos. */
+export function bandLengthM(bandId) {
+  const segs = bandSegments(bandId);
+  return segs ? segs.reduce((a, s) => a + s.lengthM, 0) : 0;
+}
+/** Sub-segmento que contiene la posición posM (m) dentro de la banda. */
+export function segmentAtM(bandId, posM) {
+  const segs = bandSegmentsWithBounds(bandId);
+  if (!segs) return null;
+  const clampP = (v, a, b) => Math.max(a, Math.min(b, v));
+  for (let i = 0; i < segs.length; i++) {
+    const s = segs[i];
+    if (posM < s.endM || i === segs.length - 1) {
+      const span = s.endM - s.startM;
+      return {
+        segmentId: s.id,
+        segmentLabel: s.label,
+        segmentType: s.type,
+        segmentStartM: s.startM,
+        segmentEndM: s.endM,
+        segmentProgress: span > 0 ? clampP((posM - s.startM) / span, 0, 1) : 1,
+      };
+    }
+  }
+  return null;
+}
+
 export const DOWNSTREAM = [
   {
     id: 'white',
@@ -289,18 +401,23 @@ export const DOWNSTREAM = [
     beltColor: 'white',
     validated: true,
     measuredAt: '2026-06-30',
+    segments: WHITE_SEGMENTS,
+    waypoints: WHITE_WAYPOINTS,
     source: {
       kind: 'measured',
       date: '2026-06-30',
       desc: 't = L_white / v_prensa × 60',
-      detail: '45 m medidos en planta. Banda acoplada a prensa (colchón + báscula + pre-prensa + nariz #1).',
+      detail: '45 m medidos en planta, en cadena de sub-segmentos (formación SL1/CL/SL2 + imán + pre-prensa + sprays + detector + cuchillas + nariz #1).',
     },
     equipment: [
-      { name: 'Colchón 3 capas', atPct: 12 },
-      { name: 'Báscula central', atPct: 28 },
-      { name: 'Pre-prensa ~153 bar', atPct: 52 },
-      { name: 'Spray anti-pegado', atPct: 70 },
-      { name: 'Nariz #1', atPct: 90 },
+      { name: 'Zona SL1', atPct: 19 },
+      { name: 'Zona CL', atPct: 36 },
+      { name: 'Zona SL2', atPct: 53 },
+      { name: 'Imán', atPct: 59 },
+      { name: 'Pre-prensa', atPct: 75 },
+      { name: 'Sprays', atPct: 80 },
+      { name: 'Detector', atPct: 84 },
+      { name: 'Cuchillas / nariz', atPct: 88 },
     ],
   },
   {
@@ -310,15 +427,17 @@ export const DOWNSTREAM = [
     lengthM: 10,
     beltColor: 'red',
     validated: true,
+    segments: RED_SEGMENTS,
+    waypoints: RED_WAYPOINTS,
     source: {
       kind: 'measured',
       date: '2026-06-30',
       desc: 't = L_red / v_prensa × 60',
-      detail: '10 m medidos en planta. Banda acoplada a prensa (sensor metales + Dynasteam).',
+      detail: '10 m medidos en planta, en cadena de sub-segmentos (entrada + Dynasteam vapor + salida a prensa).',
     },
     equipment: [
-      { name: 'Sensor metales', atPct: 22 },
-      { name: 'Dynasteam vapor', atPct: 55 },
+      { name: 'Vapor start', atPct: 19 },
+      { name: 'Vapor end', atPct: 42 },
     ],
   },
   {
@@ -329,13 +448,20 @@ export const DOWNSTREAM = [
     lengthM: 16.6,
     beltColor: 'press',
     validated: true,
+    segments: PRESS_SEGMENTS,
+    waypoints: PRESS_WAYPOINTS,
     source: {
       kind: 'measured',
-      date: '2026-06',
+      date: '2026-07',
       desc: 't = L_press / v_prensa × 60',
-      detail: 'Zona activa de prensado: 16,6 m (19 marcos). El total de 45 m incluye el retorno de la banda.',
+      detail: 'Zona activa de prensado: 16,6 m (19 marcos, flexómetro jul-2026). El circuito total ~45 m incluye el retorno de la banda (no modelado).',
     },
-    equipment: [{ name: '19 marcos prensa', atPct: 50 }],
+    equipment: [
+      { name: 'Marco 1', atPct: 1 },
+      { name: 'Marco 7', atPct: 28 },
+      { name: 'Marco 13', atPct: 60 },
+      { name: 'Marco 19', atPct: 93 },
+    ],
   },
 ];
 

@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
   <title>Línea 1 — Trazabilidad en vivo · NOVOPAN</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23004E38'/%3E%3Ctext x='50' y='72' font-family='Helvetica,Arial,sans-serif' font-size='68' font-weight='700' text-anchor='middle' fill='white'%3EN%3C/text%3E%3C/svg%3E" />
   <!-- Fuentes de marca + iconos (absolutas → cargan sin importar la ruta del CSS) -->
@@ -10,16 +12,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" />
-  <link rel="stylesheet" href="css/trazabilidad.css" />
+  <link rel="stylesheet" href="css/trazabilidad.css?v=20260701b" />
 </head>
 <body>
   <div class="layout">
     <aside class="sidebar">
       <h3>Controles</h3>
       <div class="controls-compact">
-        <label for="injectionPoint">Punto de inyección (t = 0)</label>
-        <select id="injectionPoint"></select>
-
         <label for="speedPreset">Preset espesor</label>
         <select id="speedPreset">
           <option value="observed-jun24" selected>9 mm medido 24-jun (14,5 m/min)</option>
@@ -38,6 +37,13 @@
 
         <label for="timeScrub">Avance manual (s)</label>
         <input type="range" id="timeScrub" min="0" max="600" step="0.1" value="0" />
+
+        <div class="injection-control">
+          <label for="injectionPoint" class="injection-control__label">
+            <span class="ms">radio_button_checked</span> Inicio del cambio
+          </label>
+          <select id="injectionPoint" class="injection-control__select"></select>
+        </div>
 
         <button type="button" class="btn btn--demo" id="demoPaintBtn" title="t=0 en encoladores, defaults de planta, reloj 30×">
           <span class="ms">format_paint</span> Demo pintura
@@ -65,8 +71,13 @@
         Parámetros HMI, receta y τ por etapa → pestaña <strong>Parámetros</strong> arriba.
       </p>
 
+      <p class="sim-switch" style="margin-top:0.75rem;padding:0.55rem 0.65rem;font-size:11px;background:#E3F1E8;border-radius:6px;border-left:3px solid #004E38;">
+        <strong>Nuevo</strong> — vista horizontal Sección 2:<br />
+        <a href="../trazabilidad-linea/" style="color:#004E38;font-weight:600;">trazabilidad-linea/</a>
+      </p>
+
       <p class="serve-hint">
-        Mediciones de campo: <a href="MEDICIONES_CAMPO.md" target="_blank" rel="noopener">MEDICIONES_CAMPO.md</a><br />
+        Mediciones de campo: <a href="MEDICIONES_BANDAS_CAMPO.md" target="_blank" rel="noopener">MEDICIONES_BANDAS_CAMPO.md</a><br />
         Si no carga: <code>cd encolados/deck && python3 -m http.server 8080</code><br />
         → <code>localhost:8080/trazabilidad/</code>
       </p>
@@ -124,7 +135,7 @@
     </main>
   </div>
 
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=20260701b"></script>
 
   <!-- Auto-fit: ajusta el diagrama para que entre completo en el alto de
        pantalla usando CSS `zoom` (refluye el layout de verdad → los widgets se
@@ -158,7 +169,10 @@
         var availH = sw.clientHeight - 6;
         var z = Math.max(0.4, Math.min(1, availH / natH));
         wrap.style.zoom = z < 0.999 ? String(z) : '';
-        redrawConnectors();
+        requestAnimationFrame(function () {
+          redrawConnectors();
+          setTimeout(redrawConnectors, 150);
+        });
       }
       function schedule() { if (!raf) raf = requestAnimationFrame(fit); }
 

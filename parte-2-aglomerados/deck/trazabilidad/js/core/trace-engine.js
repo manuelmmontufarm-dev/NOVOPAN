@@ -11,7 +11,10 @@
  *   El min() de mergeElapsed = "tiempo desde que las TRES capas están presentes".
  */
 
-import { PATHS, PATH_IDS, DOWNSTREAM, nodesForPath, pathsForInjection, startNodeForPath, DOWNSTREAM_STAGE_IDS } from './process-graph.js';
+import {
+  PATHS, PATH_IDS, DOWNSTREAM, nodesForPath, pathsForInjection, startNodeForPath,
+  DOWNSTREAM_STAGE_IDS, segmentAtM, bandWaypoints, bandSegmentsWithBounds,
+} from './process-graph.js';
 
 // ── Helpers de parámetros ──
 
@@ -283,6 +286,7 @@ function traceDownstream(elapsed, speed, params, fromStageId = null) {
       const vEff = beltSpeed(node, params, speed);
       const L = len(node.id, params, node);
       const posM = (elapsed / 60) * vEff;
+      const seg = node.segments ? segmentAtM(node.id, posM) : null;
       return {
         pathId: 'merged',
         pathColor: '#004E38',
@@ -291,6 +295,8 @@ function traceDownstream(elapsed, speed, params, fromStageId = null) {
         phase: 'transport',
         progressInNode: posM / L,
         positionM: posM,
+        bandId: node.id,
+        ...(seg ?? {}),
         retentionRemainingSec: 0,
         completedNodeIds: completed,
       };
@@ -377,6 +383,25 @@ export function computeAllMarkers(tSec, speedMperMin, injectionId, params) {
 
 /** Time when the marker first reaches the start of a given stage (relativo a t=0 de inyección). */
 export function arrivalTimeForStage(stageId, speedMperMin, params, injectionId) {
+  // Sub-segmento o waypoint de banda downstream: 'white:point-iman', 'press:point:m19', 'red:zone-vapor'.
+  if (typeof stageId === 'string' && stageId.includes(':')) {
+    const bandId = stageId.slice(0, stageId.indexOf(':'));
+    if (bandId === 'white' || bandId === 'red' || bandId === 'press') {
+      const rest = stageId.slice(bandId.length + 1);
+      const bandStart = arrivalTimeForStage(bandId, speedMperMin, params, injectionId);
+      if (bandStart == null) return null;
+      let atM = null;
+      const wp = (bandWaypoints(bandId) ?? []).find((w) => w.id === rest);
+      if (wp) atM = wp.atM;
+      else {
+        const seg = (bandSegmentsWithBounds(bandId) ?? []).find((s) => s.id === rest);
+        if (seg) atM = seg.startM;
+      }
+      if (atM == null) return null;
+      return bandStart + (speedMperMin > 0 ? (atM / speedMperMin) * 60 : 0);
+    }
+  }
+
   const pathIds = pathsForInjection(injectionId);
 
   if (DOWNSTREAM_STAGE_IDS.includes(injectionId)) {
