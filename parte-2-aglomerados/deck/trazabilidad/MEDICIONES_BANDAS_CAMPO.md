@@ -1,10 +1,12 @@
-# Mediciones de campo — Banda blanca y banda roja
+# Mediciones de campo — Banda blanca, roja y prensa
 
-> **Fuente:** `datos/Production_Line_Timing_Averages.xlsx` (6SS Banda Blanca · 3SS Banda Roja)  
-> **Corridas:** 3 repeticiones · promedios en fórmulas del Excel  
-> **Velocidad medida:** **11,11 m/min** (promedio de las 3 corridas en hoja blanca)  
+> **Fuentes:**  
+> - Cronometría: `datos/Production_Line_Timing_Averages.xlsx` (6SS Banda Blanca · 3SS Banda Roja)  
+> - Flexómetro: banda prensa metálica (jul-2026, planta)  
+> **Corridas cronómetro:** 3 repeticiones · promedios en fórmulas del Excel  
+> **Velocidad cronómetro:** **11,11 m/min** (promedio de las 3 corridas en hoja blanca)  
 > **Fecha de análisis:** jul-2026  
-> **Valida longitudes del simulador:** blanca **45 m** · roja **10 m**
+> **Valida longitudes del simulador:** blanca **45 m** · roja **10 m** · prensa activa **16,6 m**
 
 ## Cómo leer las mediciones
 
@@ -114,14 +116,93 @@ Usar esta tabla como **fuente de verdad** para el motor de bandas.
 
 ---
 
-## Banda prensa metálica (sin cronometría nueva)
+## Banda prensa metálica — resumen
 
-Sin waypoints en el Excel de jul-2026. Mantener parámetro existente del simulador:
+> **Método:** flexómetro en planta (jul-2026).  
+> **Convención:** huecos entre marcos = longitud; cada marco = waypoint (centro del marco).
+
+| Magnitud | Valor |
+|----------|-------|
+| Longitud total zona activa | **16,6 m** |
+| Marcos de prensado | **19** |
+| Tramo pre-marco 1 | **0,10 m** |
+| Huecos marcos 1→7 (6 × 75 cm) | **4,50 m** |
+| Huecos marcos 7→19 (12 × 90 cm) | **10,80 m** |
+| Cola post-marco 19 (descompresión) | **1,20 m** |
+| Tiempo total @ 14,5 m/min | **~68,7 s** |
+| Tiempo total @ 11,11 m/min | **~89,7 s** |
+
+**Verificación:** `0,10 + 6×0,75 + 12×0,90 + 1,20 = 16,60 m` ✓
+
+El circuito físico total de la banda metálica (~45 m) incluye **retorno** no modelado en τ; solo los **16,6 m activos** (entrada → descompresión).
+
+### Secuencia de sub-segmentos (orden físico, 0 → 16,6 m)
+
+| # | ID sugerido | Tipo | Desde (m) | Hasta (m) | Longitud (m) | % inicio | % fin | Notas |
+|---|-------------|------|-----------|-----------|--------------|----------|-------|-------|
+| 1 | `press:gap:pre-m1` | transport | 0,00 | 0,10 | **0,10** | 0,0 % | 0,6 % | Hasta marco 1 |
+| 2 | `press:gap:m1-m2` | transport | 0,10 | 0,85 | **0,75** | 0,6 % | 5,1 % | Pitch denso |
+| 3 | `press:gap:m2-m3` | transport | 0,85 | 1,60 | **0,75** | 5,1 % | 9,6 % | |
+| 4 | `press:gap:m3-m4` | transport | 1,60 | 2,35 | **0,75** | 9,6 % | 14,2 % | |
+| 5 | `press:gap:m4-m5` | transport | 2,35 | 3,10 | **0,75** | 14,2 % | 18,7 % | |
+| 6 | `press:gap:m5-m6` | transport | 3,10 | 3,85 | **0,75** | 18,7 % | 23,2 % | |
+| 7 | `press:gap:m6-m7` | transport | 3,85 | 4,60 | **0,75** | 23,2 % | 27,7 % | Último hueco 75 cm |
+| 8 | `press:gap:m7-m8` | transport | 4,60 | 5,50 | **0,90** | 27,7 % | 33,1 % | Pitch estándar |
+| 9 | `press:gap:m8-m9` | transport | 5,50 | 6,40 | **0,90** | 33,1 % | 38,6 % | |
+| 10 | `press:gap:m9-m10` | transport | 6,40 | 7,30 | **0,90** | 38,6 % | 44,0 % | |
+| 11 | `press:gap:m10-m11` | transport | 7,30 | 8,20 | **0,90** | 44,0 % | 49,4 % | |
+| 12 | `press:gap:m11-m12` | transport | 8,20 | 9,10 | **0,90** | 49,4 % | 54,8 % | |
+| 13 | `press:gap:m12-m13` | transport | 9,10 | 10,00 | **0,90** | 54,8 % | 60,2 % | |
+| 14 | `press:gap:m13-m14` | transport | 10,00 | 10,90 | **0,90** | 60,2 % | 65,7 % | |
+| 15 | `press:gap:m14-m15` | transport | 10,90 | 11,80 | **0,90** | 65,7 % | 71,1 % | |
+| 16 | `press:gap:m15-m16` | transport | 11,80 | 12,70 | **0,90** | 71,1 % | 76,5 % | |
+| 17 | `press:gap:m16-m17` | transport | 12,70 | 13,60 | **0,90** | 76,5 % | 81,9 % | |
+| 18 | `press:gap:m17-m18` | transport | 13,60 | 14,50 | **0,90** | 81,9 % | 87,3 % | |
+| 19 | `press:gap:m18-m19` | transport | 14,50 | 15,40 | **0,90** | 87,3 % | 92,8 % | Fin zona prensado |
+| 20 | `press:gap:decompress` | transport | 15,40 | 16,60 | **1,20** | 92,8 % | 100,0 % | Descompresión + salida activa |
+
+**Suma:** 0,10 + 6×0,75 + 12×0,90 + 1,20 = **16,60 m**
+
+### Waypoints — posición de cada marco
+
+| Marco | Posición (m) | % zona activa | Tiempo acum. @ 14,5 m/min |
+|-------|--------------|---------------|---------------------------|
+| 1 | 0,10 | 0,6 % | 0,4 s |
+| 2 | 0,85 | 5,1 % | 3,5 s |
+| 3 | 1,60 | 9,6 % | 6,6 s |
+| 4 | 2,35 | 14,2 % | 9,7 s |
+| 5 | 3,10 | 18,7 % | 12,8 s |
+| 6 | 3,85 | 23,2 % | 15,9 s |
+| 7 | 4,60 | 27,7 % | 19,0 s |
+| 8 | 5,50 | 33,1 % | 22,8 s |
+| 9 | 6,40 | 38,6 % | 26,5 s |
+| 10 | 7,30 | 44,0 % | 30,2 s |
+| 11 | 8,20 | 49,4 % | 33,9 s |
+| 12 | 9,10 | 54,8 % | 37,7 s |
+| 13 | 10,00 | 60,2 % | 41,4 s |
+| 14 | 10,90 | 65,7 % | 45,1 s |
+| 15 | 11,80 | 71,1 % | 48,8 s |
+| 16 | 12,70 | 76,5 % | 52,6 s |
+| 17 | 13,60 | 81,9 % | 56,3 s |
+| 18 | 14,50 | 87,3 % | 60,0 s |
+| 19 | 15,40 | 92,8 % | 63,7 s |
+| Fin zona activa | 16,60 | 100,0 % | 68,7 s |
+
+### Mapa visual (escala aproximada)
+
+```
+0m                                                              16.6m
+├10cm├─75×6 (marcos 1─7)─├──────90×12 (marcos 7─19)──────├descomp.┤
+0%  1%        28%                    93%                 100%
+```
+
+### Retorno (no modelado en τ)
 
 | Tramo | Longitud | Notas |
 |-------|----------|-------|
-| Zona activa prensado | **16,6 m** | 19 marcos; medido jun-2026 |
-| Retorno (no modelado en τ) | ~28 m | Incluido en 45 m totales físicos de circuito |
+| Circuito total banda metálica | ~45 m | Incluye retorno bajo prensa |
+| Zona activa (este doc) | 16,6 m | Entrada → post-descompresión |
+| Retorno estimado | ~28 m | Fuera del modelo de trazabilidad |
 
 ---
 
@@ -141,6 +222,7 @@ Ejemplo @ **14,5 m/min** (default simulador):
 |-------|-------|------------|
 | Banda blanca | 45,0 | 186,2 |
 | Banda roja | 10,0 | 41,4 |
+| Banda prensa activa | 16,6 | 68,7 |
 
 Ejemplo @ **11,11 m/min** (velocidad de las corridas del Excel):
 
@@ -148,6 +230,7 @@ Ejemplo @ **11,11 m/min** (velocidad de las corridas del Excel):
 |-------|-------|------------|
 | Banda blanca | 45,0 | 242,9 |
 | Banda roja | 10,0 | 54,2 |
+| Banda prensa activa | 16,6 | 89,7 |
 
 ---
 
@@ -161,7 +244,9 @@ Ejemplo @ **11,11 m/min** (velocidad de las corridas del Excel):
 | Pre-prensa | Zona 4,69 m @ 64,6–75,1 % | Punto decorativo @ 52 % |
 | Detector metales | 83,8 % **blanca** | 22 % **roja** |
 | Vapor | Zona 2,29 m @ 18,6–41,5 % roja | Punto @ 55 % roja |
-| Longitudes totales | 45 m / 10 m | 45 m / 10 m ✓ |
+| Longitudes totales | 45 m / 10 m / 16,6 m | 45 m / 10 m / 16,6 m ✓ |
+| Marcos prensa | 19 waypoints; pitch 75 cm (1–7) luego 90 cm | Un bloque; marcos @ 50 % decorativo |
+| Descompresión post-M19 | 1,20 m (7 % del tramo) | No modelado |
 
 ---
 
