@@ -12,7 +12,7 @@ import { SimulationClock } from '../../trazabilidad/js/core/simulation-clock.js'
 import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
 import { totalTravelTimeSec, computeAllMarkers } from '../../trazabilidad/js/core/trace-engine.js';
 import {
-  mapAbsMToX, absMForMarker, pickDownstreamMarker, markerReadout, buildAnnotations,
+  mapAbsMToX, absMForMarker, pickDownstreamMarker, buildAnnotations,
 } from './line-bridge.js';
 import { loadParams, initParams } from './line-params.js';
 
@@ -179,14 +179,11 @@ function initSimulation() {
   range.max = totalSec.toFixed(1);
   range.step = 0.1;
 
-  const metersEl = document.getElementById('tracerMeters');
-
   function render(tSec) {
     const state = computeAllMarkers(tSec, DEFAULT_SPEED, INJECTION, params);
     const marker = pickDownstreamMarker(state);
     const mx = mapAbsMToX(absMForMarker(marker));
     setTracerX(mx);
-    if (metersEl) metersEl.textContent = markerReadout(marker);
 
     const p = clamp(tSec / totalSec, 0, 1);
     clockEl.textContent = fmtClock(tSec);
