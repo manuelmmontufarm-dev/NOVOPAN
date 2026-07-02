@@ -206,6 +206,40 @@ El circuito físico total de la banda metálica (~45 m) incluye **retorno** no m
 
 ---
 
+## Tramo post-prensa — fin prensa → sensores
+
+> **Medición de campo añadida:** 2-jul-2026.
+> **Origen absoluto:** fin de la zona activa de prensa = **71,60 m** desde formación del colchón.
+
+| # | ID sugerido | Tipo | Desde abs. (m) | Hasta abs. (m) | Longitud (m) | Evento |
+|---|-------------|------|----------------|----------------|--------------|--------|
+| 1 | `post:gap:press-refila` | transport | 71,60 | 78,30 | **6,70** | Fin prensa → cuchillos de refila |
+| 2 | `post:zone:refila` | zone | 78,30 | 79,65 | **1,35** | Cuchillos de refila |
+| 3 | `post:gap:refila-sierra` | transport | 79,65 | 80,35 | **0,70** | Refila → sierra transversal |
+| 4 | `post:zone:sierra` | zone | 80,35 | 82,65 | **2,30** | Sierra transversal |
+| 5 | `post:gap:sierra-sensores` | transport | 82,65 | 85,15 | **2,50** | Sierra transversal → sensores |
+
+**Verificación:** `6,70 + 1,35 + 0,70 + 2,30 + 2,50 = 13,55 m`.
+
+**Longitud total medida desde formación hasta sensores:** `71,60 + 13,55 = 85,15 m`.
+
+Todos los sub-tramos post-prensa usan:
+
+```text
+t_post,i (s) = L_i (m) / v_prensa (m/min) × 60
+```
+
+| Tramo post-prensa | L (m) | Tiempo @ 14,5 m/min | Tiempo @ 11,11 m/min |
+|-------------------|-------|----------------------|-----------------------|
+| Fin prensa → refila | 6,70 | 27,7 s | 36,2 s |
+| Cuchillos de refila | 1,35 | 5,6 s | 7,3 s |
+| Refila → sierra | 0,70 | 2,9 s | 3,8 s |
+| Sierra transversal | 2,30 | 9,5 s | 12,4 s |
+| Sierra → sensores | 2,50 | 10,3 s | 13,5 s |
+| **Total post-prensa** | **13,55** | **56,1 s** | **73,2 s** |
+
+---
+
 ## Conversión tiempo ↔ posición
 
 Para bandas acopladas a prensa:

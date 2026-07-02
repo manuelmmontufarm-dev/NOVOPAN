@@ -29,7 +29,7 @@ https://novopan.vercel.app/trazabilidad-linea
 ## Entregable esperado de Claude Design
 
 - Un `.dc.html` (HTML/SVG/CSS vanilla, sin React).
-- SVG proporcional a **71.6 m** reales.
+- SVG proporcional a **85.15 m** medidos, incluido el tramo post-prensa hasta sensores.
 - Toolbar v2: línea siempre corriendo, solo **v_prensa**, botón **Aplicar cambio aquí**.
 - Parámetros v2: inputs limpios, ecuaciones colapsadas.
 

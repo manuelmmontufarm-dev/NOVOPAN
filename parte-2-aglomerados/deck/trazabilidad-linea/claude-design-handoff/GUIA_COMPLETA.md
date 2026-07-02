@@ -81,7 +81,8 @@ Estas reglas guían el **diseño UX**; Cursor implementa la lógica después.
 | Blanca | **45.0 m** | 0 → 45 |
 | Roja | **10.0 m** | 45 → 55 |
 | Prensa metálica | **16.6 m** | 55 → 71.6 |
-| **Total downstream** | **71.6 m** | |
+| Post-prensa | **13.55 m** | 71.6 → 85.15 |
+| **Total medido** | **85.15 m** | |
 
 ### Waypoints clave (m absolutos)
 
@@ -101,7 +102,10 @@ Estas reglas guían el **diseño UX**; Cursor implementa la lógica después.
 | 55.0 | Inicio prensa |
 | 55.1 | Marco 1 |
 | 70.4 | Marco 19 |
-| 71.6 | Salida / tablero |
+| 71.6 | Fin prensa |
+| 78.3–79.65 | Cuchillos de refila |
+| 80.35–82.65 | Sierra transversal |
+| 85.15 | Sensores de calidad |
 
 **Proporción visual bandas:** 45 : 10 : 16.6 ≈ **62.8% : 14.0% : 23.2%** del tramo downstream.
 
@@ -148,14 +152,14 @@ RECOMENDACIONES DE PLANTA (prioridad UX)
 6. Pestaña Parámetros más limpia: inputs visibles; ecuaciones (τ = M/F×60, t = L/v×60) y justificaciones dentro de paneles colapsables "Ver cálculo".
 
 MEDICIONES REALES (flexómetro jul-2026 — escala del SVG)
-- Total downstream 71.6 m: blanca 45 m + roja 10 m + prensa 16.6 m.
-- Waypoints (m): 0 · 4.9 SL1 · 13.9 CL · 20.7 SL2 · 26.7 imán · 31.4 pre-prensa · 36 sprays · 37.7 detector · 39.6 cuchillas · 45 fin blanca · 48 vapor · 55 prensa · 55.1 marco1 · 70.4 marco19 · 71.6 salida.
+- Total medido 85.15 m: blanca 45 m + roja 10 m + prensa 16.6 m + post-prensa 13.55 m.
+- Waypoints post-prensa (m): 71.6 fin prensa · 78.3–79.65 refila · 80.35–82.65 sierra transversal · 85.15 sensores.
 - Proporción visual bandas ≈ 63% : 14% : 23%.
 - Prensa: 19 marcos, pitch 0.75 m (1–7) y 0.90 m (7–19).
-- Regla inferior 0–70 m cada 5 m, alineada al mismo eje X que los equipos.
+- Regla inferior 0–85.15 m cada 5 m, alineada al mismo eje X que los equipos.
 
 TAREA
-1. Re-dibuja el SVG con X proporcional a metros (escala lineal 0–71.6 m).
+1. Re-dibuja el SVG con X proporcional a metros (escala lineal 0–85.15 m).
 2. Diseña toolbar v2: tabs Línea|Parámetros, v_prensa, "Aplicar cambio aquí", chips 2A–2E, sin play/reset dominantes.
 3. Diseña panel Parámetros v2: limpio, ecuaciones colapsadas.
 4. Mantén header verde, reloj, leyenda, trazador amarillo, colchón 3 capas, animaciones conveyor/steam/mist.

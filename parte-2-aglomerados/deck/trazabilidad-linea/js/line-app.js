@@ -15,7 +15,7 @@
    ============================================================ */
 
 import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
-import { buildAnnotations } from './line-bridge.js';
+import { buildAnnotations, PROCESS_TOTAL_M } from './line-bridge.js';
 import { initParams } from './line-params.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -26,10 +26,8 @@ const DEFAULT_SPEED = SPEED_PRESETS.find((p) => p.id === 'observed-jun24')?.mPer
 const SPEED_MIN = 8;
 const SPEED_MAX = 22;
 
-// Fin real del recorrido visual: los 71.6 m medidos (MEDICIONES.md) + ~5 m
-// cosméticos (sin medición exacta) hasta los sensores de calidad, donde se
-// da por completado el cambio y se cierra su reporte.
-const PROCESS_END_M = 76.6;
+// Fin real medido: 71.6 m hasta fin de prensa + 13.55 m post-prensa.
+const PROCESS_END_M = PROCESS_TOTAL_M;
 
 // Waypoints con nombre (m absolutos) para registrar en qué equipo y a qué hora
 // real pasó cada cambio. Los equipos "esparcidores" con material que cae (SL1/
@@ -49,6 +47,11 @@ const NAMED_WAYPOINTS = [
   { m: 44.9, label: 'Nariz · rechazo' },
   { m: 46.86, label: 'Vapor EVOsteam' },
   { m: 55.0, label: 'Prensa continua' },
+  { m: 71.6, label: 'Fin prensa' },
+  { m: 78.3, label: 'Cuchillos de refila · inicio' },
+  { m: 79.65, label: 'Cuchillos de refila · fin' },
+  { m: 80.35, label: 'Sierra transversal · inicio' },
+  { m: 82.65, label: 'Sierra transversal · fin' },
   { m: PROCESS_END_M, label: 'Sensores de calidad · fin de proceso' },
 ].sort((a, b) => a.m - b.m);
 
@@ -61,14 +64,14 @@ const CHANGE_COLORS = ['#FFDE00', '#FF7A33', '#29B6F6', '#AB47BC', '#EC407A', '#
 
 // ── Constantes de geometría (escala lineal real · Parte 1) ──
 // x = X0 + PX_PER_M × metros. Waypoints clave (px):
-//   0 m → 80 · 45 m → 3230 · 55 m → 3930 · 71.6 m → 5092 · 76.6 m → 5442.
+//   0 m → 80 · 45 m → 3230 · 55 m → 3930 · 71.6 m → 5092 · 85.15 m → 6040.5.
 const BELT_Y = 400;
 const X0 = 80;            // metro 0
 const PX_PER_M = 70;      // px por metro
 const xm = (m) => X0 + PX_PER_M * m;
 const PRESS_START_X = xm(55);   // 3930
 const PRESS_END_X = xm(71.6);   // 5092
-const END = xm(82);             // 5820 · fin visual de la banda de salida (cola cosmética)
+const END = xm(91);             // 6450 · margen visual después de sensores
 
 // Punto donde cada capa "aparece" y sube en el colchón: el mismo punto real
 // donde cae el material (3/4 de la zona del esparcidor) — no el cabezal
@@ -159,8 +162,9 @@ function renderRuler() {
       gLabels.appendChild(t);
     }
   };
-  for (let m = 0; m <= 71; m++) addTick(m, m % 5 === 0, m % 5 === 0 ? String(m) : null);
-  addTick(71.6, true, '71.6'); // fin de zona activa / tablero
+  for (let m = 0; m <= 84; m++) addTick(m, m % 5 === 0, m % 5 === 0 ? String(m) : null);
+  addTick(71.6, true, '71.6');   // fin prensa
+  addTick(85.15, true, '85.15'); // sensores / fin de proceso
 }
 
 // anotaciones discretas de distancias medidas (una sola vez)
@@ -197,7 +201,7 @@ function renderAnnotations() {
       x: w.x.toFixed(1), y: 558, 'text-anchor': 'middle',
       'font-family': "'Barlow',sans-serif", 'font-size': 8, fill: '#676E69',
     });
-    pos.textContent = `${w.atM.toFixed(1)} m · ${w.pct}%`;
+    pos.textContent = w.pct == null ? `${w.atM.toFixed(2)} m` : `${w.atM.toFixed(1)} m · ${w.pct}%`;
     gWp.appendChild(pos);
   }
 }

@@ -9,7 +9,8 @@ Fuente: flexómetro planta, jul-2026. Motor en `process-graph.js`.
 | Blanca | 45.0 m | 0 → 45 |
 | Roja | 10.0 m | 45 → 55 |
 | Prensa | 16.6 m | 55 → 71.6 |
-| **Total** | **71.6 m** | |
+| Post-prensa | 13.55 m | 71.6 → 85.15 |
+| **Total** | **85.15 m** | |
 
 **Proporción visual:** 45 : 10 : 16.6 ≈ **62.8% : 14.0% : 23.2%**
 
@@ -32,6 +33,11 @@ Fuente: flexómetro planta, jul-2026. Motor en `process-graph.js`.
 | 55.10 | Marco 1 prensa |
 | 70.40 | Marco 19 |
 | 71.60 | Fin zona activa / tablero |
+| 78.30 | Inicio cuchillos de refila |
+| 79.65 | Fin cuchillos de refila |
+| 80.35 | Inicio sierra transversal |
+| 82.65 | Fin sierra transversal |
+| 85.15 | Sensores de calidad |
 
 ## Banda blanca — sub-tramos (45 m)
 
@@ -71,10 +77,22 @@ Fuente: flexómetro planta, jul-2026. Motor en `process-graph.js`.
 Posiciones marcos (m desde inicio prensa):  
 0.10, 0.85, 1.60, 2.35, 3.10, 3.85, 4.60, 5.50, 6.40, 7.30, 8.20, 9.10, 10.00, 10.90, 11.80, 12.70, 13.60, 14.50, 15.40, 16.60 (fin).
 
+## Post-prensa — sub-tramos (13.55 m)
+
+| Longitud (m) | Tramo |
+|-------------|-------|
+| 6.70 | Fin prensa → cuchillos de refila |
+| 1.35 | Zona cuchillos de refila |
+| 0.70 | Refila → sierra transversal |
+| 2.30 | Zona sierra transversal |
+| 2.50 | Sierra transversal → sensores |
+
+**Verificación:** `6.70 + 1.35 + 0.70 + 2.30 + 2.50 = 13.55 m`; total desde formación: `71.60 + 13.55 = 85.15 m`.
+
 ## Escala SVG sugerida
 
 ```
-x = x₀ + (absM / 71.6) × anchoÚtil
+x = x₀ + (absM / 85.15) × anchoÚtil
 ```
 
 Todos los equipos y la regla 0–70 m deben usar la **misma** escala X.

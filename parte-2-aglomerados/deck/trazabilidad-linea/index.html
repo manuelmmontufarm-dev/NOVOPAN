@@ -78,7 +78,7 @@
     <div class="s2-toolbar__spacer"></div>
     <div class="s2-mover">
       <span class="s2-mover__label"><span class="ms">drag_pan</span> Mover cambio seleccionado</span>
-      <input type="range" class="s2-mover__range" id="moverRange" min="0" max="76.6" step="0.1" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
+      <input type="range" class="s2-mover__range" id="moverRange" min="0" max="85.15" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
     </div>
     <button type="button" class="s2-reports-btn" id="reportsToggle">
       <span class="ms">receipt_long</span> Reportes <span class="s2-reports-btn__count" id="reportsCount">0</span>
@@ -102,11 +102,10 @@
   </div>
 
   <!-- ══ CANVAS ══ -->
-  <!-- Escala lineal real (Parte 1): x = 80 + 70 × metros. Tramo MEDIDO 0→71.6 m
-       (0 m→80 · 45 m→3230 · 55 m→3930 · 71.6 m→5092) + cola cosmética +5 m sin
-       medición exacta hasta los sensores de calidad (76.6 m→5442) y margen (82 m→5820). -->
+  <!-- Escala lineal real: x = 80 + 70 × metros. Tramo medido 0→85.15 m
+       (0→80 · 45→3230 · 55→3930 · 71.6→5092 · 85.15→6040.5) + margen hasta 91 m. -->
   <div class="s2-canvas" id="canvasScroll">
-    <svg width="5920" height="580" viewBox="0 0 5920 580">
+    <svg width="6550" height="580" viewBox="0 0 6550 580">
       <defs>
         <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#EAEEF2"/><stop offset="0.5" stop-color="#C3CCD6"/><stop offset="1" stop-color="#98A6B4"/>
@@ -130,29 +129,29 @@
       <rect x="1948" y="42" width="1282" height="410" fill="rgba(21,101,192,0.04)"/>    <!-- 2B 26.68→45 -->
       <rect x="3230" y="42" width="700" height="410" fill="rgba(198,40,40,0.04)"/>      <!-- 2C 45→55 -->
       <rect x="3930" y="42" width="1162" height="410" fill="rgba(30,30,30,0.06)"/>      <!-- 2D 55→71.6 -->
-      <rect x="5092" y="42" width="728" height="410" fill="rgba(0,78,56,0.05)"/>        <!-- 2E 71.6→82 (incl. +5 m hasta sensores) -->
+      <rect x="5092" y="42" width="1358" height="410" fill="rgba(0,78,56,0.05)"/>       <!-- 2E 71.6→91 -->
       <g stroke="#C7CCC7" stroke-width="1.5" stroke-dasharray="4 5" opacity="0.7">
         <line x1="1948" y1="44" x2="1948" y2="450"/><line x1="3230" y1="44" x2="3230" y2="450"/>
         <line x1="3930" y1="44" x2="3930" y2="450"/><line x1="5092" y1="44" x2="5092" y2="450"/>
       </g>
 
       <!-- ── GROUND / SUPPORT ── -->
-      <line x1="80" y1="447" x2="5820" y2="447" stroke="#C7CCC7" stroke-width="2"/>
+      <line x1="80" y1="447" x2="6450" y2="447" stroke="#C7CCC7" stroke-width="2"/>
 
       <!-- ── BELT SEGMENTS (proporcionales · blanca 45 : roja 10 : prensa 16.6) ── -->
       <rect x="80" y="400" width="1868" height="24" fill="#FFFFFF" stroke="#004E38" stroke-width="2.5"/>   <!-- blanca 0→26.68 -->
       <rect x="1948" y="400" width="1282" height="24" fill="#BBDEFB" stroke="#1565C0" stroke-width="2.5"/> <!-- azul 26.68→45 -->
       <rect x="3230" y="400" width="700" height="24" fill="#EF9A9A" stroke="#C62828" stroke-width="2.5"/>  <!-- roja 45→55 -->
       <rect x="3930" y="400" width="1162" height="24" fill="url(#pressBelt)" stroke="#5C5C5C" stroke-width="2.5"/> <!-- prensa 55→71.6 -->
-      <rect x="5092" y="400" width="728" height="24" fill="#D9DDD9" stroke="#8A97A6" stroke-width="2.5"/>  <!-- salida 71.6→82 (+5 m hasta sensores) -->
+      <rect x="5092" y="400" width="1358" height="24" fill="#D9DDD9" stroke="#8A97A6" stroke-width="2.5"/> <!-- post-prensa 71.6→91 -->
       <!-- conveyor motion dashes on belt -->
-      <line x1="86" y1="412" x2="5814" y2="412" stroke="rgba(0,0,0,0.16)" stroke-width="2" stroke-dasharray="14 14" style="animation:conveyor 1.1s linear infinite"/>
+      <line x1="86" y1="412" x2="6444" y2="412" stroke="rgba(0,0,0,0.16)" stroke-width="2" stroke-dasharray="14 14" style="animation:conveyor 1.1s linear infinite"/>
 
       <!-- support rollers (poblado por JS) -->
       <g id="rollers" fill="#B7C1CB" stroke="#7E8B99" stroke-width="1"></g>
       <!-- terminal + transfer drums -->
       <circle cx="86" cy="412" r="16" fill="url(#steel)" stroke="#6B7886" stroke-width="1.5"/>
-      <circle cx="5814" cy="412" r="16" fill="url(#steel)" stroke="#6B7886" stroke-width="1.5"/>
+      <circle cx="6444" cy="412" r="16" fill="url(#steel)" stroke="#6B7886" stroke-width="1.5"/>
       <circle cx="1948" cy="412" r="17" fill="url(#steel)" stroke="#1565C0" stroke-width="2"/>
       <circle cx="3230" cy="412" r="17" fill="url(#steel)" stroke="#C62828" stroke-width="2"/>
       <text x="1948" y="392" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="11" fill="#1565C0">IMÁN · BANDA → AZUL</text>
@@ -164,9 +163,9 @@
       <path id="layerCore"   fill="#C98B2E" stroke="#9A6A1E" stroke-width="1" opacity="0.97"/>
       <path id="layerTop"    fill="#ECC873" stroke="#C29A3E" stroke-width="1" opacity="0.97"/>
       <!-- board darkening after press -->
-      <rect x="3958" y="384" width="1862" height="17" fill="rgba(80,52,16,0.20)"/>
-      <line x1="3966" y1="386" x2="5814" y2="386" stroke="#6E5018" stroke-width="1.4" opacity="0.55"/>
-      <text x="5220" y="372" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="12" fill="#6E5018">TABLERO (salida)</text>
+      <rect x="3958" y="384" width="2486" height="17" fill="rgba(80,52,16,0.20)"/>
+      <line x1="3966" y1="386" x2="6444" y2="386" stroke="#6E5018" stroke-width="1.4" opacity="0.55"/>
+      <text x="5660" y="372" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="12" fill="#6E5018">TABLERO · POST-PRENSA</text>
 
       <!-- ══════════ 2A · FORMACIÓN ══════════ -->
 
@@ -377,9 +376,25 @@
         <text x="4511" y="186" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#3D423F">19 MARCOS · CALOR + PRESIÓN</text>
       </g>
 
-      <!-- ══════════ 2E · CALIDAD DE SALIDA (5 m más allá de la salida de prensa · 76.6 m
-           · fin real del recorrido: aquí se completa el reporte de cada cambio) ══════════ -->
-      <g class="s2-machine" data-inject-m="76.6" data-label="Sensores de calidad · fin de proceso" transform="translate(5442 0)">
+      <!-- ══════════ 2E · POST-PRENSA MEDIDO (71.6 → 85.15 m) ══════════ -->
+      <g class="s2-machine" data-inject-m="78.3" data-label="Cuchillos de refila · inicio" transform="translate(5608.25 0)">
+        <rect x="-47.25" y="348" width="94.5" height="70" rx="5" fill="url(#steel)" stroke="#6B7886" stroke-width="1.5"/>
+        <g stroke="#303840" stroke-width="3"><line x1="-32" y1="354" x2="-32" y2="408"/><line x1="0" y1="354" x2="0" y2="408"/><line x1="32" y1="354" x2="32" y2="408"/></g>
+        <rect x="-70" y="310" width="140" height="30" rx="6" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="1.5"/>
+        <text x="0" y="324" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="13" fill="#1A1D1B">CUCHILLOS DE REFILA</text>
+        <text x="0" y="335" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#676E69">1.35 m</text>
+      </g>
+
+      <g class="s2-machine" data-inject-m="80.35" data-label="Sierra transversal · inicio" transform="translate(5785 0)">
+        <rect x="-80.5" y="342" width="161" height="78" rx="5" fill="url(#steelBlue)" stroke="#5E7286" stroke-width="1.5"/>
+        <circle cx="0" cy="381" r="30" fill="#DCE3E9" stroke="#4A5560" stroke-width="3"/>
+        <path d="M0 351 L7 369 L27 364 L15 381 L29 394 L8 391 L0 411 L-7 391 L-29 394 L-15 381 L-27 364 L-7 369 Z" fill="#8A97A6"/>
+        <rect x="-74" y="300" width="148" height="30" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="1.5"/>
+        <text x="0" y="314" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="13" fill="#1A1D1B">SIERRA TRANSVERSAL</text>
+        <text x="0" y="325" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#676E69">2.30 m</text>
+      </g>
+
+      <g class="s2-machine" data-inject-m="85.15" data-label="Sensores de calidad · fin de proceso" transform="translate(6040.5 0)">
         <rect x="-95" y="170" width="10" height="262" fill="#4A5560"/><rect x="85" y="170" width="10" height="262" fill="#4A5560"/>
         <rect x="-100" y="170" width="200" height="18" rx="4" fill="url(#steel)" stroke="#6B7886"/>
         <!-- sensor modules -->
@@ -399,7 +414,7 @@
       </g>
 
       <!-- READINGS PANEL -->
-      <g transform="translate(5582 0)">
+      <g transform="translate(6175 0)">
         <rect x="0" y="196" width="205" height="176" rx="10" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="1.5"/>
         <rect x="0" y="196" width="205" height="26" rx="10" fill="#004E38"/>
         <rect x="0" y="210" width="205" height="12" fill="#004E38"/>
@@ -416,8 +431,8 @@
         </g>
       </g>
 
-      <!-- ── METRIC RULER (escala real 0–71.6 m · ticks poblados por JS) ── -->
-      <line x1="80" y1="470" x2="5092" y2="470" stroke="#AEB4B0" stroke-width="1.5"/>
+      <!-- ── METRIC RULER (escala real 0–85.15 m · ticks poblados por JS) ── -->
+      <line x1="80" y1="470" x2="6040.5" y2="470" stroke="#AEB4B0" stroke-width="1.5"/>
       <g id="rulerTicks" stroke="#AEB4B0" stroke-width="1"></g>
       <g id="rulerLabels" font-family="'Barlow',sans-serif" font-size="9" fill="#676E69" text-anchor="middle"></g>
       <text x="80" y="508" font-family="'Barlow',sans-serif" font-weight="600" font-size="9" letter-spacing="0.06em" fill="#AEB4B0">METROS MEDIDOS DESDE FORMACIÓN DEL COLCHÓN →</text>
@@ -433,7 +448,7 @@
         <rect x="2414" y="10" width="350" height="26" rx="13" fill="#1565C0"/><text x="2589" y="27">2B · PRECOMPRESIÓN Y PROTECCIÓN</text>
         <rect x="3455" y="10" width="250" height="26" rx="13" fill="#C62828"/><text x="3580" y="27">2C · PRECALENTAMIENTO</text>
         <rect x="4401" y="10" width="220" height="26" rx="13" fill="#2A2A2A"/><text x="4511" y="27">2D · PRENSADO</text>
-        <rect x="5327" y="10" width="230" height="26" rx="13" fill="#0A7D5A"/><text x="5442" y="27">2E · CALIDAD DE SALIDA</text>
+        <rect x="5550" y="10" width="300" height="26" rx="13" fill="#0A7D5A"/><text x="5700" y="27">2E · CORTE Y CALIDAD</text>
       </g>
 
       <!-- ── TRAZADORES (uno por cada cambio inyectado · poblado por JS, colores distintos) ── -->
