@@ -10,8 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" />
-<link rel="stylesheet" href="css/seccion2-linea.css?v=20260701" />
-<link rel="stylesheet" href="css/params.css?v=20260701" />
+<link rel="stylesheet" href="css/seccion2-linea.css?v=20260707" />
+<link rel="stylesheet" href="css/params.css?v=20260707" />
 </head>
 <body>
 
@@ -55,22 +55,26 @@
     <span class="s2-toolbar__label">Ir a zona</span>
     <div class="s2-zones">
       <button type="button" class="s2-zone-btn" data-scroll="0">
+        <span class="s2-zone-btn__dot" style="background:#37474F;"></span>
+        <strong>0</strong> Silos
+      </button>
+      <button type="button" class="s2-zone-btn" data-scroll="1920">
         <span class="s2-zone-btn__dot" style="background:#004E38;"></span>
         <strong>2A</strong> Formación
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="1828">
+      <button type="button" class="s2-zone-btn" data-scroll="3748">
         <span class="s2-zone-btn__dot" style="background:#1565C0;"></span>
         <strong>2B</strong> Precompresión
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="3110">
+      <button type="button" class="s2-zone-btn" data-scroll="5030">
         <span class="s2-zone-btn__dot" style="background:#C62828;"></span>
         <strong>2C</strong> Precalent.
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="3810">
+      <button type="button" class="s2-zone-btn" data-scroll="5730">
         <span class="s2-zone-btn__dot" style="background:#2A2A2A;"></span>
         <strong>2D</strong> Prensado
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="4932">
+      <button type="button" class="s2-zone-btn" data-scroll="6852">
         <span class="s2-zone-btn__dot" style="background:#0A7D5A;"></span>
         <strong>2E</strong> Calidad
       </button>
@@ -101,11 +105,23 @@
     </div>
   </div>
 
+  <!-- ══ BARRA MODELO v3: ecuación maestra + estado del CSV del HMI ══ -->
+  <div class="s2-v3bar" id="v3Bar">
+    <div class="s2-v3-readout" id="v3Readout">t_tot = …</div>
+    <div class="s2-hmi">
+      <button type="button" class="btn btn--secondary s2-hmi__btn" id="hmiConnectBtn" title="Elegir el CSV exportado del HMI (se relee solo al cambiar)">
+        <span class="ms">upload_file</span> Conectar CSV del HMI
+      </button>
+      <span class="s2-hmi-status is-idle" id="hmiStatus">● HMI CSV · —</span>
+      <input type="file" id="hmiFileInput" accept=".csv,.txt" hidden />
+    </div>
+  </div>
+
   <!-- ══ CANVAS ══ -->
-  <!-- Escala lineal real: x = 80 + 70 × metros. Tramo medido 0→85.15 m
-       (0→80 · 45→3230 · 55→3930 · 71.6→5092 · 85.15→6040.5) + margen hasta 91 m. -->
+  <!-- x < 1920: carril upstream ESQUEMÁTICO (silos → esparcidores, por tiempos τ).
+       x ≥ 1920: escala lineal real x = 1920 + 80 + 70 × metros. Tramo medido 0→85.15 m. -->
   <div class="s2-canvas" id="canvasScroll">
-    <svg width="6550" height="580" viewBox="0 0 6550 580">
+    <svg width="8470" height="580" viewBox="0 0 8470 580">
       <defs>
         <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#EAEEF2"/><stop offset="0.5" stop-color="#C3CCD6"/><stop offset="1" stop-color="#98A6B4"/>
@@ -123,6 +139,13 @@
           <stop offset="0" stop-color="#FFCF7A"/><stop offset="0.55" stop-color="#E8892B"/><stop offset="1" stop-color="#B55512" stop-opacity="0"/>
         </radialGradient>
       </defs>
+
+      <!-- ── CARRIL UPSTREAM (silos → esparcidores · esquemático · poblado por JS) ── -->
+      <g id="upstreamRoot"></g>
+      <g id="upstreamTracers"></g>
+
+      <!-- ── TRAMO MÉTRICO (todo lo existente, corrido +1920 px sin tocar coordenadas) ── -->
+      <g id="downstreamRoot" transform="translate(1920 0)">
 
       <!-- ── ZONE BACKGROUNDS (metros) ── -->
       <rect x="80" y="42" width="1868" height="410" fill="rgba(0,78,56,0.035)"/>       <!-- 2A 0→26.68 -->
@@ -453,6 +476,8 @@
 
       <!-- ── TRAZADORES (uno por cada cambio inyectado · poblado por JS, colores distintos) ── -->
       <g id="tracers"></g>
+
+      </g><!-- /downstreamRoot -->
     </svg>
   </div>
 
@@ -463,6 +488,8 @@
     <span><i class="s2-legend__swatch" style="background:#E4B657;"></i> capa inferior (SL1)</span>
     <span><i class="s2-legend__dot"></i> trazador de cambio</span>
     <span class="s2-legend__hint"><span class="ms">ads_click</span> clic en un equipo = crea un cambio nuevo (color distinto) desde el inicio de ese proceso</span>
+    <span class="s2-legend__hint"><span class="ms">flag</span> registro (v3) = el cambio nace en el colchón cuando llega la ÚLTIMA capa (t_reg = max) · se mide desde el punto SL1 (1.42 m)</span>
+    <span class="s2-legend__hint"><span class="badge badge--tbd">TBD</span> pendiente de medir (silos · t_enc) — aporta 0 s hasta tener dato</span>
     <span class="s2-legend__hint"><span class="ms">receipt_long</span> reportes = hora real (Quito) en que cada cambio pasó por cada equipo</span>
     <span class="s2-legend__reject"><span class="ms">arrow_downward</span> ruta ghost = nariz abierta (rechazo)</span>
     <span class="s2-legend__spacer">Colchón: blanca → azul → roja → prensa → tablero · Simulador P&amp;ID clásico: <a href="../trazabilidad/">trazabilidad/</a></span>
@@ -484,6 +511,6 @@
   </div>
 </div>
 
-<script type="module" src="js/line-app.js?v=20260701"></script>
+<script type="module" src="js/line-app.js?v=20260707"></script>
 </body>
 </html>

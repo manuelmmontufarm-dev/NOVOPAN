@@ -17,6 +17,11 @@
 import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
 import { buildAnnotations, PROCESS_TOTAL_M } from './line-bridge.js';
 import { initParams } from './line-params.js';
+import {
+  computeRegistro, totalToSensors, expectedDownstream, selfTest, REGISTRO_POS_M,
+} from './v3-model.js';
+import { renderUpstream, refreshUpstreamChips, upstreamMarkerPos } from './upstream-view.js';
+import { initHmiCsv } from './hmi-csv.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const QUITO_TZ = 'America/Guayaquil';
@@ -238,8 +243,9 @@ function initSimulation() {
   let scrubbing = false;
   let changeSeq = 0;
   let selectedId = null;   // cambio que controla el movedor manual (el último inyectado)
-  const changes = [];      // cambios activos: { id, seq, color, posM, el, arrivals[], passed:Set }
+  const changes = [];      // cambios activos: { id, seq, color, phase, posM, el, arrivals[], passed:Set, ... }
   const reports = [];      // cambios completados (más reciente primero), máx. 8
+  let paramsApi = null;    // panel de parámetros (getParams / applyExternal)
 
   const speedRange = document.getElementById('speedRange');
   const speedInput = document.getElementById('speedInput');
@@ -261,6 +267,22 @@ function initSimulation() {
     const nv = parseFloat(v);
     vPrensa = clamp(Number.isNaN(nv) ? DEFAULT_SPEED : nv, SPEED_MIN, SPEED_MAX);
     syncSpeedUI();
+    updateV3Readout();
+  }
+
+  // ── Readout maestro del modelo v3 (ecuación maestra + check 346.5/452.1) ──
+  function updateV3Readout() {
+    const out = document.getElementById('v3Readout');
+    if (!out || !paramsApi) return;
+    const T = totalToSensors(paramsApi.getParams(), vPrensa, 'silos');
+    const exp = expectedDownstream(vPrensa);
+    const chk = exp == null ? '' :
+      ` · check t_down@${vPrensa} = ${exp} s → <span class="${Math.abs(T.tDown - exp) < 0.6 ? 'is-ok' : 'is-bad'}">calc ${T.tDown.toFixed(1)} s ${Math.abs(T.tDown - exp) < 0.6 ? '✓' : '✗'}</span>`;
+    out.innerHTML =
+      `<strong>t_tot = ${T.tTot.toFixed(1)} s</strong>` +
+      ` = t_reg ${T.tReg.toFixed(1)} s (gobierna <strong>${T.governing}</strong>)` +
+      ` + t_down ${T.tDown.toFixed(1)} s <span class="s2-v3-readout__eq">(83.73 m ÷ ${vPrensa} m/min × 60)</span>` +
+      (T.anyTbd ? ' · <span class="is-bad">⚠ hay TBD — t_reg usa solo lo conocido</span>' : '') + chk;
   }
 
   function labelForM(m) {
@@ -288,14 +310,75 @@ function initSimulation() {
     ch.el?.setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)})`);
   }
 
+  // ── Fase upstream (modelo v3): puntos por capa en el carril esquemático ──
+  const upstreamTracersLayer = document.getElementById('upstreamTracers');
+
+  function createUpstreamEls(ch) {
+    const g = el('g', { class: 's2-tracer', 'data-change-id': ch.id });
+    for (const L of ch.reg.layers) {
+      const dot = el('g', { 'data-layer': L });
+      dot.appendChild(el('circle', { cx: 0, cy: 0, r: 10, fill: 'none', stroke: ch.color, 'stroke-width': 3, style: 'animation:mpulse 1.4s ease infinite' }));
+      dot.appendChild(el('circle', { cx: 0, cy: 0, r: 4.5, fill: ch.color }));
+      const lbl = el('text', {
+        x: 0, y: -16, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif",
+        'font-weight': 800, 'font-size': 10, fill: '#1A1D1B',
+      });
+      lbl.textContent = `${ch.seq}·${L}`;
+      dot.appendChild(lbl);
+      g.appendChild(dot);
+    }
+    upstreamTracersLayer?.appendChild(g);
+    return g;
+  }
+
+  function updateUpstreamEls(ch, elapsed) {
+    if (!ch.upEl) return;
+    for (const dot of ch.upEl.querySelectorAll('[data-layer]')) {
+      const L = dot.dataset.layer;
+      const p = upstreamMarkerPos(ch.reg.perLayer[L].slice, elapsed, L);
+      dot.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+      dot.setAttribute('opacity', p.done ? 0.45 : 1);
+    }
+  }
+
+  /* El cambio cumple t_reg → se REGISTRA (colchón · punto SL1 = 1.42 m) y nace
+     su trazador downstream; de ahí en adelante manda la cinemática de siempre. */
+  function bornOnBelt(ch) {
+    ch.phase = 'belt';
+    ch.upEl?.remove();
+    ch.upEl = null;
+    const regLabel = `◆ Registro (colchón · punto SL1) — gobierna ${ch.reg.governing}`;
+    ch.arrivals.push({ label: regLabel, m: REGISTRO_POS_M, wallTime: new Date() });
+    ch.passed.add(regLabel);
+    ch.posM = REGISTRO_POS_M;
+    ch.el = createTracerEl(ch);
+    updateTracerEl(ch);
+    syncMoverEnabled();
+    renderReportsList();
+  }
+
   // El reporte de cada cambio existe desde que NACE (se ve "en curso" con solo
   // su primera fila) y se va llenando en vivo con cada equipo que va cruzando;
   // al completarse pasa a "completado" y queda fijo en la lista.
+  /* Próximo evento de un cambio activo: hito upstream (por tiempo) o waypoint
+     métrico downstream (por distancia / v_prensa). */
+  function nextEventFor(ch) {
+    if (ch.phase === 'upstream') {
+      const elapsed = (performance.now() - ch.t0) / 1000;
+      const ms = ch.milestones.find((m) => m.at > elapsed + 1e-6);
+      if (ms) return { label: ms.label, seconds: ms.at - elapsed };
+      return { label: `Registro (gobierna ${ch.reg.governing})`, seconds: ch.reg.tReg - elapsed };
+    }
+    const wp = nextWaypoint(ch.posM);
+    if (!wp) return null;
+    return { label: wp.label, seconds: (Math.max(0, wp.m - ch.posM) / vPrensa) * 60 };
+  }
+
   function renderCard(item, isActive) {
     const card = document.createElement('div');
     card.className = isActive ? 'report-card report-card--active' : 'report-card';
     card.style.borderLeftColor = item.color;
-    const nextWp = isActive ? nextWaypoint(item.posM) : null;
+    const nextWp = isActive ? nextEventFor(item) : null;
     const countdownRow = isActive ? `
         <li class="report-card__countdown">
           <span data-countdown-label-for="${item.id}">Próximo: ${nextWp?.label ?? '—'}</span>
@@ -321,15 +404,14 @@ function initSimulation() {
       const strong = reportsList.querySelector(`[data-countdown-for="${ch.id}"]`);
       const labelEl = reportsList.querySelector(`[data-countdown-label-for="${ch.id}"]`);
       if (!strong) continue;
-      const wp = nextWaypoint(ch.posM);
-      if (!wp) {
+      const ev = nextEventFor(ch);
+      if (!ev) {
         if (labelEl) labelEl.textContent = 'Próximo';
         strong.textContent = '—';
         continue;
       }
-      if (labelEl) labelEl.textContent = `Próximo: ${wp.label}`;
-      const distM = Math.max(0, wp.m - ch.posM);
-      strong.textContent = fmtCountdown((distM / vPrensa) * 60);
+      if (labelEl) labelEl.textContent = `Próximo: ${ev.label}`;
+      strong.textContent = fmtCountdown(ev.seconds);
     }
   }
 
@@ -352,8 +434,9 @@ function initSimulation() {
   function syncMoverEnabled() {
     if (!moverRange) return;
     const sel = changes.find((c) => c.id === selectedId);
-    moverRange.disabled = !sel;
-    if (sel && document.activeElement !== moverRange) moverRange.value = sel.posM.toFixed(1);
+    // en fase upstream el cambio avanza por TIEMPO (τ), no por metros → sin movedor
+    moverRange.disabled = !sel || sel.phase === 'upstream';
+    if (sel && sel.phase !== 'upstream' && document.activeElement !== moverRange) moverRange.value = sel.posM.toFixed(1);
   }
 
   function recordCrossings(ch, prevM) {
@@ -392,6 +475,7 @@ function initSimulation() {
       id: `chg-${changeSeq}`,
       seq: changeSeq,
       color: CHANGE_COLORS[(changeSeq - 1) % CHANGE_COLORS.length],
+      phase: 'belt',
       posM: startM,
       arrivals: [{ label: startLabel, m: startM, wallTime: new Date() }],
       passed: new Set([startLabel]),
@@ -404,6 +488,60 @@ function initSimulation() {
     renderReportsList(); // el reporte nace con el cambio, no solo al completarse
   }
 
+  /* Inyección UPSTREAM (modelo v3): el cambio recorre silo→dosing→encolador→
+     inclinada→esparcidor por capa; se registra cuando llega la ÚLTIMA capa
+     (t_reg = max) y de ahí nace en el colchón (punto SL1 · 1.42 m). */
+  function injectV3(nodeId, label) {
+    if (!paramsApi) return;
+    const reg = computeRegistro(paramsApi.getParams(), nodeId);
+    changeSeq += 1;
+    const startLabel = label ?? 'Cambio de receta · silos';
+    // Hitos de la RUTA QUE GOBIERNA (entradas a cada etapa siguiente)
+    const milestones = [];
+    let cum = 0;
+    reg.govChain.forEach((node, i) => {
+      if (i > 0) milestones.push({ at: cum, label: `Entra ${node.label} (${reg.governing})` });
+      cum += node.sec;
+    });
+    const ch = {
+      id: `chg-${changeSeq}`,
+      seq: changeSeq,
+      color: CHANGE_COLORS[(changeSeq - 1) % CHANGE_COLORS.length],
+      phase: 'upstream',
+      posM: 0,
+      t0: performance.now(),
+      reg,
+      milestones,
+      mi: 0,
+      arrivals: [{ label: startLabel, m: 0, wallTime: new Date() }],
+      passed: new Set([startLabel]),
+    };
+    ch.upEl = createUpstreamEls(ch);
+    updateUpstreamEls(ch, 0);
+    changes.push(ch);
+    selectedId = ch.id;
+    if (ch.reg.tReg <= 0) bornOnBelt(ch);   // todo TBD → registro inmediato
+    syncMoverEnabled();
+    renderReportsList();
+  }
+
+  /* Si cambian parámetros con cambios upstream activos, su t_reg se recalcula
+     (el tiempo ya transcurrido se conserva). */
+  function recomputeUpstreamRegs() {
+    if (!paramsApi) return;
+    for (const ch of changes) {
+      if (ch.phase !== 'upstream') continue;
+      ch.reg = computeRegistro(paramsApi.getParams(), ch.reg.startId);
+      const milestones = [];
+      let cum = 0;
+      ch.reg.govChain.forEach((node, i) => {
+        if (i > 0) milestones.push({ at: cum, label: `Entra ${node.label} (${ch.reg.governing})` });
+        cum += node.sec;
+      });
+      ch.milestones = milestones;
+    }
+  }
+
   // Bucle continuo — la línea nunca deja de moverse; cada cambio activo avanza a v_prensa.
   let last = performance.now();
   function frame(now) {
@@ -412,6 +550,22 @@ function initSimulation() {
     const advanceM = (vPrensa / 60) * dt;
     let crossed = false;
     for (const ch of changes.slice()) {
+      // fase upstream: avanza por TIEMPO real contra t_reg (modelo v3)
+      if (ch.phase === 'upstream') {
+        const elapsed = (now - ch.t0) / 1000;
+        while (ch.mi < ch.milestones.length && elapsed + 1e-6 >= ch.milestones[ch.mi].at) {
+          const msn = ch.milestones[ch.mi];
+          if (!ch.passed.has(msn.label)) {
+            ch.passed.add(msn.label);
+            ch.arrivals.push({ label: msn.label, m: 0, wallTime: new Date() });
+            crossed = true;
+          }
+          ch.mi += 1;
+        }
+        if (elapsed >= ch.reg.tReg) { bornOnBelt(ch); crossed = true; }
+        else updateUpstreamEls(ch, elapsed);
+        continue;
+      }
       if (scrubbing && ch.id === selectedId) continue; // el movedor controla este directamente
       const prevM = ch.posM;
       ch.posM = Math.min(ch.posM + advanceM, PROCESS_END_M);
@@ -456,7 +610,16 @@ function initSimulation() {
   moverRange?.addEventListener('change', endScrub);
 
   // Clic en un equipo → crea un cambio NUEVO (color propio) desde el inicio de ese proceso.
+  // Equipos upstream (data-inject-node) usan el modelo v3; el resto, metros (data-inject-m).
   canvas?.addEventListener('click', (e) => {
+    const up = e.target.closest('[data-inject-node]');
+    if (up) {
+      up.classList.remove('is-injected');
+      void up.getBoundingClientRect();
+      up.classList.add('is-injected');
+      injectV3(up.dataset.injectNode, up.dataset.label);
+      return;
+    }
     const g = e.target.closest('[data-inject-m]');
     if (!g) return;
     g.classList.remove('is-injected');
@@ -471,7 +634,7 @@ function initSimulation() {
 
   // Reiniciar demo: borra todos los cambios activos y los reportes acumulados.
   function resetAll() {
-    for (const ch of changes.slice()) ch.el?.remove();
+    for (const ch of changes.slice()) { ch.el?.remove(); ch.upEl?.remove(); }
     changes.length = 0;
     reports.length = 0;
     changeSeq = 0;
@@ -487,9 +650,32 @@ function initSimulation() {
   requestAnimationFrame(frame);
 
   // Pestaña Parámetros: comparte localStorage con el clásico y refleja v_prensa.
-  initParams({
+  paramsApi = initParams({
     speedGetter: () => vPrensa,
-    onChange: () => {},
+    onChange: (p) => {
+      refreshUpstreamChips(p);
+      updateV3Readout();
+      recomputeUpstreamRegs();
+    },
+  });
+
+  // Carril upstream (silos → esparcidores) + readout de la ecuación maestra.
+  renderUpstream();
+  refreshUpstreamChips(paramsApi.getParams());
+  updateV3Readout();
+  selfTest();
+
+  // Datos del HMI vía CSV local (Fase 2): fetch datos/hmi.csv o archivo elegido.
+  initHmiCsv({
+    statusEl: document.getElementById('hmiStatus'),
+    connectBtn: document.getElementById('hmiConnectBtn'),
+    fileInput: document.getElementById('hmiFileInput'),
+    applyData: ({ updates, vPrensa: vCsv }) => {
+      paramsApi.applyExternal(updates);           // ya dispara onChange si cambió algo
+      if (vCsv != null) setSpeed(vCsv);
+      refreshUpstreamChips(paramsApi.getParams());
+      updateV3Readout();
+    },
   });
 }
 

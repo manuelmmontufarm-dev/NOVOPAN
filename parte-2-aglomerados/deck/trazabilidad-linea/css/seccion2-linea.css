@@ -657,3 +657,48 @@ body {
 .btn .ms { font-size: 18px; }
 .btn--primary { background: #004E38; color: #fff; }
 .btn--secondary { background: #F6F7F4; border-color: #D9DDD9; color: #1A1D1B; }
+
+/* ============================================================
+   Modelo v3 · carril upstream + barra de ecuación maestra + CSV HMI
+   ============================================================ */
+
+.badge--tbd { background: #FDECEA; color: #B00020; }
+
+.s2-v3bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 6px 18px;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--line-200);
+  font-size: 13px;
+  color: var(--text-body);
+}
+.s2-v3-readout { flex: 1; min-width: 320px; font-variant-numeric: tabular-nums; }
+.s2-v3-readout strong { color: var(--text-strong); }
+.s2-v3-readout__eq { color: var(--text-muted); font-size: 11px; }
+.s2-v3-readout .is-ok { color: var(--ok-ink); font-weight: 700; }
+.s2-v3-readout .is-bad { color: #B00020; font-weight: 700; }
+
+.s2-hmi { display: flex; align-items: center; gap: 10px; }
+.s2-hmi__btn { display: inline-flex; align-items: center; gap: 6px; }
+.s2-hmi-status {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.s2-hmi-status.is-idle   { background: var(--surface-sunken); color: var(--text-muted); }
+.s2-hmi-status.is-live   { background: var(--ok-bg); color: var(--ok-ink); }
+.s2-hmi-status.is-manual { background: #e3f0fd; color: #0b5cad; }
+.s2-hmi-status.is-error  { background: #FDECEA; color: #B00020; }
+
+.s2-up-node { cursor: pointer; }
+.s2-up-node:hover { opacity: .9; }
+.s2-up-recipe rect { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18)); }
+
+/* Tarjeta v3 dentro del panel de parámetros */
+.stage-card--v3 { border-left: 3px solid #37474F; }

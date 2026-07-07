@@ -12,11 +12,12 @@ import {
 import {
   tauForNode, transportForNode, flowFor,
 } from '../../trazabilidad/js/core/trace-engine.js';
+import { V3_PARAMS, v3Defaults, layerChain, computeRegistro } from './v3-model.js';
 
 const STORAGE_KEY = 'novopan-trazabilidad-params-v9';
 
 export function loadParams() {
-  const defaults = defaultParams();
+  const defaults = { ...defaultParams(), ...v3Defaults() };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaults;
@@ -45,6 +46,7 @@ const BADGE = {
   measured:     { cls: 'ok', short: 'Medido' },
   derived:      { cls: 'derived', short: 'Derivado' },
   estimated:    { cls: 'est', short: 'Estim.' },
+  tbd:          { cls: 'tbd', short: 'TBD' },
 };
 function badgeHtml(kind) {
   const b = BADGE[kind] ?? BADGE.estimated;
@@ -107,6 +109,87 @@ function renderGlobalsCard(params) {
     grid.appendChild(field);
   }
   return card;
+}
+
+/* ── Tarjeta MODELO v3: silos + encoladores + caudales CE/CI ──
+   Campos ANULABLES: vacío = TBD (no aporta tiempo y se marca pendiente).
+   Fuente: CODEX_PROMPT_PRESENTACION_ECUACIONES.md §3 y §9. */
+const V3_GROUP_META = {
+  'silo-fine':  { title: 'Silo 6 · fina', eq: 'τ_silo = ρ·V_cap·L% / F_out × 60' },
+  'silo-thick': { title: 'Silo 5 · gruesa', eq: 'τ_silo = ρ·V_cap·L% / F_out × 60' },
+  enc:          { title: 'Encoladores CE · CI', eq: 't_enc = prueba de trazador (pendiente)' },
+  dos:          { title: 'Caudal descarga HMI (dosing)', eq: 'τ_dos = M_dosing / F_descarga × 60' },
+};
+
+function v3FieldHtml(p, params) {
+  const v = params[p.key];
+  const isTbd = v == null || v === '';
+  return `
+    <label class="stage-field">
+      <span class="stage-field__lbl">${p.label} ${badgeHtml(isTbd && p.kindBadge === 'tbd' ? 'tbd' : p.kindBadge)}</span>
+      <span class="stage-field__input">
+        <input type="number" step="any" min="0" data-key="${p.key}" data-nullable="1"
+               value="${isTbd ? '' : v}" placeholder="TBD" />
+        <span class="stage-field__unit">${p.unit}</span>
+      </span>
+    </label>
+  `;
+}
+
+function renderV3Card(params) {
+  const card = document.createElement('div');
+  card.className = 'stage-card stage-card--v3';
+  card.dataset.v3Card = '1';
+  const reg = computeRegistro(params, 'silos');
+  const chains = { SL1: layerChain('SL1', params), CL: layerChain('CL', params), SL2: layerChain('SL2', params) };
+  const rows = ['SL1', 'CL', 'SL2'].map((L) => {
+    const p = reg.perLayer[L];
+    return `<span class="stage-card__total-line${L === reg.governing ? ' stage-card__total-line--sum' : ''}">
+      <span>T_antes ${L}${p.tbd ? ' ⚠' : ''}</span><strong>${p.sum.toFixed(1)} s</strong></span>`;
+  }).join('');
+  const groups = ['silo-fine', 'silo-thick', 'enc', 'dos'].map((gid) => {
+    const meta = V3_GROUP_META[gid];
+    const fields = V3_PARAMS.filter((p) => p.group === gid).map((p) => v3FieldHtml(p, params)).join('');
+    return `
+      <div class="stage-card__eq"><span class="stage-card__eq-label">${meta.title}</span>
+        <code>${meta.eq}</code></div>
+      <div class="stage-card__params">${fields}</div>`;
+  }).join('');
+  card.innerHTML = `
+    <header class="stage-card__hd">
+      <span class="stage-card__name">Modelo v3 · Silos y encolador (registro por max)</span>
+      ${badgeHtml('tbd')}
+    </header>
+    <div class="stage-card__eq">
+      <span class="stage-card__eq-label">Registro del cambio</span>
+      <code>t_reg = max(T_antes,SL1 · T_antes,CL · T_antes,SL2)</code>
+      <div class="stage-card__eq-detail">T_antes,e = τ_silo + τ_dos + t_enc + t_incl + τ_esp,e ·
+        campos vacíos = <strong>TBD</strong> (aportan 0 s y se marcan pendientes)</div>
+    </div>
+    ${groups}
+    <div class="stage-card__totals" data-v3-totals>
+      ${rows}
+      <span class="stage-card__total-line"><span>t_reg (gobierna ${reg.governing})${reg.anyTbd ? ' · ⚠ hay TBD' : ''}</span>
+        <strong>${reg.tReg.toFixed(1)} s</strong></span>
+    </div>
+  `;
+  return card;
+}
+
+function refreshV3Totals(grid, params) {
+  const card = grid.querySelector('[data-v3-card]');
+  if (!card) return;
+  const totals = card.querySelector('[data-v3-totals]');
+  if (!totals) return;
+  const reg = computeRegistro(params, 'silos');
+  const rows = ['SL1', 'CL', 'SL2'].map((L) => {
+    const p = reg.perLayer[L];
+    return `<span class="stage-card__total-line${L === reg.governing ? ' stage-card__total-line--sum' : ''}">
+      <span>T_antes ${L}${p.tbd ? ' ⚠' : ''}</span><strong>${p.sum.toFixed(1)} s</strong></span>`;
+  }).join('');
+  totals.innerHTML = `${rows}
+    <span class="stage-card__total-line"><span>t_reg (gobierna ${reg.governing})${reg.anyTbd ? ' · ⚠ hay TBD' : ''}</span>
+      <strong>${reg.tReg.toFixed(1)} s</strong></span>`;
 }
 
 function groupSchemaByStage(schema) {
@@ -270,8 +353,14 @@ export function initParams({ speedGetter, onChange }) {
     let changed = false;
     grid.querySelectorAll('input[data-key]').forEach((inp) => {
       const key = inp.dataset.key;
-      const parsed = parseFloat(inp.value);
-      const next = Number.isNaN(parsed) ? 0 : parsed;
+      const raw = inp.value.trim();
+      let next;
+      if (inp.dataset.nullable) {
+        next = raw === '' ? null : (Number.isNaN(parseFloat(raw)) ? null : parseFloat(raw));
+      } else {
+        const parsed = parseFloat(raw);
+        next = Number.isNaN(parsed) ? 0 : parsed;
+      }
       if (params[key] !== next) changed = true;
       params[key] = next;
     });
@@ -282,6 +371,11 @@ export function initParams({ speedGetter, onChange }) {
     const v = speed();
     grid.innerHTML = '';
     grid.appendChild(renderGlobalsCard(params));
+    const h3 = document.createElement('h4');
+    h3.className = 'param-group__title';
+    h3.textContent = 'Modelo v3 · Silos → sensores';
+    grid.appendChild(h3);
+    grid.appendChild(renderV3Card(params));
     const stages = groupSchemaByStage(getParameterSchema());
     let currentGroup = null;
     for (const stage of stages) {
@@ -299,6 +393,7 @@ export function initParams({ speedGetter, onChange }) {
       inp.addEventListener('input', () => {
         syncFromUI();
         refreshEquationsLight();
+        refreshV3Totals(grid, params);
         onChange?.(params);
       });
     });
@@ -331,13 +426,28 @@ export function initParams({ speedGetter, onChange }) {
   });
   document.getElementById('resetParamsBtn')?.addEventListener('click', () => {
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
-    params = defaultParams();
+    params = { ...defaultParams(), ...v3Defaults() };
     build();
     onChange?.(params);
     showFeedback('Defaults restaurados');
   });
 
+  /* Aplica actualizaciones externas (CSV del HMI): pisa los valores, persiste
+     y re-renderiza el panel si está construido. */
+  function applyExternal(updates) {
+    let changed = false;
+    for (const [key, val] of Object.entries(updates ?? {})) {
+      if (params[key] !== val) { params[key] = val; changed = true; }
+    }
+    if (!changed) return false;
+    saveParamsToStorage(params);
+    if (built) build();
+    onChange?.(params);
+    return true;
+  }
+
   return {
     getParams: () => params,
+    applyExternal,
   };
 }
