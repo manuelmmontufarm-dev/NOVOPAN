@@ -52,28 +52,52 @@ export const TAG_MAP = {
   T_ENC_CI_S: 'v3:enc-thick:tEnc',
 };
 
+/* Quita comillas envolventes (Excel exporta "valor" con comillas). */
+function unquote(s) {
+  const t = s.trim();
+  return t.length >= 2 && t[0] === '"' && t[t.length - 1] === '"'
+    ? t.slice(1, -1).trim()
+    : t;
+}
+
+/* Normaliza el valor a número. Tolerante con:
+   · decimal con coma (`14,5`) SOLO cuando el separador de campos no es coma
+   · unidades pegadas (`14.5 m/min`, `47.1%`) — toma el número inicial
+   · separador de miles (`1.234,5` o `1,234.5`) */
+function toNumber(valRaw, sep) {
+  let v = unquote(valRaw);
+  if (v === '') return { empty: true };
+  if (sep === ';' || sep === '\t') v = v.replace(/\./g, '').replace(',', '.'); // 1.234,5 → 1234.5
+  else v = v.replace(/,/g, '');                                                 // 1,234.5 → 1234.5
+  const m = v.match(/-?\d+(\.\d+)?/);                          // primer número
+  if (!m) return { nan: true };
+  return { val: parseFloat(m[0]) };
+}
+
 /** Parsea el CSV del HMI. → { updates, vPrensa|null, warnings[], count } */
 export function parseHmiCsv(text) {
   const updates = {};
   const warnings = [];
   let vPrensa = null;
   let count = 0;
-  const lines = String(text ?? '').split(/\r?\n/);
+  const clean = String(text ?? '').replace(/^﻿/, '');     // BOM de Windows
+  const lines = clean.split(/\r?\n/);
   for (const raw of lines) {
     const line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
-    const sep = line.includes(';') && !line.includes(',') ? ';' : ',';
+    if (!line || line.startsWith('#') || line.startsWith('//')) continue;
+    // separador: tab > `;` > coma. Si hay `;`, la coma es decimal (CSV europeo).
+    const sep = line.includes('\t') ? '\t' : (line.includes(';') ? ';' : ',');
     const [tagRaw, ...rest] = line.split(sep);
-    const tag = (tagRaw ?? '').trim().toUpperCase();
-    if (!tag || tag === 'TAG') continue;                       // cabecera
-    const valRaw = rest.join(sep).trim().replace(',', '.');    // decimal con coma
+    const tag = unquote(tagRaw ?? '').toUpperCase();
+    if (!tag || tag === 'TAG' || tag === 'TAGNAME') continue;  // cabecera
     const key = TAG_MAP[tag];
     if (!key) { warnings.push(`tag desconocido: ${tag}`); continue; }
-    if (valRaw === '') continue;                               // vacío = no tocar
-    const val = parseFloat(valRaw);
-    if (Number.isNaN(val)) { warnings.push(`valor inválido en ${tag}: "${valRaw}"`); continue; }
-    if (key === 'v_prensa') vPrensa = val;
-    else updates[key] = val;
+    const num = toNumber(rest.join(sep), sep);
+    if (num.empty) continue;                                   // vacío = no tocar (TBD)
+    if (num.nan) { warnings.push(`valor inválido en ${tag}: "${rest.join(sep).trim()}"`); continue; }
+    if (num.val < 0) { warnings.push(`valor negativo ignorado en ${tag}: ${num.val}`); continue; }
+    if (key === 'v_prensa') vPrensa = num.val;
+    else updates[key] = num.val;
     count += 1;
   }
   return { updates, vPrensa, warnings, count };
@@ -90,6 +114,8 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
   let mode = 'off';         // off | server | live-file | manual-file
   let fileHandle = null;
   let lastWarnings = [];
+  let lastGood = null;      // Date de la última lectura buena (para "reconectando")
+  let failStreak = 0;       // fallos de fetch seguidos (evita parpadeo por un blip)
 
   function setStatus(cls, msg, title) {
     if (!statusEl) return;
@@ -108,22 +134,41 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
       return false;
     }
     applyData(parsed);
+    lastGood = new Date();
+    failStreak = 0;
     const warn = parsed.warnings.length ? ` · ⚠ ${parsed.warnings.length}` : '';
     setStatus(mode === 'manual-file' ? 'manual' : 'live',
-      `● HMI ${sourceLabel} · ${fmtTime(new Date())} · ${parsed.count} tags${warn}`,
+      `● HMI ${sourceLabel} · ${fmtTime(lastGood)} · ${parsed.count} tags${warn}`,
       parsed.warnings.join('\n'));
     return true;
+  }
+
+  /* Marca desconexión sin perder el último dato bueno; tolera 1 blip. */
+  function markServerDown() {
+    failStreak += 1;
+    if (failStreak < 2) return;                                 // ignora un fallo aislado
+    if (lastGood) setStatus('error', `● HMI CSV · reconectando… (último dato ${fmtTime(lastGood)})`,
+      'El sitio no encuentra datos/hmi.csv. Se reintenta solo cada 2 s.');
+    else setStatus('idle', '● HMI CSV · sin conexión',
+      'Coloca datos/hmi.csv junto al sitio o conecta un archivo local.');
   }
 
   // ── MODO SERVIDOR: fetch de datos/hmi.csv junto al sitio ──
   async function pollServer() {
     try {
       const res = await fetch(`datos/hmi.csv?t=${Date.now()}`, { cache: 'no-store' });
-      if (!res.ok) return false;
+      if (!res.ok) { if (mode === 'server') markServerDown(); return false; }
+      const wasDown = failStreak >= 2;
       mode = 'server';
-      applyText(await res.text(), 'CSV (servidor)');
+      const changed = applyText(await res.text(), 'CSV (servidor)');
+      failStreak = 0;
+      // reapareció con contenido idéntico tras una caída → re-afirmar "en vivo"
+      if (!changed && wasDown && lastGood) {
+        setStatus('live', `● HMI CSV (servidor) · ${fmtTime(lastGood)} · reconectado`, '');
+      }
       return true;
     } catch {
+      if (mode === 'server') markServerDown();
       return false;
     }
   }
