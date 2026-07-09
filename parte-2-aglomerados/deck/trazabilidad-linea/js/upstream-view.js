@@ -280,6 +280,16 @@ export function renderUpstream() {
   btn.appendChild(el('text', { x: 58, y: 128, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#3D423F' }, '3 capas'));
   g.appendChild(btn);
 
+  // Botón único "cambio en encolador" — entre las dos columnas, a la altura
+  // dosing↔encolador. Inyecta un cambio que arranca en el encolador de AMBAS rutas.
+  const bx = 420, by = 338, bw = 88, bh = 74;
+  const encBtn = el('g', { class: 's2-machine s2-up-node s2-up-recipe', 'data-inject-node': 'enc', 'data-label': 'Cambio · encolador (ambas rutas)' });
+  encBtn.appendChild(el('rect', { x: bx - bw / 2, y: by, width: bw, height: bh, rx: 10, fill: '#FFDE00', stroke: '#1A1D1B', 'stroke-width': 1.5 }));
+  encBtn.appendChild(el('text', { x: bx, y: by + 24, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, 'CAMBIO'));
+  encBtn.appendChild(el('text', { x: bx, y: by + 38, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, 'ENCOLADOR'));
+  encBtn.appendChild(el('text', { x: bx, y: by + 56, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#3D423F' }, 'ambas rutas'));
+  g.appendChild(encBtn);
+
   // Columnas verticales: FINA (izquierda) y GRUESA (derecha)
   renderColumn(g, COLS.fine);
   renderColumn(g, COLS.thick);

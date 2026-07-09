@@ -132,9 +132,13 @@ export function computeRegistro(params, startId = 'silos') {
   let governing = layers[0];
   let anyTbd = false;
   let govChain = [];
+  // Una etapa genérica ('enc', 'dosing', 'silo', 'incl') arranca cada capa en SU
+  // propio nodo real (fina/gruesa). startId específico ('enc-fine') matchea directo.
+  const genericStage = /^(silo|dosing|enc|incl)$/.test(startId);
   for (const L of layers) {
     const chain = layerChain(L, params);
-    const si = startId && startId !== 'silos' ? chain.findIndex((n) => n.id === startId) : 0;
+    const realId = genericStage ? `${startId}-${L === 'CL' ? 'thick' : 'fine'}` : startId;
+    const si = startId && startId !== 'silos' ? chain.findIndex((n) => n.id === realId) : 0;
     const slice = chain.slice(si < 0 ? 0 : si);
     const sum = slice.reduce((a, n) => a + n.sec, 0);
     const tbd = slice.some((n) => n.tbd);

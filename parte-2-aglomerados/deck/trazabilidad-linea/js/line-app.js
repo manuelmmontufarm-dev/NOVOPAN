@@ -304,41 +304,56 @@ function initSimulation() {
     return g;
   }
 
+  // Caída por la esparcidora SL1 (a 6.63 m): el punto sube a la tolva y baja al
+  // colchón, "visto arriba del esparcidor cayendo". Solo visual (no altera posM).
+  const SPREADER_SL1_M = 6.63;
+  const SPREADER_SL1_TOP_Y = 200;   // y (local, #downstreamRoot) de la salida de la tolva SL1
+  const ESP_DROP_W = 1.0;           // ventana (m) del arco sube→baja a cada lado del pico
+
   function updateTracerEl(ch) {
     const mx = xm(ch.posM);
-    const my = topTop(mx) - 6;
+    let my = topTop(mx) - 6;
+    if (ch.phase === 'belt') {
+      const d = ch.posM - SPREADER_SL1_M;
+      if (d >= -2 * ESP_DROP_W && d <= 0) {
+        const f = d < -ESP_DROP_W
+          ? (ch.posM - (SPREADER_SL1_M - 2 * ESP_DROP_W)) / ESP_DROP_W   // sube 0→1
+          : 1 - (ch.posM - (SPREADER_SL1_M - ESP_DROP_W)) / ESP_DROP_W;  // baja 1→0
+        my += (SPREADER_SL1_TOP_Y - my) * Math.max(0, Math.min(1, f));
+      }
+    }
     ch.el?.setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)})`);
   }
 
   // ── Fase upstream (modelo v3): puntos por capa en el carril esquemático ──
   const upstreamTracersLayer = document.getElementById('upstreamTracers');
 
+  // UN solo punto por cambio: baja por la columna SL1 (fina) con la cinemática de
+  // la ruta GOBERNANTE (la más lenta, que suma exactamente t_reg). SL1/CL/SL2 ya no
+  // se dibujan por separado — el registro sigue gobernado por t_reg (max).
   function createUpstreamEls(ch) {
     const g = el('g', { class: 's2-tracer', 'data-change-id': ch.id });
-    for (const L of ch.reg.layers) {
-      const dot = el('g', { 'data-layer': L });
-      dot.appendChild(el('circle', { cx: 0, cy: 0, r: 10, fill: 'none', stroke: ch.color, 'stroke-width': 3, style: 'animation:mpulse 1.4s ease infinite' }));
-      dot.appendChild(el('circle', { cx: 0, cy: 0, r: 4.5, fill: ch.color }));
-      const lbl = el('text', {
-        x: 0, y: -16, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif",
-        'font-weight': 800, 'font-size': 10, fill: '#1A1D1B',
-      });
-      lbl.textContent = `${ch.seq}·${L}`;
-      dot.appendChild(lbl);
-      g.appendChild(dot);
-    }
+    const dot = el('g', { 'data-layer': 'SL1' });
+    dot.appendChild(el('circle', { cx: 0, cy: 0, r: 10, fill: 'none', stroke: ch.color, 'stroke-width': 3, style: 'animation:mpulse 1.4s ease infinite' }));
+    dot.appendChild(el('circle', { cx: 0, cy: 0, r: 4.5, fill: ch.color }));
+    const lbl = el('text', {
+      x: 0, y: -16, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif",
+      'font-weight': 800, 'font-size': 10, fill: '#1A1D1B',
+    });
+    lbl.textContent = `${ch.seq}`;
+    dot.appendChild(lbl);
+    g.appendChild(dot);
     upstreamTracersLayer?.appendChild(g);
     return g;
   }
 
   function updateUpstreamEls(ch, elapsed) {
     if (!ch.upEl) return;
-    for (const dot of ch.upEl.querySelectorAll('[data-layer]')) {
-      const L = dot.dataset.layer;
-      const p = upstreamMarkerPos(ch.reg.perLayer[L].slice, elapsed, L);
-      dot.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
-      dot.setAttribute('opacity', p.done ? 0.45 : 1);
-    }
+    const dot = ch.upEl.querySelector('[data-layer]');
+    if (!dot) return;
+    const p = upstreamMarkerPos(ch.reg.govChain, elapsed, 'SL1');
+    dot.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+    dot.setAttribute('opacity', p.done ? 0.45 : 1);
   }
 
   /* El cambio cumple t_reg → se REGISTRA (colchón · punto SL1 = 1.42 m) y nace
@@ -503,6 +518,11 @@ function initSimulation() {
       if (i > 0) milestones.push({ at: cum, label: `Entra ${node.label} (${reg.governing})` });
       cum += node.sec;
     });
+    // τ del esparcidor más lento (para la caída visual en la máquina SL1 a 6.63 m)
+    const tEspMax = Math.max(0, ...reg.layers.map((L) => {
+      const last = reg.perLayer[L].slice.at(-1);
+      return last && /^esp-/.test(last.id) ? last.sec : 0;
+    }));
     const ch = {
       id: `chg-${changeSeq}`,
       seq: changeSeq,
@@ -511,6 +531,7 @@ function initSimulation() {
       posM: 0,
       t0: performance.now(),
       reg,
+      tEspMax,
       milestones,
       mi: 0,
       arrivals: [{ label: startLabel, m: 0, wallTime: new Date() }],
