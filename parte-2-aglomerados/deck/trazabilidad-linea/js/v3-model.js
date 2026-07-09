@@ -22,20 +22,25 @@ export const REGISTRO_POS_M = 1.42;
 /* Parámetros nuevos del modelo v3. default null = TBD (regla §9: NO rellenar).
    Viven en el MISMO localStorage que el resto (novopan-trazabilidad-params-v9);
    el simulador clásico los ignora. */
+/* Valores de PRUEBA (placeholder) para los campos que antes eran TBD — puestos
+   para que el simulador SIEMPRE calcule un t_reg real y no se quede bloqueado
+   en "TBD" mientras IT confirma los tags reales del HMI/SQL. Marcados con badge
+   'estimated' (no 'hmi-live' ni 'medido') para dejar claro que son de prueba.
+   Reemplazar por los valores reales apenas llegue el CSV real del HMI. */
 export const V3_PARAMS = [
   // Silo 6 · fina
-  { key: 'v3:silo-fine:rho',  label: 'ρ densidad',   unit: 'kg/m³',  default: null, group: 'silo-fine',  kindBadge: 'tbd' },
-  { key: 'v3:silo-fine:Vcap', label: 'V_cap',        unit: 'm³',     default: null, group: 'silo-fine',  kindBadge: 'tbd' },
-  { key: 'v3:silo-fine:Lpct', label: 'Nivel L%',     unit: '%',      default: null, group: 'silo-fine',  kindBadge: 'hmi-live' },
-  { key: 'v3:silo-fine:Fout', label: 'F_out descarga', unit: 'kg/min', default: null, group: 'silo-fine', kindBadge: 'tbd' },
+  { key: 'v3:silo-fine:rho',  label: 'ρ densidad',   unit: 'kg/m³',  default: 150, group: 'silo-fine',  kindBadge: 'estimated' },
+  { key: 'v3:silo-fine:Vcap', label: 'V_cap',        unit: 'm³',     default: 15,  group: 'silo-fine',  kindBadge: 'estimated' },
+  { key: 'v3:silo-fine:Lpct', label: 'Nivel L%',     unit: '%',      default: 55,  group: 'silo-fine',  kindBadge: 'hmi-live' },
+  { key: 'v3:silo-fine:Fout', label: 'F_out descarga', unit: 'kg/min', default: 400, group: 'silo-fine', kindBadge: 'estimated' },
   // Silo 5 · gruesa
-  { key: 'v3:silo-thick:rho',  label: 'ρ densidad',   unit: 'kg/m³',  default: null, group: 'silo-thick', kindBadge: 'tbd' },
-  { key: 'v3:silo-thick:Vcap', label: 'V_cap',        unit: 'm³',     default: null, group: 'silo-thick', kindBadge: 'tbd' },
-  { key: 'v3:silo-thick:Lpct', label: 'Nivel L%',     unit: '%',      default: null, group: 'silo-thick', kindBadge: 'hmi-live' },
-  { key: 'v3:silo-thick:Fout', label: 'F_out descarga', unit: 'kg/min', default: null, group: 'silo-thick', kindBadge: 'tbd' },
-  // Encoladores (prueba de trazador pendiente)
-  { key: 'v3:enc-fine:tEnc',  label: 't_enc CE (fina)',   unit: 's', default: null, group: 'enc', kindBadge: 'tbd' },
-  { key: 'v3:enc-thick:tEnc', label: 't_enc CI (gruesa)', unit: 's', default: null, group: 'enc', kindBadge: 'tbd' },
+  { key: 'v3:silo-thick:rho',  label: 'ρ densidad',   unit: 'kg/m³',  default: 160, group: 'silo-thick', kindBadge: 'estimated' },
+  { key: 'v3:silo-thick:Vcap', label: 'V_cap',        unit: 'm³',     default: 18,  group: 'silo-thick', kindBadge: 'estimated' },
+  { key: 'v3:silo-thick:Lpct', label: 'Nivel L%',     unit: '%',      default: 55,  group: 'silo-thick', kindBadge: 'hmi-live' },
+  { key: 'v3:silo-thick:Fout', label: 'F_out descarga', unit: 'kg/min', default: 450, group: 'silo-thick', kindBadge: 'estimated' },
+  // Encoladores (prueba de trazador pendiente — 10/12 s son estimación de planta similar)
+  { key: 'v3:enc-fine:tEnc',  label: 't_enc CE (fina)',   unit: 's', default: 10, group: 'enc', kindBadge: 'estimated' },
+  { key: 'v3:enc-thick:tEnc', label: 't_enc CI (gruesa)', unit: 's', default: 12, group: 'enc', kindBadge: 'estimated' },
   // Caudal de descarga HMI por corriente (para el dosing, doc §3)
   { key: 'v3:dos-fine:F',  label: 'F descarga CE (fina)',   unit: 'kg/min', default: 111, group: 'dos', kindBadge: 'hmi-live' },
   { key: 'v3:dos-thick:F', label: 'F descarga CI (gruesa)', unit: 'kg/min', default: 282, group: 'dos', kindBadge: 'hmi-live' },
