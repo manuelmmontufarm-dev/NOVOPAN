@@ -280,14 +280,16 @@ export function renderUpstream() {
   btn.appendChild(el('text', { x: 58, y: 128, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#3D423F' }, '3 capas'));
   g.appendChild(btn);
 
-  // Botón único "cambio en encolador" — entre las dos columnas, a la altura
-  // dosing↔encolador. Inyecta un cambio que arranca en el encolador de AMBAS rutas.
-  const bx = 420, by = 338, bw = 88, bh = 74;
-  const encBtn = el('g', { class: 's2-machine s2-up-node s2-up-recipe', 'data-inject-node': 'enc', 'data-label': 'Cambio · encolador (ambas rutas)' });
-  encBtn.appendChild(el('rect', { x: bx - bw / 2, y: by, width: bw, height: bh, rx: 10, fill: '#FFDE00', stroke: '#1A1D1B', 'stroke-width': 1.5 }));
-  encBtn.appendChild(el('text', { x: bx, y: by + 24, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, 'CAMBIO'));
-  encBtn.appendChild(el('text', { x: bx, y: by + 38, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, 'ENCOLADOR'));
-  encBtn.appendChild(el('text', { x: bx, y: by + 56, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#3D423F' }, 'ambas rutas'));
+  // Botón DISCRETO "cambio en encolador (ambas rutas)" — pastilla compacta entre
+  // las dos columnas, a la altura de las encoladoras. El cambio se ve en LAS DOS
+  // filas (mismo color) y se unen en la línea de formación. (Las encoladoras CE/CI
+  // siguen siendo clicables por separado para un cambio en una sola ruta.)
+  const bx = 420, by = 368, bw = 118, bh = 26;
+  const encBtn = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': 'enc', 'data-label': 'Cambio · encolador (ambas rutas)' });
+  encBtn.appendChild(el('rect', { x: bx - bw / 2, y: by, width: bw, height: bh, rx: 13, fill: '#FFFFFF', stroke: '#0A7D5A', 'stroke-width': 1.5 }));
+  encBtn.appendChild(el('circle', { cx: bx - bw / 2 + 15, cy: by + bh / 2, r: 7, fill: '#0A7D5A' }));
+  encBtn.appendChild(el('text', { x: bx - bw / 2 + 15, y: by + bh / 2 + 4, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#fff' }, '+'));
+  encBtn.appendChild(el('text', { x: bx + 8, y: by + bh / 2 + 4, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 700, 'font-size': 10, fill: '#1A1D1B' }, 'cambio encolador'));
   g.appendChild(encBtn);
 
   // Columnas verticales: FINA (izquierda) y GRUESA (derecha)
@@ -332,10 +334,11 @@ export function refreshUpstreamChips(params) {
    activa (desde el punto de inyección). Silo/dosing/enc CAEN en vertical;
    incl/esp corren en horizontal sobre la banda. Etapas con τ=0 (TBD) se
    cruzan al instante. */
-export function upstreamMarkerPos(slice, elapsedSec, layer) {
+export function upstreamMarkerPos(slice, elapsedSec, layer, opts = {}) {
   const col = layer === 'CL' ? 'thick' : 'fine';
   const geo = GEO[col];
   const off = layer === 'SL1' ? -7 : layer === 'SL2' ? 7 : 0;   // separa SL1/SL2 (misma columna)
+  const merge = opts.mergeTo;   // {x,y}: punto de formación común (dos filas se unen)
   let acc = 0;
   for (const node of slice) {
     const base = node.id.split('-')[0];
@@ -344,6 +347,10 @@ export function upstreamMarkerPos(slice, elapsedSec, layer) {
     if (node.sec <= 0) continue;
     if (elapsedSec < acc + node.sec) {
       const f = (elapsedSec - acc) / node.sec;
+      // en el tramo esparcidor con merge, converge desde el fin de banda al punto común
+      if (base === 'esp' && merge) {
+        return { x: seg[0] + f * (merge.x - seg[0]), y: seg[1] + f * (merge.y - seg[1]), done: false };
+      }
       const x = seg[0] + f * (seg[2] - seg[0]);
       const y = seg[1] + f * (seg[3] - seg[1]);
       const vertical = base === 'silo' || base === 'dosing' || base === 'enc';
@@ -352,5 +359,5 @@ export function upstreamMarkerPos(slice, elapsedSec, layer) {
     }
     acc += node.sec;
   }
-  return { x: DIVIDER_X, y: geo.esp[3] + off, done: true };
+  return merge ? { x: merge.x, y: merge.y, done: true } : { x: DIVIDER_X, y: geo.esp[3] + off, done: true };
 }

@@ -328,12 +328,14 @@ function initSimulation() {
   // ── Fase upstream (modelo v3): puntos por capa en el carril esquemático ──
   const upstreamTracersLayer = document.getElementById('upstreamTracers');
 
-  // UN solo punto por cambio: baja por la columna SL1 (fina) con la cinemática de
-  // la ruta GOBERNANTE (la más lenta, que suma exactamente t_reg). SL1/CL/SL2 ya no
-  // se dibujan por separado — el registro sigue gobernado por t_reg (max).
-  function createUpstreamEls(ch) {
-    const g = el('g', { class: 's2-tracer', 'data-change-id': ch.id });
-    const dot = el('g', { 'data-layer': 'SL1' });
+  // Punto de formación donde las dos filas se unen (cerca del divisor / metro 0).
+  const FORM_MERGE = { x: 1900, y: 455 };
+
+  // Por defecto UN solo punto (columna SL1, cinemática de la ruta gobernante, suma
+  // t_reg). Para el botón "cambio encolador" (ch.dual) se ven DOS puntos —uno por
+  // fila, mismo color— que se UNEN en la línea de formación.
+  function makeDot(ch, lane) {
+    const dot = el('g', { 'data-lane': lane });
     dot.appendChild(el('circle', { cx: 0, cy: 0, r: 10, fill: 'none', stroke: ch.color, 'stroke-width': 3, style: 'animation:mpulse 1.4s ease infinite' }));
     dot.appendChild(el('circle', { cx: 0, cy: 0, r: 4.5, fill: ch.color }));
     const lbl = el('text', {
@@ -342,14 +344,29 @@ function initSimulation() {
     });
     lbl.textContent = `${ch.seq}`;
     dot.appendChild(lbl);
-    g.appendChild(dot);
+    return dot;
+  }
+
+  function createUpstreamEls(ch) {
+    const g = el('g', { class: 's2-tracer', 'data-change-id': ch.id });
+    const lanes = ch.dual ? ['fine', 'thick'] : ['SL1'];
+    for (const lane of lanes) g.appendChild(makeDot(ch, lane));
     upstreamTracersLayer?.appendChild(g);
     return g;
   }
 
   function updateUpstreamEls(ch, elapsed) {
     if (!ch.upEl) return;
-    const dot = ch.upEl.querySelector('[data-layer]');
+    if (ch.dual) {
+      for (const dot of ch.upEl.querySelectorAll('[data-lane]')) {
+        const L = dot.dataset.lane === 'thick' ? 'CL' : 'SL1';
+        const p = upstreamMarkerPos(ch.reg.perLayer[L].slice, elapsed, L, { mergeTo: FORM_MERGE });
+        dot.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+        dot.setAttribute('opacity', p.done ? 0.55 : 1);
+      }
+      return;
+    }
+    const dot = ch.upEl.querySelector('[data-lane]');
     if (!dot) return;
     const p = upstreamMarkerPos(ch.reg.govChain, elapsed, 'SL1');
     dot.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
@@ -528,6 +545,7 @@ function initSimulation() {
       seq: changeSeq,
       color: CHANGE_COLORS[(changeSeq - 1) % CHANGE_COLORS.length],
       phase: 'upstream',
+      dual: nodeId === 'enc',   // botón encolador → dos filas que se unen en formación
       posM: 0,
       t0: performance.now(),
       reg,
