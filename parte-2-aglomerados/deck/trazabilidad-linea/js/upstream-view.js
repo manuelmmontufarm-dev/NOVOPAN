@@ -280,17 +280,20 @@ export function renderUpstream() {
   btn.appendChild(el('text', { x: 58, y: 128, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#3D423F' }, '3 capas'));
   g.appendChild(btn);
 
-  // Botón DISCRETO "cambio en encolador (ambas rutas)" — pastilla compacta entre
-  // las dos columnas, a la altura de las encoladoras. El cambio se ve en LAS DOS
-  // filas (mismo color) y se unen en la línea de formación. (Las encoladoras CE/CI
-  // siguen siendo clicables por separado para un cambio en una sola ruta.)
-  const bx = 420, by = 368, bw = 118, bh = 26;
-  const encBtn = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': 'enc', 'data-label': 'Cambio · encolador (ambas rutas)' });
-  encBtn.appendChild(el('rect', { x: bx - bw / 2, y: by, width: bw, height: bh, rx: 13, fill: '#FFFFFF', stroke: '#0A7D5A', 'stroke-width': 1.5 }));
-  encBtn.appendChild(el('circle', { cx: bx - bw / 2 + 15, cy: by + bh / 2, r: 7, fill: '#0A7D5A' }));
-  encBtn.appendChild(el('text', { x: bx - bw / 2 + 15, y: by + bh / 2 + 4, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#fff' }, '+'));
-  encBtn.appendChild(el('text', { x: bx + 8, y: by + bh / 2 + 4, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 700, 'font-size': 10, fill: '#1A1D1B' }, 'cambio encolador'));
-  g.appendChild(encBtn);
+  // Botones DISCRETOS de cambio combinado (ambas rutas) — pastillas compactas entre
+  // las dos columnas. El cambio se ve en LAS DOS filas (mismo color) y se unen en la
+  // línea de formación. (Dosing/encoladoras siguen clicables por separado = una ruta.)
+  const drawComboBtn = (node, cy, label) => {
+    const bx = 420, bw = 118, bh = 26, by = cy - bh / 2;
+    const b = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': node, 'data-label': `Cambio · ${label} (ambas rutas)` });
+    b.appendChild(el('rect', { x: bx - bw / 2, y: by, width: bw, height: bh, rx: 13, fill: '#FFFFFF', stroke: '#0A7D5A', 'stroke-width': 1.5 }));
+    b.appendChild(el('circle', { cx: bx - bw / 2 + 15, cy, r: 7, fill: '#0A7D5A' }));
+    b.appendChild(el('text', { x: bx - bw / 2 + 15, y: cy + 4, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#fff' }, '+'));
+    b.appendChild(el('text', { x: bx + 8, y: cy + 4, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 700, 'font-size': 10, fill: '#1A1D1B' }, `cambio ${label}`));
+    g.appendChild(b);
+  };
+  drawComboBtn('dosing', 253, 'dosing');   // a la altura de las dosificadoras
+  drawComboBtn('enc', 381, 'encolador');   // a la altura de las encoladoras
 
   // Columnas verticales: FINA (izquierda) y GRUESA (derecha)
   renderColumn(g, COLS.fine);

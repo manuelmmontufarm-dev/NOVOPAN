@@ -368,7 +368,10 @@ function initSimulation() {
     }
     const dot = ch.upEl.querySelector('[data-lane]');
     if (!dot) return;
-    const p = upstreamMarkerPos(ch.reg.govChain, elapsed, 'SL1');
+    // el punto único se dibuja en SU columna: fina si el cambio toca SL1/SL2,
+    // gruesa (CL) si es solo de la ruta gruesa. (Cambio de receta silos → SL1.)
+    const displayLayer = ch.reg.layers.includes('SL1') ? 'SL1' : 'CL';
+    const p = upstreamMarkerPos(ch.reg.govChain, elapsed, displayLayer);
     dot.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
     dot.setAttribute('opacity', p.done ? 0.45 : 1);
   }
@@ -545,7 +548,7 @@ function initSimulation() {
       seq: changeSeq,
       color: CHANGE_COLORS[(changeSeq - 1) % CHANGE_COLORS.length],
       phase: 'upstream',
-      dual: nodeId === 'enc',   // botón encolador → dos filas que se unen en formación
+      dual: nodeId === 'enc' || nodeId === 'dosing',   // botones combinados → dos filas que se unen en formación
       posM: 0,
       t0: performance.now(),
       reg,
