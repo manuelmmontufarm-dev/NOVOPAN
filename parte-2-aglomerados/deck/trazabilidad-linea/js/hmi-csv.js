@@ -13,9 +13,14 @@
      local. En Chrome/Edge (File System Access API) se relee solo
      al cambiar; en otros navegadores es lectura manual.
 
-   Formato: 1 línea por variable, separador `,` o `;`, decimal
-   `.` o `,`. Valor vacío = no tocar (conserva TBD). Tags
-   desconocidos → warning, no error. Ejemplo: datos/ejemplo-hmi.csv
+   Formato del HMI (principal): `VARIABLE:VALOR;` — clave y valor
+   separados por `:`, cada registro terminado en `;`. Puede venir
+   una variable por línea o varias en la misma línea. Valor vacío
+   (`VARIABLE:;`) = no tocar (conserva TBD). Ejemplo: datos/ejemplo-hmi.csv
+
+   También acepta el CSV clásico `TAG,valor` (coma / `;` / tab, uno
+   por línea) por compatibilidad. Decimal `.` o `,`. Tags
+   desconocidos → warning, no error.
    ============================================================ */
 
 const POLL_MS = 2000;
@@ -67,8 +72,17 @@ function unquote(s) {
 function toNumber(valRaw, sep) {
   let v = unquote(valRaw);
   if (v === '') return { empty: true };
-  if (sep === ';' || sep === '\t') v = v.replace(/\./g, '').replace(',', '.'); // 1.234,5 → 1234.5
-  else v = v.replace(/,/g, '');                                                 // 1,234.5 → 1234.5
+  if (sep === ':') {
+    // HMI `VARIABLE:valor` — el último separador (`,` o `.`) es el decimal;
+    // cualquier otro `.`/`,` a la izquierda es separador de miles. Cubre
+    // `14.5`, `14,5`, `1.234,5` y `1,234.5` sin ambigüedad.
+    const dec = Math.max(v.lastIndexOf(','), v.lastIndexOf('.'));
+    if (dec !== -1) v = v.slice(0, dec).replace(/[.,]/g, '') + '.' + v.slice(dec + 1);
+  } else if (sep === ';' || sep === '\t') {
+    v = v.replace(/\./g, '').replace(',', '.');                                 // 1.234,5 → 1234.5
+  } else {
+    v = v.replace(/,/g, '');                                                    // 1,234.5 → 1234.5
+  }
   const m = v.match(/-?\d+(\.\d+)?/);                          // primer número
   if (!m) return { nan: true };
   return { val: parseFloat(m[0]) };
@@ -81,24 +95,41 @@ export function parseHmiCsv(text) {
   let vPrensa = null;
   let count = 0;
   const clean = String(text ?? '').replace(/^﻿/, '');     // BOM de Windows
-  const lines = clean.split(/\r?\n/);
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line || line.startsWith('#') || line.startsWith('//')) continue;
-    // separador: tab > `;` > coma. Si hay `;`, la coma es decimal (CSV europeo).
-    const sep = line.includes('\t') ? '\t' : (line.includes(';') ? ';' : ',');
-    const [tagRaw, ...rest] = line.split(sep);
-    const tag = unquote(tagRaw ?? '').toUpperCase();
-    if (!tag || tag === 'TAG' || tag === 'TAGNAME') continue;  // cabecera
-    const key = TAG_MAP[tag];
-    if (!key) { warnings.push(`tag desconocido: ${tag}`); continue; }
-    const num = toNumber(rest.join(sep), sep);
-    if (num.empty) continue;                                   // vacío = no tocar (TBD)
-    if (num.nan) { warnings.push(`valor inválido en ${tag}: "${rest.join(sep).trim()}"`); continue; }
-    if (num.val < 0) { warnings.push(`valor negativo ignorado en ${tag}: ${num.val}`); continue; }
-    if (key === 'v_prensa') vPrensa = num.val;
-    else updates[key] = num.val;
-    count += 1;
+  for (const rawLine of clean.split(/\r?\n/)) {
+    // quita comentarios (`#` o `//`), de línea completa o al final de línea
+    let line = rawLine;
+    const h = line.indexOf('#');  if (h !== -1) line = line.slice(0, h);
+    const c = line.indexOf('//'); if (c !== -1) line = line.slice(0, c);
+    line = line.trim();
+    if (!line) continue;
+
+    // Formato HMI `VARIABLE:valor;` → varios registros por línea (se parte por `;`).
+    // Se detecta por la presencia de `:`. Si no hay `:`, es CSV clásico de una fila.
+    const records = line.includes(':') ? line.split(';') : [line];
+    for (const recRaw of records) {
+      const rec = recRaw.trim();
+      if (!rec) continue;
+      // separador clave/valor: `:` (HMI) o tab > `;` > coma (CSV clásico).
+      let sep, sepIdx = rec.indexOf(':');
+      if (sepIdx !== -1) sep = ':';
+      else if ((sepIdx = rec.indexOf('\t')) !== -1) sep = '\t';
+      else if ((sepIdx = rec.indexOf(';'))  !== -1) sep = ';';
+      else if ((sepIdx = rec.indexOf(','))  !== -1) sep = ',';
+      else { warnings.push(`registro sin separador: "${rec}"`); continue; }
+
+      const tag = unquote(rec.slice(0, sepIdx)).toUpperCase();
+      if (!tag || tag === 'TAG' || tag === 'TAGNAME') continue; // cabecera
+      const key = TAG_MAP[tag];
+      if (!key) { warnings.push(`tag desconocido: ${tag}`); continue; }
+      const valRaw = rec.slice(sepIdx + 1);
+      const num = toNumber(valRaw, sep);
+      if (num.empty) continue;                                  // vacío = no tocar (TBD)
+      if (num.nan) { warnings.push(`valor inválido en ${tag}: "${valRaw.trim()}"`); continue; }
+      if (num.val < 0) { warnings.push(`valor negativo ignorado en ${tag}: ${num.val}`); continue; }
+      if (key === 'v_prensa') vPrensa = num.val;
+      else updates[key] = num.val;
+      count += 1;
+    }
   }
   return { updates, vPrensa, warnings, count };
 }

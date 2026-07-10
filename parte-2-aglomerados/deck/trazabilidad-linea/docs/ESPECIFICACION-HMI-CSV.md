@@ -24,25 +24,28 @@ No se necesita ningún servicio web, API ni endpoint. Basta con que "algo" (un j
 
 ## 2. Formato del archivo `hmi.csv`
 
-- Texto plano. Una línea por variable: **`TAG,valor`**.
-- Separador: coma `,` (también acepta `;` o tabulador).
-- Decimal: punto `.` (también acepta coma si el separador es `;`).
+- Texto plano. Formato **`VARIABLE:VALOR;`** — clave y valor separados por dos
+  puntos `:`, cada registro terminado en punto y coma `;`.
+- Puede ir **una variable por línea** (recomendado, más legible) o **varias en la
+  misma línea** (`V_PRENSA_M_MIN:14.5;PESO_MANTA_KGM2:11.5;`). Ambas funcionan.
+- Decimal: punto `.` o coma `,` (los dos válidos — `14.5` y `14,5` son iguales).
 - Codificación: UTF-8 (con o sin BOM — ambas funcionan).
 - Líneas que empiezan con `#` o `//` = comentarios (se ignoran).
-- Una línea de cabecera `tag,value` es opcional (se ignora).
-- **Valor vacío = "pendiente / no medido"** → el simulador lo deja como TBD y no lo toca.
+- **Valor vacío (`VARIABLE:;`) = "pendiente / no medido"** → el simulador lo deja
+  como TBD y no lo toca.
 - Tags que el simulador no conoce → se ignoran con aviso, **no rompen** el archivo.
-- Si una línea está mal formada, se ignora esa línea y las demás siguen funcionando.
+- Si un registro está mal formado, se ignora ese registro y los demás siguen funcionando.
+- *(Compatibilidad: también acepta el CSV clásico `TAG,valor`, una fila por línea,
+  por si algún export viejo lo usa.)*
 
 ### Ejemplo
-```csv
-tag,value
-V_PRENSA_M_MIN,14.5
-PESO_MANTA_KGM2,11.5
-PCT_SL1,47.1
-SILO6_LEVEL_PCT,
 ```
-(la última línea vacía = ese dato sigue pendiente)
+V_PRENSA_M_MIN:14.5;
+PESO_MANTA_KGM2:11.5;
+PCT_SL1:47.1;
+SILO6_LEVEL_PCT:;
+```
+(la última línea con valor vacío = ese dato sigue pendiente / TBD)
 
 ---
 
@@ -93,16 +96,24 @@ SILO6_LEVEL_PCT,
 
 ### Opción A (recomendada) — Job programado en SQL Server
 Un **SQL Server Agent Job** que cada pocos segundos ejecute un `SELECT` de los tags
-y lo escriba a `datos/hmi.csv`. Ejemplo del `SELECT` que debe producir el CSV
-(estructura larga tag/valor):
+y lo escriba a `datos/hmi.csv`. Cada fila debe salir ya con el formato
+`VARIABLE:VALOR;` (se arma concatenando en el propio `SELECT`):
 
 ```sql
--- Pseudo-consulta: adaptar tabla/columnas reales (WinCC Tag Logging o vista de valores actuales)
-SELECT tag_del_csv AS tag, valor_actual AS value
+-- Pseudo-consulta: adaptar tabla/columnas reales (WinCC Tag Logging o vista de valores actuales).
+-- Produce una línea "VARIABLE:VALOR;" por tag.
+SELECT tag_del_csv + ':' + CONVERT(varchar(32), valor_actual) + ';' AS linea
 FROM  <tabla_o_vista_de_valores_en_vivo>
 WHERE tag_del_csv IN ('V_PRENSA_M_MIN','PESO_MANTA_KGM2','PCT_SL1', ...);
 ```
 El resultado se exporta a `datos/hmi.csv` (con `bcp`, `sqlcmd -o`, SSIS, o PowerShell).
+Ejemplo de salida esperada:
+
+```
+V_PRENSA_M_MIN:14.5;
+PESO_MANTA_KGM2:11.5;
+PCT_SL1:47.1;
+```
 
 ### Opción B — OPC-UA / WinCC
 Si prefieren, un script que lea del **servidor OPC-UA de WinCC** (ya instalado:
