@@ -29,6 +29,15 @@ mkdir -p "$PUBLIC/trazabilidad-linea"
 cp -R "$DECK/trazabilidad-linea/." "$PUBLIC/trazabilidad-linea/"
 find "$PUBLIC/trazabilidad-linea" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
 
+# Trazabilidad Parte 1 — preparación de madera + clasificación real HMI 10-jul-2026
+mkdir -p "$PUBLIC/trazabilidad-preparacion"
+cp -R "$PARTE1_APP/trazabilidad-preparacion/." "$PUBLIC/trazabilidad-preparacion/"
+
+# Trazabilidad total — Parte 1 conectada a Sección 2
+mkdir -p "$PUBLIC/trazabilidad-total"
+cp -R "$DECK/trazabilidad-total/." "$PUBLIC/trazabilidad-total/"
+find "$PUBLIC/trazabilidad-total" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
+
 # Design system tokens — CSS imports ../../_ds/... from trazabilidad/css/
 mkdir -p "$PUBLIC/_ds"
 cp -R "$DECK/_ds/." "$PUBLIC/_ds/"
@@ -69,6 +78,8 @@ for html_path, base in [
     (public / "patios-interactivo" / "index.html", "/patios-interactivo/"),
     (public / "trazabilidad" / "index.html", "/trazabilidad/"),
     (public / "trazabilidad-linea" / "index.html", "/trazabilidad-linea/"),
+    (public / "trazabilidad-preparacion" / "index.html", "/trazabilidad-preparacion/"),
+    (public / "trazabilidad-total" / "index.html", "/trazabilidad-total/"),
 ]:
     inject_base(html_path, base)
 PY
@@ -77,5 +88,7 @@ echo "✓ public/ ready ($(find "$PUBLIC" -type f | wc -l | tr -d ' ') files)"
 echo "  /                    → index.html"
 echo "  /trazabilidad        → parte-2-aglomerados/deck/trazabilidad + _ds tokens"
 echo "  /trazabilidad-linea  → parte-2-aglomerados/deck/trazabilidad-linea (Sección 2)"
+echo "  /trazabilidad-preparacion → parte-1-preparacion-madera/html-app/trazabilidad-preparacion"
+echo "  /trazabilidad-total → Parte 1 + Sección 2 conectadas"
 echo "  /patios              → parte-1-preparacion-madera (guía estática)"
 echo "  /patios-interactivo  → parte-1-preparacion-madera/html-app (React/Babel)"

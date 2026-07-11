@@ -1,0 +1,649 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Parte 1 · trazabilidad en vivo — patios → esparcidoras</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.45 system-ui, sans-serif; color: #111; background: #fff; }
+  header { padding: 10px 14px 8px; border-bottom: 1px solid #000; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 15px; margin: 0 0 2px; }
+  .sub { font-size: 11px; color: #555; }
+  .clock { text-align: right; }
+  .clock b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 7px 12px; border-bottom: 1px solid #000; background: #f8f8f8; position: sticky; top: 0; z-index: 5; }
+  .tabs { display: flex; gap: 0; border: 1px solid #000; }
+  .tab { font: inherit; padding: 4px 14px; background: #fff; border: none; cursor: pointer; }
+  .tab.on { background: #111; color: #fff; font-weight: 700; }
+  .toolbar button.act { font: inherit; padding: 4px 10px; cursor: pointer; }
+  .toolbar .zones { display: flex; gap: 4px; }
+  .toolbar .zones button { font: 11px system-ui; padding: 3px 8px; cursor: pointer; }
+  .toolbar label { font-size: 11px; color: #555; }
+  .toolbar select, .toolbar input[type=range] { font: inherit; }
+  .mover { flex: 1; display: flex; gap: 6px; align-items: center; min-width: 200px; }
+  .mover input { flex: 1; }
+  .badge { background: #111; color: #fff; border-radius: 8px; padding: 0 6px; font-size: 11px; }
+  .tbdbar { padding: 4px 12px; font-size: 11px; border-bottom: 1px solid #ccc; background: #fffbe6; }
+  .tbd { color: #b00; font-weight: 700; }
+  .ok { color: #060; font-weight: 700; }
+  .view { display: none; }
+  .view.on { display: block; }
+  .diagwrap { overflow-x: auto; }
+  svg { display: block; min-width: 2000px; }
+  svg text { font: 10px system-ui, sans-serif; fill: #111; }
+  text.band { font: 700 11px system-ui; letter-spacing: .08em; }
+  text.lane { font: 700 9px system-ui; fill: #999; letter-spacing: .12em; }
+  text.nlabel { font: 700 10.5px system-ui; }
+  text.nsub { font: 9.5px system-ui; fill: #555; }
+  text.elabel { font: 9px system-ui; fill: #333; }
+  text.elabel.rec { fill: #b36200; }
+  text.elabel.bio { fill: #777; }
+  text.icon { font: 700 9px system-ui; text-anchor: middle; }
+  g.node { cursor: crosshair; outline: none; }
+  g.node.noinj { cursor: pointer; }
+  g.node:hover .glyph, g.node:focus .glyph { stroke-width: 3; }
+  #detail { background: #ffe; border: 1px solid #000; padding: 8px 12px; margin: 10px 12px; font-size: 12px; }
+  #detail h3 { margin: 0 0 4px; font-size: 13px; }
+  #detail .eq { font: 11.5px ui-monospace, Menlo, monospace; background: #f0f0f0; border: 1px solid #ccc; padding: 3px 8px; margin-top: 5px; overflow-x: auto; }
+  #detail .src { font-size: 11px; color: #555; margin-top: 5px; }
+  /* reportes */
+  #reports { position: fixed; right: 0; top: 90px; width: 360px; max-height: 72vh; overflow-y: auto; background: #fff; border: 1px solid #000; border-right: none; z-index: 9; padding: 8px 10px; box-shadow: -3px 3px 0 rgba(0,0,0,.12); }
+  #reports.hide { display: none; }
+  #reports h4 { margin: 0 0 6px; font-size: 13px; display: flex; justify-content: space-between; }
+  #reports h4 button { font: inherit; cursor: pointer; padding: 0 6px; }
+  .chg { border: 1px solid #ccc; margin: 6px 0; padding: 6px 8px; }
+  .chg.sel { border-color: #000; box-shadow: 2px 2px 0 #000; }
+  .chg .hd { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; cursor: pointer; }
+  .chip { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .chg table { border-collapse: collapse; width: 100%; font-size: 11px; margin-top: 4px; }
+  .chg td { border: 1px solid #ddd; padding: 2px 5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .chg td:first-child { white-space: normal; }
+  .chg tr.done td { color: #060; }
+  .chg .meta { font-size: 11px; color: #555; margin-top: 2px; }
+  /* params view */
+  .pgrid { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; }
+  fieldset { border: 1px solid #999; padding: 6px 10px; min-width: 260px; }
+  legend { font-weight: 700; font-size: 12px; }
+  .row { display: flex; gap: 6px; align-items: center; margin: 3px 0; font-size: 12px; }
+  .row label { flex: 1; }
+  .row input { width: 78px; font: inherit; text-align: right; padding: 1px 3px; }
+  .row input.ph { background: #fff3cd; border: 1px solid #e08000; }
+  .row input.unk { background: #fff1f1; border: 1px solid #b00; color: #900; }
+  .row .u { width: 52px; color: #555; font-size: 11px; }
+  code { background: #f0f0f0; padding: 0 3px; }
+  footer { padding: 8px 14px 14px; font-size: 11px; color: #555; border-top: 1px solid #ddd; }
+</style>
+
+<header>
+  <div>
+    <h1>Parte 1 · Trazabilidad en vivo — patios → silos → esparcidoras</h1>
+    <div class="sub">Clic en un equipo = inyectar un cambio ahí (nace a la hora real de Quito y avanza solo — sin botón de iniciar). En <b>Patios · rumas</b> se inyecta un <b>cambio de receta</b>: nace con 2 marcadores (start = vía más rápida, end = la más lenta). En clasificación: Cribas F/G → 3 zarandas con clapetas → CL a Silo 5, SL por WS1/WS2 a Silo 6, oversize por WS3+refinadores, polvo a combustible.</div>
+  </div>
+  <div class="clock"><div class="sub">Hora Quito (America/Guayaquil)</div><b id="quitoClock">--:--:--</b></div>
+</header>
+
+<div class="toolbar">
+  <div class="tabs">
+    <button class="tab on" id="tabLinea">Línea</button>
+    <button class="tab" id="tabParams">Parámetros</button>
+  </div>
+  <span class="zones" id="zones">
+    <button data-x="0">Reducción</button><button data-x="560">Silos verdes</button>
+    <button data-x="760">Secado</button><button data-x="960">Clasificación</button><button data-x="1515">Parte 2</button>
+  </span>
+  <label>modo <select id="modeSel"><option value="inj" selected>Inyectar cambio</option><option value="info">Ver info</option></select></label>
+  <label>velocidad <select id="speedSel">
+    <option value="1" selected>1× (real)</option><option value="2">2×</option><option value="5">5×</option>
+    <option value="10">10×</option><option value="30">30×</option><option value="60">60× (1 min→1 s)</option>
+    <option value="120">120×</option><option value="300">300×</option><option value="600">600×</option>
+    <option value="1800">1800× (30 min→1 s)</option><option value="3600">3600× (1 h→1 s)</option>
+  </select></label>
+  <div class="mover"><label>mover cambio sel.</label><input type="range" id="mover" min="0" max="1000" step="1" value="0" disabled></div>
+  <button class="act" id="reportsBtn">Reportes <span class="badge" id="nChg">0</span></button>
+  <button class="act" id="resetBtn" title="Borrar todos los cambios">⟲</button>
+</div>
+<div class="tbdbar" id="tbdbar"></div>
+
+<div class="view on" id="viewLinea">
+  <div class="diagwrap" id="diagwrap"><svg id="diag" viewBox="0 0 2000 745" width="2000" height="745"></svg></div>
+  <div id="detail"><h3>Detalle</h3><div>Modo "Inyectar": clic en un equipo crea un cambio ahí. Modo "Ver info": clic muestra qué es, su ecuación y fuente. Los tiempos usan los Parámetros (pestaña arriba); lo vacío es <span class="tbd">TBD</span> y cuenta 0 s.</div></div>
+</div>
+
+<div class="view" id="viewParams">
+  <div class="sub" style="padding:10px 14px 0">Parámetros del modelo. <b>Blanco</b> = dato real del HMI (10-jul-2026) o del sim v3. <b style="background:#fff3cd;padding:0 4px;border:1px solid #e08000">Naranja</b> = valor <b>imaginado (placeholder)</b> para poder modelar la línea entera — al editarlo se vuelve blanco. Vacío = <span class="tbd">TBD</span> (τ = 0 s). Convención: recipiente <code>τ=M/F</code> · banda <code>t=L/v</code>.</div>
+  <div class="pgrid" id="pgrid"></div>
+</div>
+
+<div id="reports" class="hide">
+  <h4>Reportes de cambios <button id="repClose">✕</button></h4>
+  <div class="sub">Hora real de Quito en que cada cambio pasa por cada equipo. Clic en un cambio para seleccionarlo (slider "mover").</div>
+  <div id="repList"><p class="sub" style="margin:8px 0">Aún no hay cambios. Haz clic en un equipo.</p></div>
+</div>
+
+<footer>
+  Modelo estilo simulador Sección 2 (línea en vivo): sin botón de iniciar, hora real Quito, clic = inyección, parámetros en su propia pestaña. Ecuaciones: τ=M/F×60 · t=L/v×60 · receta: start=min(vías), end=max(vías). Clasificación HMI 10-jul-2026: Cribas F/G, 3 zarandas con clapetas, 5 fracciones, regla POS 7/100% → todo CL. Fuentes: fotos HMI 10-jul-2026 · audio 41 · HANDOFF_SIMULADOR.md · NOVOPAN-2 @ cc2a6d5.
+</footer>
+
+<script>
+"use strict";
+/* ================= PARÁMETROS (defaults HMI) ================= */
+const P = {
+  pila1_M: 5000, pila1_F: 9000, tDS: 20, tr1: 40,
+  s1: { rho: 271, V: 150, L: 50, F: 7000 },
+  pila2_M: 10000, pila2_F: 20000, esperaDesv: 90, tr2: 45,
+  s2: { rho: 230, V: 200, L: 25.4, F: 13990 },
+  s2b: { rho: 232, V: 200, L: 41.5, F: 13990 },
+  tr3: 60, s3: { rho: 211, V: 250, L: 30, F: 8700 },
+  bk: { rho: 290, V: 40, L: 55, F: 27005 },
+  trSec: 30, tauTambor: 900,
+  cribaF_F: 26000, cribaG_F: 21000, tCriba: 8, tZar: 15, clapPos: 7, clapPct: 100,
+  splitCL: 100, splitMacro: 0, splitMicro: 0, splitOver: 0, splitPolvo: 0,
+  tColectCL: 12, tColectSL: 12, tColectOver: 10, tPolvo: 8,
+  tWS1: 10, tWS2: 10, tWS3: 10, tFe: 4, tNeum: 8,
+  ref1_F: 6800, ref2_F: 8000, tRef1: 25, tRef2: 25, tCiclon: 8, tClasSL: 12, tReingresoSL: 10,
+  s5: { rho: 135, V: 120, L: 44, Fmin: 302 },
+  s6: { rho: 188, V: 120, L: 31, Fmin: 108 },
+  s4: { rho: 238, V: 60, L: 30, Fmin: 60.2 },
+  s8: { rho: 238, V: 40, L: 30, Fmin: 60.2 },
+  dosG: { M: 25, F: 302 }, dosF: { M: 20, F: 108 },
+  tEncCI: 30, tEncCE: 30,
+  inclG: { L: 68.5, v: 96.5 }, inclF: { L: 64.57, v: 99.5 },
+};
+/* paths con valor IMAGINADO (placeholder), no confirmado en HMI/planta.
+   Se pintan naranja en Parámetros; al editar uno, se quita de aquí. */
+const PLACEHOLDER = new Set([
+  'pila1_M','tDS','tr1','pila2_M','tr2','tr3',
+  'bk.V','trSec','tauTambor','tCriba','tZar','tColectCL','tColectSL','tColectOver','tPolvo',
+  'tWS1','tWS2','tWS3','tFe','tNeum','tRef1','tRef2','tCiclon','tClasSL','tReingresoSL','tEncCI','tEncCE',
+]);
+const UNKNOWN = new Set(['s1.V','s2.V','s2b.V','s3.V','s5.V','s6.V','s4.V','s8.V']);
+/* ---------- ecuaciones ---------- */
+const D = (t, tbd, nm) => ({ t: tbd ? 0 : t, tbd, nm });
+const tauPila  = (M, F, nm) => D((M && F) ? M / (F / 3600) : 0, !(M && F), nm);
+const tauSiloH = (s, nm) => D((s.rho && s.V && s.L && s.F) ? (s.rho * s.V * s.L / 100) / (s.F / 3600) : 0, !(s.rho && s.V && s.L && s.F), nm);
+const tauSiloM = (s, nm) => D((s.rho && s.V && s.L && s.Fmin) ? (s.rho * s.V * s.L / 100) / s.Fmin * 60 : 0, !(s.rho && s.V && s.L && s.Fmin), nm);
+const tauMF    = (d, nm) => D((d.M && d.F) ? d.M / d.F * 60 : 0, !(d.M && d.F), nm);
+const tBanda   = (b, nm) => D((b.L && b.v) ? b.L / b.v * 60 : 0, !(b.L && b.v), nm);
+const tFix     = (v, nm) => D(v ?? 0, v == null, nm);
+
+/* ================= SECUENCIAS + DURACIONES + PATHS ================= */
+const SEQ = {
+  A: ['pm1', 'ds', 's1'], C: ['chip', 'pm2', 'flex', 's2a'], H: ['hom', 's3'],
+  COM: ['bunker', 'sec1', 'crf', 'z2'],
+  CL: ['s5', 'dosG', 'encCI', 'esp2'],
+  SL1: ['ws1', 'ws2', 's6', 'dosF', 'encCE', 'esp1'],
+  SL3: ['ws1', 'ws2', 's6', 'dosF', 'encCE', 'esp3'],
+  OV1: ['partG', 'ws3', 'r1', 'cyc', 'clasSL', 'ws1', 'ws2', 's6', 'dosF', 'encCE', 'esp1'],
+  OV3: ['partG', 'ws3', 'r2', 'cyc', 'clasSL', 'ws1', 'ws2', 's6', 'dosF', 'encCE', 'esp3'],
+  POL: ['s4', 's8', 'bio'],
+};
+const DUR = {
+  'pm1>ds': () => [tauPila(P.pila1_M, P.pila1_F, 'M pila aserrín')],
+  'ds>s1': () => [tFix(P.tDS, 't clasificador'), tFix(P.tr1, 't transp. aserrín')],
+  's1>bunker': () => [tauSiloH(P.s1, 'V silo 1')],
+  'chip>pm2': () => [],
+  'pm2>flex': () => [tauPila(P.pila2_M, P.pila2_F, 'M pila chip')],
+  'flex>s2a': () => [tFix(P.esperaDesv, 'espera desviador'), tFix(P.tr2, 't transp. chip')],
+  'flex>s2b': () => [tFix(P.esperaDesv, 'espera desviador'), tFix(P.tr2, 't transp. chip')],
+  's2a>bunker': () => [tauSiloH(P.s2, 'V silo 2A')],
+  's2b>bunker': () => [tauSiloH(P.s2b, 'V silo 2B')],
+  'hom>s3': () => [tFix(P.tr3, 't transp. Hombak')],
+  's3>bunker': () => [tauSiloH(P.s3, 'V silo 3')],
+  'bunker>sec1': () => [tauSiloH(P.bk, 'V bunker'), tFix(P.trSec, 't transp. secadero')],
+  'sec1>crf': () => [tFix(P.tauTambor, 'τ tambor')],
+  'crf>z2': () => [tFix(P.tCriba, 't criba F/G'), tFix(P.tZar, 't 3 zarandas')],
+  'z2>s5': () => [tFix(P.tColectCL, 't colector CL')],
+  's5>dosG': () => [tauSiloM(P.s5, 'V silo 5')],
+  'dosG>encCI': () => [tauMF(P.dosG, 'dosing gruesa')],
+  'encCI>esp2': () => [tFix(P.tEncCI, 't encolador CI'), tBanda(P.inclG, 'incl. gruesa')],
+  'z2>ws1': () => [tFix(P.tColectSL, 't colector SL')],
+  'ws1>ws2': () => [tFix(P.tWS1, 't windsifter 1')],
+  'ws2>s6': () => [tFix(P.tWS2, 't windsifter 2'), tFix(P.tNeum, 't neumático SL')],
+  's6>dosF': () => [tauSiloM(P.s6, 'V silo 6')],
+  'dosF>encCE': () => [tauMF(P.dosF, 'dosing fina')],
+  'encCE>esp1': () => [tFix(P.tEncCE, 't encolador CE'), tBanda(P.inclF, 'incl. fina')],
+  'encCE>esp3': () => [tFix(P.tEncCE, 't encolador CE'), tBanda(P.inclF, 'incl. fina')],
+  'z2>partG': () => [tFix(P.tColectOver, 't colector Part. Grandes')],
+  'partG>ws3': () => [tFix(P.tWS3, 't windsifter 3'), tFix(P.tFe, 'imán Fe')],
+  'ws3>r1': () => [],
+  'ws3>r2': () => [],
+  'r1>cyc': () => [tFix(P.tRef1, 't refinador 1')],
+  'r2>cyc': () => [tFix(P.tRef2, 't refinador 2')],
+  'cyc>clasSL': () => [tFix(P.tCiclon, 't ciclones'), tFix(P.tClasSL, 't clasificadores')],
+  'clasSL>ws1': () => [tFix(P.tReingresoSL, 't reingreso SL')],
+  'z2>s4': () => [tFix(P.tPolvo, 't colector polvo')],
+  's4>s8': () => [tauSiloM(P.s4, 'V silo 4')],
+  's8>bio': () => [tauSiloM(P.s8, 'V silo 8')],
+};
+const PATHS = {
+  'pm1>ds': [[340,140],[454,140]], 'ds>s1': [[486,140],[680,140]],
+  's1>bunker': [[720,140],[790,140],[790,340],[815,340]],
+  'chip>pm2': [[278,330],[368,330]], 'pm2>flex': [[448,330],[536,330]],
+  'flex>s2a': [[568,330],[610,330],[610,285],[652,285]],
+  'flex>s2b': [[568,330],[622,330],[622,360],[712,360]],
+  's2a>bunker': [[692,285],[790,285],[790,340],[815,340]],
+  's2b>bunker': [[760,360],[790,360],[790,340],[815,340]],
+  'hom>s3': [[416,540],[680,540]], 's3>bunker': [[720,540],[790,540],[790,340],[815,340]],
+  'bunker>sec1': [[895,340],[912,340],[912,250],[918,250]], 'sec1>crf': [[1002,250],[1030,250]],
+  'crf>z2': [[1065,250],[1100,250],[1100,340],[1110,340]],
+  'z2>s5': [[1170,340],[1210,340],[1210,214],[1475,214]],
+  's5>dosG': [[1515,214],[1624,214]], 'dosG>encCI': [[1656,214],[1714,214]],
+  'encCI>esp2': [[1746,214],[1864,214]],
+  'z2>ws1': [[1170,340],[1244,340]], 'ws1>ws2': [[1276,340],[1324,340]], 'ws2>s6': [[1356,340],[1435,410]],
+  's6>dosF': [[1475,410],[1624,410]], 'dosF>encCE': [[1656,410],[1714,410]],
+  'encCE>esp1': [[1746,410],[1805,410],[1805,360],[1864,360]],
+  'encCE>esp3': [[1746,410],[1805,410],[1805,480],[1864,480]],
+  'z2>partG': [[1170,340],[1208,340],[1208,525],[1234,525]],
+  'partG>ws3': [[1266,525],[1304,525]], 'ws3>r1': [[1336,525],[1364,492]], 'ws3>r2': [[1336,525],[1364,558]],
+  'r1>cyc': [[1396,492],[1430,525]], 'r2>cyc': [[1396,558],[1430,525]],
+  'cyc>clasSL': [[1462,525],[1494,525]], 'clasSL>ws1': [[1526,525],[1548,525],[1548,340],[1244,340]],
+  'z2>s4': [[1170,340],[1190,340],[1190,640],[1230,640]], 's4>s8': [[1270,640],[1325,640]], 's8>bio': [[1365,640],[1010,640]],
+};
+/* alias: nodos equivalentes en tiempo (mismo modelo) */
+const ALIAS = { aser: 'pm1', pat: 'pat', s2b: 's2a', sec2: 'sec1', crg: 'crf', z1: 'z2', z3: 'z2' };
+
+/* compila una secuencia de ids → {segs, total, tbds, miles:[{id,t}]} */
+function compileSeq(ids) {
+  const segs = [], miles = [{ id: ids[0], t: 0 }], tbds = new Set();
+  let t = 0;
+  for (let i = 0; i < ids.length - 1; i++) {
+    const key = ids[i] + '>' + ids[i + 1];
+    const ds = (DUR[key] || (() => []))();
+    ds.forEach(d => { if (d.tbd) tbds.add(d.nm); });
+    const dur = ds.reduce((a, d) => a + d.t, 0);
+    segs.push({ pts: PATHS[key] || [[0,0],[0,0]], t0: t, t1: t + dur });
+    t += dur;
+    miles.push({ id: ids[i + 1], t });
+  }
+  return { segs, total: t, tbds, miles };
+}
+function posAt(route, t) {
+  const { segs, total } = route;
+  if (!segs.length) return [0, 0];
+  if (t <= 0) return segs[0].pts[0];
+  if (t >= total) return segs[segs.length - 1].pts[segs.length ? segs[segs.length - 1].pts.length - 1 : 0];
+  let seg = segs.find(s => t >= s.t0 && t < s.t1 && s.t1 > s.t0);
+  if (!seg) { seg = segs.find(s => t <= s.t1) || segs[segs.length - 1]; return seg.pts[0]; }
+  const f = (t - seg.t0) / (seg.t1 - seg.t0), pts = seg.pts;
+  const lens = []; let L = 0;
+  for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]); lens.push(d); L += d; }
+  let tg = f * L;
+  for (let i = 1; i < pts.length; i++) {
+    if (tg <= lens[i-1]) { const g = lens[i-1] ? tg / lens[i-1] : 0;
+      return [pts[i-1][0]+(pts[i][0]-pts[i-1][0])*g, pts[i-1][1]+(pts[i][1]-pts[i-1][1])*g]; }
+    tg -= lens[i-1];
+  }
+  return pts[pts.length - 1];
+}
+const viaOf = id => SEQ.A.includes(id) ? 'A' : SEQ.C.includes(id) ? 'C' : SEQ.H.includes(id) ? 'H' : null;
+const sliceFrom = (arr, id) => arr.slice(arr.indexOf(id));
+
+/* rutas de un cambio inyectado en nodeId → { pairs: {G:[startRoute,endRoute?],F1:..,F3:..}, dests } */
+function routesForInjection(rawId) {
+  const id = ALIAS[rawId] || rawId;
+  const dests = { CL: SEQ.CL, SL1: SEQ.SL1, SL3: SEQ.SL3, OV1: SEQ.OV1, OV3: SEQ.OV3, POL: SEQ.POL };
+  const out = {};
+  if (id === 'pat') { // cambio de RECETA: 4 vías (aserrín, 2A, 2B, Hombak) → start=min, end=max
+    const SEQ_C2 = ['chip', 'pm2', 'flex', 's2b'];
+    const seqOf = v => v === 'C2' ? SEQ_C2 : SEQ[v];
+    const upstream = {};
+    for (const v of ['A', 'C', 'C2', 'H']) upstream[v] = compileSeq([...seqOf(v), 'bunker']);
+    const ord = Object.entries(upstream).sort((a, b) => a[1].total - b[1].total);
+    const minV = ord[0][0], maxV = ord[ord.length - 1][0];
+    for (const k in dests) out[k] = [
+      compileSeq([...seqOf(minV), ...SEQ.COM, ...dests[k]]),
+      compileSeq([...seqOf(maxV), ...SEQ.COM, ...dests[k]]),
+    ];
+    return { pairs: out, dual: true, minV, maxV, upstream };
+  }
+  const via = viaOf(id);
+  if (via) { for (const k in dests) out[k] = [compileSeq([...sliceFrom(SEQ[via], id), ...SEQ.COM, ...dests[k]])]; return { pairs: out, dual: false }; }
+  if (SEQ.COM.includes(id)) { for (const k in dests) out[k] = [compileSeq([...sliceFrom(SEQ.COM, id), ...dests[k]])]; return { pairs: out, dual: false }; }
+  if (SEQ.CL.includes(id)) return { pairs: { CL: [compileSeq(sliceFrom(SEQ.CL, id))] }, dual: false };
+  if (SEQ.SL1.includes(id) && SEQ.SL3.includes(id)) return { pairs: { SL1: [compileSeq(sliceFrom(SEQ.SL1, id))], SL3: [compileSeq(sliceFrom(SEQ.SL3, id))] }, dual: false };
+  if (SEQ.SL1.includes(id)) return { pairs: { SL1: [compileSeq(sliceFrom(SEQ.SL1, id))] }, dual: false };
+  if (SEQ.SL3.includes(id)) return { pairs: { SL3: [compileSeq(sliceFrom(SEQ.SL3, id))] }, dual: false };
+  if (SEQ.OV1.includes(id) && SEQ.OV3.includes(id)) return { pairs: { OV1: [compileSeq(sliceFrom(SEQ.OV1, id))], OV3: [compileSeq(sliceFrom(SEQ.OV3, id))] }, dual: false };
+  if (SEQ.OV1.includes(id)) return { pairs: { OV1: [compileSeq(sliceFrom(SEQ.OV1, id))] }, dual: false };
+  if (SEQ.OV3.includes(id)) return { pairs: { OV3: [compileSeq(sliceFrom(SEQ.OV3, id))] }, dual: false };
+  if (SEQ.POL.includes(id)) return { pairs: { POL: [compileSeq(sliceFrom(SEQ.POL, id))] }, dual: false };
+  return null;
+}
+
+/* ================= DIAGRAMA ================= */
+const NSNS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('diag');
+const el = (t, a, txt) => { const e = document.createElementNS(NSNS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+const BANDS = [
+  { x: 0, w: 185, t: 'PATIOS' }, { x: 185, w: 435, t: 'REDUCCIÓN — 3 VÍAS' },
+  { x: 620, w: 170, t: 'SILOS VERDES' }, { x: 790, w: 215, t: 'DOSIF. · SECADO' },
+  { x: 1005, w: 510, t: 'CLASIFICACIÓN REAL — CRIBAS · CLAPETAS · WS · REFINO' }, { x: 1515, w: 105, t: 'SILOS FINALES' },
+  { x: 1620, w: 380, t: 'PARTE 2 → ESPARCIDORAS' },
+];
+BANDS.forEach((b, i) => { if (i) svg.appendChild(el('line', { x1: b.x, y1: 18, x2: b.x, y2: 700, stroke: '#e4e4e4' }));
+  svg.appendChild(el('text', { x: b.x + b.w/2, y: 32, 'text-anchor': 'middle', class: 'band' }, b.t)); });
+svg.appendChild(el('line', { x1: 0, y1: 42, x2: 2000, y2: 42, stroke: '#000' }));
+[['VÍA ASERRÍN',128],['VÍA CHIP',318],['VÍA HOMBAK',528]].forEach(([t,y]) => svg.appendChild(el('text',{x:200,y:y-44,class:'lane'},t)));
+const defs = el('defs', {});
+[['ah','#000'],['ahr','#e08000'],['ahb','#888']].forEach(([id,c]) => { const m = el('marker',{id,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'}); m.appendChild(el('path',{d:'M0,0 L10,5 L0,10 z',fill:c})); defs.appendChild(m); });
+svg.appendChild(defs);
+
+const NODES = [
+  { id:'aser', x:92, y:140, g:'source', l:'Aserrín comprado', s:'~9 t/h', ok:1, d:'Aserrín de terceros → piso móvil 1.', eq:'fuente', src:'HMI Chips/Flakes' },
+  { id:'pat', x:92, y:330, g:'source', l:'Patios · rumas', s:'CLIC = cambio de RECETA', ok:1, d:'Inyectar aquí = cambio de receta: nace con 2 marcadores (start=vía más rápida, end=la más lenta) que viajan por las 3 vías.', eq:'start=min(τ_vías) · end=max(τ_vías)', src:'IJP-REC-001' },
+  { id:'desc', x:92, y:640, g:'side', l:'Descortezado', s:'paso lateral · grúa', ok:1, d:'Fuera de línea principal: grúa, eucalipto Sierra; corteza → biomasa.', eq:'paso lateral, no entra a la línea de viruta', src:'Manuel', noinj:1 },
+  { id:'chip', x:262, y:330, g:'mill', ic:'CH', l:'Molino Chips', s:'194 A', ok:1, d:'Chipeadora. Paradas por metal: 835 (causa #1).', eq:'t≈0 (transformación)', src:'HMI Chips/Flakes' },
+  { id:'pm2', x:408, y:330, g:'piso', l:'Piso Móvil 2', s:'receta · 16–23 t/h', ok:1, d:'Pila de chip; dosifica por palas.', eq:'τ = M_pila/F·3600 [s]', src:'HMI' },
+  { id:'flex', x:552, y:330, g:'mill', ic:'FX', l:'Molinos Flakes 1·2', s:'cuchillas 10 h/1.6 h', ok:1, d:'Flakers (¿Mayer+Globus?). 309/250 A. Desviador a 2A/2B: 180 s de 360 s.', eq:'t≈0 · espera desviador ∈ [0,180 s]', src:'HMI · Manuel' },
+  { id:'pm1', x:300, y:140, g:'piso', l:'Piso móvil 1', s:'solo aserrín', ok:1, d:'Pila de aserrín comprado.', eq:'τ = M_pila/F·3600 [s]', src:'HMI P.Mo.1' },
+  { id:'ds', x:470, y:140, g:'mill', ic:'DS', l:'Clasificador', s:'¿Dynescreen?', ok:1, d:'Criba del aserrín antes del Silo 1.', eq:'t_DS = plug fijo [s]', src:'Manuel · IMALPAL' },
+  { id:'hom', x:400, y:540, g:'mill', ic:'HB', l:'Hombak U100+U112', s:'escama 0.45 mm', ok:1, d:'Rolliza entera → viruta. U100 336 A · U112 263/259 A.', eq:'t≈0 (transformación)', src:'HMI U100/U112' },
+  { id:'s1', x:700, y:140, g:'silo', l:'Silo 1 · Aserrín', s:'ρ 271 · 7 t/h', ok:1, vTbd:1, d:'Silo verde ①. Densidad y caudal validados; volumen m³ no confirmado.', eq:'τ = (ρ·V·L%)/F', src:'HMI Viruta Húmeda' },
+  { id:'s2a', x:672, y:285, g:'silo', l:'Silo 2A · Flakes 1', s:'ρ 230 · L 25.4 %', ok:1, vTbd:1, d:'Silo verde ②a. Volumen m³ no confirmado.', eq:'τ = (ρ·V·L%)/F', src:'HMI' },
+  { id:'s2b', x:736, y:360, g:'silo', l:'Silo 2B · Flakes 2', s:'ρ 232 · L 41.5 %', ok:1, vTbd:1, d:'Silo verde ②b. Volumen m³ no confirmado; equivale a 2A en el modelo de ruta.', eq:'τ = (ρ·V·L%)/F', src:'HMI' },
+  { id:'s3', x:700, y:540, g:'silo', l:'Silo 3 · Hombak', s:'ρ 211 · 8.7 t/h', ok:1, vTbd:1, d:'Silo verde ③. Descarga 300 m³/h; volumen m³ no confirmado.', eq:'τ = (ρ·V·L%)/F', src:'HMI' },
+  { id:'bunker', x:855, y:340, g:'piso', l:'Dosing Bunker', s:'IMAL · selector Maestro', ok:1, d:'Mezcla por receta % (24/47/29). Selector Maestro → Secadero 1 ó 2.', eq:'τ_b = (ρ·V·L%)/F · F húmedo 27,005 kg/h', src:'HMI Viruta Húmeda' },
+  { id:'sec1', x:960, y:250, g:'drum', l:'Secadero 1', s:'260→132 °C', ok:1, d:'Tambor rotatorio. 27,005 kg/h húmedo → 15,235 kg/h seco + 11,776 kg/h agua evaporada; 10.2 MW; combustible = polvo.', eq:'τ_tambor = M_holdup/F [placeholder]', src:'HMI Secador 10-jul-2026' },
+  { id:'sec2', x:960, y:430, g:'drum', l:'Secadero 2', s:'polvo combustible', ok:1, d:'Segundo secadero seleccionado por Maestro; usa el mismo modelo temporal que Secadero 1 para trazabilidad.', eq:'F_evap = F_in − F_out', src:'HMI Secador' },
+  { id:'crf', x:1048, y:250, g:'screen', l:'Criba F', s:'26 T/h', ok:1, d:'Criba a la salida de secaderos antes de las zarandas.', eq:'F_F = 26 T/h · t_criba plug', src:'Fotos HMI 10-jul-2026' },
+  { id:'crg', x:1048, y:430, g:'screen', l:'Criba G', s:'21 T/h', ok:1, d:'Criba paralela antes de las zarandas.', eq:'F_G = 21 T/h · mismo t_criba del modelo', src:'Fotos HMI 10-jul-2026' },
+  { id:'z1', x:1140, y:215, g:'screen', l:'Zaranda 1', s:'clapetas 1–7', ok:1, d:'Una de tres zarandas con clapetas ajustables; separa fracciones hacia colectores CL, SL-Macro, SL-Micro, Part. Grandes y Polvo.', eq:'POS 7 ó 100% = TODO AL SILO CL', src:'Fotos HMI 10-jul-2026' },
+  { id:'z2', x:1140, y:340, g:'screen', l:'Zaranda 2', s:'5 fracciones', ok:1, d:'Nodo de división del modelo: CL/core, SL-Macro, SL-Micro, Part. Grandes y Polvo. Las variables de clapeta gobiernan el split conceptual.', eq:'POS 7 ó 100% = TODO AL SILO CL', src:'Fotos HMI 10-jul-2026' },
+  { id:'z3', x:1140, y:465, g:'screen', l:'Zaranda 3', s:'clapetas 1–7', ok:1, d:'Tercera zaranda del banco de clasificación. Equivale a Z2 para tiempos de simulación.', eq:'t_zarandas = plug [s]', src:'Fotos HMI 10-jul-2026' },
+  { id:'partG', x:1250, y:525, g:'mill', ic:'PG', l:'Part. Grandes', s:'oversize', ok:1, d:'Fracción oversize enviada al lazo de limpieza y refinado.', eq:'split Part. Grandes %', src:'Fotos HMI 10-jul-2026' },
+  { id:'ws1', x:1260, y:340, g:'mill', ic:'W1', l:'Windsifter 1', s:'línea SL', ok:1, d:'Limpieza de SL-Macro/SL-Micro antes de Silo 6.', eq:'t_WS1 plug [s]', src:'Fotos HMI 10-jul-2026' },
+  { id:'ws2', x:1340, y:340, g:'mill', ic:'W2', l:'Windsifter 2', s:'línea SL', ok:1, d:'Segunda limpieza de línea SL antes de Silo 6.', eq:'t_WS2 plug [s]', src:'Fotos HMI 10-jul-2026' },
+  { id:'ws3', x:1320, y:525, g:'mill', ic:'W3', l:'Windsifter 3', s:'arena/piedras', ok:1, d:'Lazo oversize: saca Sand/arena y Oversize/piedras; incluye imán Fe antes de refinadores.', eq:'t_WS3 + t_Fe', src:'Fotos HMI 10-jul-2026' },
+  { id:'r1', x:1380, y:492, g:'mill', ic:'R1', l:'Refinador 1', s:'6.8 T/h', ok:1, d:'Molino refinador del lazo oversize.', eq:'t_ref1 plug [s] · capacidad 6.8 T/h', src:'Fotos HMI 10-jul-2026' },
+  { id:'r2', x:1380, y:558, g:'mill', ic:'R2', l:'Refinador 2', s:'8.0 T/h', ok:1, d:'Segundo molino refinador del lazo oversize.', eq:'t_ref2 plug [s] · capacidad 8.0 T/h', src:'Fotos HMI 10-jul-2026' },
+  { id:'cyc', x:1446, y:525, g:'mill', ic:'CY', l:'Ciclones', s:'post-refino', ok:1, d:'Ciclones de descarga después de refinadores.', eq:'t_ciclón plug [s]', src:'Fotos HMI 10-jul-2026' },
+  { id:'clasSL', x:1510, y:525, g:'mill', ic:'CL', l:'Clasificadores', s:'reingresa a SL', ok:1, d:'Clasificadores posteriores al refino; material aceptado reingresa a la línea SL.', eq:'t_clasificadores + t_reingreso_SL', src:'Fotos HMI 10-jul-2026' },
+  { id:'waste', x:1450, y:590, g:'side', l:'Arena/piedras/Fe', s:'rechazo WS3', ok:1, d:'Rechazo del Windsifter 3: Sand/arena, Oversize/piedras y extracción por imán Fe.', eq:'rechazo, no va a Parte 2', src:'Fotos HMI 10-jul-2026', noinj:1 },
+  { id:'s5', x:1495, y:214, g:'silo', l:'Silo 5 · CL/core', s:'ρ 128–135 · L 44%', ok:1, vTbd:1, d:'Línea CL/core va directa desde zarandas a Silo 5. Sin windsifter. Volumen m³ no confirmado.', eq:'τ = (ρ·V·L%)/302×60', src:'HMI · Parte 2' },
+  { id:'s6', x:1455, y:410, g:'silo', l:'Silo 6 · SL/capas', s:'ρ 161–188 · L 31%', ok:1, vTbd:1, d:'Línea SL pasa por Windsifter 1 y 2 antes de Silo 6. Volumen m³ no confirmado.', eq:'τ = (ρ·V·L%)/108×60', src:'HMI · Parte 2' },
+  { id:'s4', x:1250, y:640, g:'silo', l:'Silo 4 · Polvo', s:'ρ 238', ok:1, vTbd:1, d:'Fracción polvo de clasificación. Sale a 150 °C y va a combustible.', eq:'τ = (ρ·V·L%)/F_polvo×60 · V m³ no confirmado', src:'Fotos HMI 10-jul-2026' },
+  { id:'s8', x:1345, y:640, g:'silo', l:'Silo 8 · TVM', s:'filtros', ok:1, vTbd:1, d:'Silo de filtros TVM asociado a polvo para quemador. Volumen m³ no confirmado.', eq:'τ = (ρ·V·L%)/F_polvo×60', src:'Fotos HMI 10-jul-2026' },
+  { id:'bio', x:1010, y:640, g:'side', l:'Quemador', s:'corteza+polvo', ok:1, d:'Combustible de secadero: polvo + corteza; polvo reportado 3,610 kg/h, diesel 0.', eq:'energía/calor, no sale a Parte 2', src:'HMI Secador', noinj:1 },
+  { id:'dosG', x:1640, y:214, g:'mill', ic:'DG', l:'Dosing CL', s:'M 25 · F 302', ok:1, d:'Dosificadora CL/core (P2).', eq:'τ = M/F×60 = 5.0 s', src:'sim v3 · HMI' },
+  { id:'encCI', x:1730, y:214, g:'mill', ic:'CI', l:'Encolador CI', s:'core', ok:1, d:'Encolado core.', eq:'t_enc fijo [s] placeholder', src:'sim v3' },
+  { id:'esp2', x:1880, y:214, g:'mill', ic:'E2', l:'Esparcidora 2', s:'CL · core', ok:1, d:'Llega por ruta CL/core desde Silo 5. Inclinada gruesa 68.5 m @ 96.5 = 42.6 s.', eq:'t_incl = L/v×60', src:'sim v3 · HMI' },
+  { id:'dosF', x:1640, y:410, g:'mill', ic:'DF', l:'Dosing SL', s:'M 20 · F 108', ok:1, d:'Dosificadora SL/capas externas.', eq:'τ = M/F×60 = 11.1 s', src:'sim v3 · HMI' },
+  { id:'encCE', x:1730, y:410, g:'mill', ic:'CE', l:'Encolador CE', s:'capas externas', ok:1, d:'Encolado de capas externas.', eq:'t_enc fijo [s] placeholder', src:'sim v3' },
+  { id:'esp1', x:1880, y:360, g:'mill', ic:'E1', l:'Esparcidora 1', s:'SL-Macro/Micro', ok:1, d:'Llega por ruta SL desde Silo 6. Inclinada fina 64.57 m @ 99.5 = 38.9 s.', eq:'t_incl = L/v×60', src:'sim v3' },
+  { id:'esp3', x:1880, y:480, g:'mill', ic:'E3', l:'Esparcidora 3', s:'SL-Macro/Micro', ok:1, d:'Misma ruta SL; se separa al final hacia la segunda capa externa.', eq:'ídem esp1', src:'sim v3' },
+];
+const NODE_LABEL = Object.fromEntries(NODES.map(n => [n.id, n.l]));
+const EDGES = [
+  { f:'aser', t:'pm1', k:'main' }, { f:'pm1', t:'ds', k:'main', l:'imán Fe' }, { f:'ds', t:'s1', k:'main' },
+  { f:'pat', t:'chip', k:'main', l:'rolliza' }, { f:'chip', t:'pm2', k:'main', l:'chip' }, { f:'pm2', t:'flex', k:'main' },
+  { f:'flex', t:'s2a', k:'main', l:'desv. 180/360 s', via:[[610,330],[610,285]] },
+  { f:'flex', t:'s2b', k:'main', via:[[610,330],[610,360]] },
+  { f:'pat', t:'hom', k:'main', l:'rolliza entera', via:[[160,440],[160,540]] },
+  { f:'hom', t:'s3', k:'main', l:'viruta' },
+  { f:'s1', t:'bunker', k:'main', via:[[790,140],[790,340]] },
+  { f:'s2a', t:'bunker', k:'main', l:'receta %', via:[[790,285],[790,340]] },
+  { f:'s2b', t:'bunker', k:'main' },
+  { f:'s3', t:'bunker', k:'main', via:[[790,540],[790,340]] },
+  { f:'bunker', t:'sec1', k:'main', l:'Maestro: 1 ó 2', via:[[912,340],[912,250]] },
+  { f:'bunker', t:'sec2', k:'main', via:[[912,340],[912,430]] },
+  { f:'sec1', t:'crf', k:'main' }, { f:'sec2', t:'crg', k:'main' },
+  { f:'crf', t:'z1', k:'main', l:'26 T/h' }, { f:'crf', t:'z2', k:'main', via:[[1095,250],[1095,340]] },
+  { f:'crg', t:'z2', k:'main', l:'21 T/h', via:[[1095,430],[1095,340]] }, { f:'crg', t:'z3', k:'main' },
+  { f:'z2', t:'s5', k:'main', via:[[1210,340],[1210,214]] },
+  { f:'z2', t:'ws1', k:'main' }, { f:'ws1', t:'ws2', k:'main' }, { f:'ws2', t:'s6', k:'main' },
+  { f:'z2', t:'partG', k:'rec', via:[[1208,340],[1208,525]] },
+  { f:'partG', t:'ws3', k:'rec' }, { f:'ws3', t:'waste', k:'bio', l:'sand/piedras + Fe', via:[[1390,585]] },
+  { f:'ws3', t:'r1', k:'rec' }, { f:'ws3', t:'r2', k:'rec' },
+  { f:'r1', t:'cyc', k:'rec' }, { f:'r2', t:'cyc', k:'rec' }, { f:'cyc', t:'clasSL', k:'rec' },
+  { f:'clasSL', t:'ws1', k:'rec', l:'reingreso SL', via:[[1548,525],[1548,340]] },
+  { f:'z2', t:'s4', k:'bio', via:[[1190,340],[1190,640]] },
+  { f:'s4', t:'s8', k:'bio', l:'filtros TVM' }, { f:'s8', t:'bio', k:'bio' },
+  { f:'desc', t:'bio', k:'bio', l:'corteza' },
+  { f:'bio', t:'sec1', k:'bio', l:'10.2 MW calor', via:[[960,640],[960,560]] },
+  { f:'s5', t:'dosG', k:'main' }, { f:'dosG', t:'encCI', k:'main' },
+  { f:'encCI', t:'esp2', k:'main', l:'incl. gruesa 68.5 m' },
+  { f:'s6', t:'dosF', k:'main' }, { f:'dosF', t:'encCE', k:'main' },
+  { f:'encCE', t:'esp1', k:'main', l:'incl. fina 64.57 m', via:[[1710,430],[1710,380]] },
+  { f:'encCE', t:'esp3', k:'main', via:[[1710,430],[1710,480]] },
+];
+function glyph(n) {
+  const g = el('g', { class: 'node' + (n.noinj ? ' noinj' : ''), tabindex: 0 });
+  const stroke = n.ok ? '#060' : '#b00', cls = 'glyph';
+  if (n.g === 'mill') { g.appendChild(el('circle', { cx:n.x, cy:n.y, r:16, fill:'#fff', stroke, 'stroke-width':2, class:cls }));
+    g.appendChild(el('text', { x:n.x, y:n.y+3.5, class:'icon' }, n.ic || 'M')); }
+  else if (n.g === 'silo') { g.appendChild(el('rect', { x:n.x-18, y:n.y-22, width:36, height:34, fill:'#fff', stroke, 'stroke-width':2, class:cls }));
+    g.appendChild(el('ellipse', { cx:n.x, cy:n.y-22, rx:18, ry:6, fill:'#fff', stroke, 'stroke-width':2 }));
+    g.appendChild(el('path', { d:`M${n.x-18},${n.y+12} L${n.x},${n.y+26} L${n.x+18},${n.y+12}`, fill:'#fff', stroke, 'stroke-width':2 })); }
+  else if (n.g === 'drum') { g.appendChild(el('rect', { x:n.x-42, y:n.y-15, width:84, height:30, rx:14, fill:'#fff', stroke, 'stroke-width':2, class:cls }));
+    [-26,0,26].forEach(dx => g.appendChild(el('line', { x1:n.x+dx+4, y1:n.y-15, x2:n.x+dx-4, y2:n.y+15, stroke }))); }
+  else if (n.g === 'screen') { const gg = el('g', { transform:`rotate(-7 ${n.x} ${n.y})` });
+    gg.appendChild(el('rect', { x:n.x-30, y:n.y-12, width:60, height:24, fill:'#fff', stroke, 'stroke-width':2, class:cls }));
+    [-15,0,15].forEach(dx => gg.appendChild(el('line', { x1:n.x+dx, y1:n.y-12, x2:n.x+dx, y2:n.y+12, stroke }))); g.appendChild(gg); }
+  else if (n.g === 'piso') { g.appendChild(el('rect', { x:n.x-38, y:n.y-12, width:76, height:24, fill:'#fff', stroke, 'stroke-width':2, class:cls }));
+    [-20,-2,16].forEach(dx => g.appendChild(el('path', { d:`M${n.x+dx},${n.y-4} l8,4 l-8,4`, fill:'none', stroke, 'stroke-width':1.5 }))); }
+  else if (n.g === 'source') g.appendChild(el('rect', { x:n.x-44, y:n.y-16, width:88, height:32, fill:'#f4f4f4', stroke:'#000', 'stroke-width':1.5, class:cls }));
+  else if (n.g === 'side') g.appendChild(el('rect', { x:n.x-44, y:n.y-16, width:88, height:32, fill:'#fff', stroke:n.ok?'#888':'#b00', 'stroke-width':1.5, 'stroke-dasharray':'4 3', class:cls }));
+  const ly = n.g==='silo' ? n.y+40 : (n.g==='source'||n.g==='side') ? n.y+28 : n.g==='mill' ? n.y+30 : n.y+26;
+  g.appendChild(el('text', { x:n.x, y:ly, 'text-anchor':'middle', class:'nlabel' }, n.l));
+  if (n.s) g.appendChild(el('text', { x:n.x, y:ly+12, 'text-anchor':'middle', class:'nsub' }, n.s));
+  if (n.vTbd) g.appendChild(el('text', { x:n.x, y:ly+24, 'text-anchor':'middle', class:'nsub', style:'fill:#b00;font-weight:700' }, 'V m³ ?'));
+  g.addEventListener('click', () => nodeClick(n));
+  g.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); nodeClick(n); } });
+  return g;
+}
+const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
+function anchor(n, tx) { const w = { mill:16, silo:20, drum:44, screen:32, piso:40, source:46, side:46 }[n.g] || 16; return tx > n.x ? [n.x+w, n.y] : [n.x-w, n.y]; }
+const STYLE = { main:{ s:'#000', d:null, m:'ah', w:1.6 }, rec:{ s:'#e08000', d:'6 4', m:'ahr', w:1.6 }, bio:{ s:'#888', d:'4 3', m:'ahb', w:1.3 } };
+EDGES.forEach(e => { const a = byId[e.f], b = byId[e.t], via = e.via || [];
+  const p1 = anchor(a, (via[0] || [b.x])[0]), p2 = anchor(b, (via[via.length-1] || [a.x])[0]);
+  const st = STYLE[e.k];
+  const attrs = { points: [p1, ...via, p2].map(p => p.join(',')).join(' '), fill:'none', stroke:st.s, 'stroke-width':st.w, 'marker-end':`url(#${st.m})` };
+  if (st.d) attrs['stroke-dasharray'] = st.d;
+  svg.appendChild(el('polyline', attrs));
+  if (e.l) { const mid = via.length ? via[Math.floor((via.length-1)/2)] : [(p1[0]+p2[0])/2, (p1[1]+p2[1])/2];
+    svg.appendChild(el('text', { x: via.length ? mid[0]+6 : mid[0], y: mid[1]-5, 'text-anchor':'middle', class:'elabel '+(e.k==='rec'?'rec':e.k==='bio'?'bio':'') }, e.l)); } });
+svg.appendChild(el('text', { x:1188, y:188, class:'elabel rec' }, 'regla HMI: POS 7 / 100% = todo al Silo CL'));
+svg.appendChild(el('text', { x:1176, y:302, class:'elabel' }, '5 fracciones: CL · SL-Macro · SL-Micro · Part. Grandes · Polvo'));
+NODES.forEach(n => svg.appendChild(glyph(n)));
+const mkLayer = el('g', {}); svg.appendChild(mkLayer);
+
+/* ================= CAMBIOS (inyección en vivo, estilo Sección 2) ================= */
+const COLORS = ['#06c', '#C62828', '#7B1FA2', '#EF6C00', '#00838F', '#2E7D32', '#AD1457'];
+let changes = [], selId = null, speed = 1, mode = 'inj';
+const fmtDur = s => s < 90 ? s.toFixed(0) + ' s' : s < 3600 ? Math.floor(s/60) + ':' + String(Math.round(s%60)).padStart(2,'0') + ' min' : (s/3600).toFixed(2) + ' h';
+const fmtQuito = ms => new Intl.DateTimeFormat('es-EC', { timeZone: 'America/Guayaquil', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(ms));
+
+function nodeClick(n) {
+  if (mode === 'info' || n.noinj) { showDetail(n); return; }
+  const r = routesForInjection(n.id);
+  if (!r) { showDetail(n); return; }
+  const ch = { n: changes.length + 1, at: n.id, t0: Date.now(), color: COLORS[changes.length % COLORS.length], ...r };
+  changes.push(ch); selId = ch.n;
+  showDetail(n);
+  updateReports(); syncUi();
+}
+function recompileAll() { changes = changes.map(ch => ({ ...ch, ...routesForInjection(ch.at) })); updateReports(); }
+function elapsedOf(ch) { return (Date.now() - ch.t0) / 1000 * speed; }
+function maxTotal(ch) { let m = 0; for (const k in ch.pairs) for (const r of ch.pairs[k]) m = Math.max(m, r.total); return m; }
+
+function tick() {
+  document.getElementById('quitoClock').textContent = fmtQuito(Date.now());
+  mkLayer.innerHTML = '';
+  const tbds = new Set();
+  for (const ch of changes) {
+    const t = elapsedOf(ch);
+    for (const k in ch.pairs) {
+      const pr = ch.pairs[k];
+      pr.forEach((route, i) => {
+        route.tbds.forEach(x => tbds.add(x));
+        const [x, y] = posAt(route, t);
+        if (i === 0) mkLayer.appendChild(el('circle', { cx:x, cy:y, r:7, fill:ch.color, stroke:'#000', 'stroke-width':1.2 }));
+        else mkLayer.appendChild(el('circle', { cx:x, cy:y, r:7, fill:'#fff', stroke:ch.color, 'stroke-width':2.5 }));
+      });
+    }
+    // vías intermedias (ni la más rápida ni la más lenta): marcador en su tramo upstream
+    if (ch.dual && ch.upstream) {
+      for (const vk in ch.upstream) {
+        if (vk === ch.minV || vk === ch.maxV) continue;
+        const ur = ch.upstream[vk];
+        ur.tbds.forEach(x => tbds.add(x));
+        if (t < ur.total) { const [x, y] = posAt(ur, t);
+          mkLayer.appendChild(el('circle', { cx:x, cy:y, r:6, fill:ch.color, stroke:'#000', 'stroke-width':1, 'fill-opacity':0.7 })); }
+      }
+    }
+  }
+  const tb = document.getElementById('tbdbar');
+  const volWarn = UNKNOWN.size ? ` · <span class="tbd">${UNKNOWN.size} volúmenes m³ de silos no confirmados</span> (rojo)` : '';
+  if (tbds.size) tb.innerHTML = `<span class="tbd">TBD (cuentan 0 s):</span> ${[...tbds].join(' · ')} — llénalos en Parámetros${volWarn}`;
+  else if (PLACEHOLDER.size || UNKNOWN.size) tb.innerHTML = `${PLACEHOLDER.size ? `<span style="color:#b36200;font-weight:700">⚠ ${PLACEHOLDER.size} valores son PLACEHOLDER imaginados</span> (naranja)` : '<span class="ok">Sin placeholders naranja</span>'}${volWarn} — ${changes.length ? '' : 'Clic en un equipo para inyectar un cambio.'}`;
+  else tb.innerHTML = changes.length ? '<span class="ok">Todos los parámetros con valor real.</span>' : 'Sin cambios activos. Clic en un equipo para inyectar uno.';
+  /* mover slider del cambio seleccionado */
+  const mv = document.getElementById('mover');
+  const sel = changes.find(c => c.n === selId);
+  if (sel) { mv.disabled = false; mv.max = Math.ceil(maxTotal(sel)) || 1; if (document.activeElement !== mv) mv.value = Math.min(elapsedOf(sel), +mv.max); }
+  else { mv.disabled = true; mv.value = 0; }
+  refreshReportStates();
+  requestAnimationFrame ? setTimeout(tick, 200) : setTimeout(tick, 200);
+}
+
+/* ---------- reportes ---------- */
+const ROUTE_ORDER = ['CL', 'SL1', 'SL3', 'OV1', 'OV3', 'POL'];
+const DEST_LABEL = {
+  CL: 'Esp.2 · CL/core',
+  SL1: 'Esp.1 · SL-Macro/Micro',
+  SL3: 'Esp.3 · SL-Macro/Micro',
+  OV1: 'Oversize→Ref.1→SL→Esp.1',
+  OV3: 'Oversize→Ref.2→SL→Esp.3',
+  POL: 'Polvo→Silo 4/8→Quemador'
+};
+function milestoneRows(ch) {
+  /* une hitos de las rutas start (índice 0); para dual agrega columna end */
+  const rows = [];
+  const seen = new Set();
+  for (const k of ROUTE_ORDER) {
+    if (!ch.pairs[k]) continue;
+    const rs = ch.pairs[k][0], re = ch.pairs[k][1] || ch.pairs[k][0];
+    rs.miles.forEach((m, i) => {
+      const key = m.id;
+      if (seen.has(key) && !['esp1','esp2','esp3','bio'].includes(m.id)) return;
+      seen.add(key);
+      rows.push({ id: m.id, label: NODE_LABEL[m.id] || m.id, ts: m.t, te: (re.miles[i] || m).t, dest: ['esp1','esp2','esp3','bio'].includes(m.id) ? DEST_LABEL[k] : '' });
+    });
+  }
+  rows.sort((a, b) => a.ts - b.ts);
+  return rows;
+}
+function updateReports() {
+  document.getElementById('nChg').textContent = changes.length;
+  const list = document.getElementById('repList');
+  if (!changes.length) { list.innerHTML = '<p class="sub" style="margin:8px 0">Aún no hay cambios. Haz clic en un equipo.</p>'; return; }
+  list.innerHTML = changes.map(ch => {
+    const rows = milestoneRows(ch).map(r =>
+      `<tr data-t="${r.te}"><td>${r.label}${r.dest ? ' — ' + r.dest : ''}</td>` +
+      `<td>${fmtQuito(ch.t0 + r.ts / speed * 1000)}</td>` +
+      (ch.dual ? `<td>${fmtQuito(ch.t0 + r.te / speed * 1000)}</td>` : '') +
+      `<td class="st">…</td></tr>`).join('');
+    return `<div class="chg ${ch.n === selId ? 'sel' : ''}" data-n="${ch.n}">` +
+      `<div class="hd"><span class="chip" style="background:${ch.color}"></span> Cambio ${ch.n} · ${NODE_LABEL[ch.at] || ch.at}` +
+      `${ch.dual ? ' · RECETA (start/end)' : ''}<span style="margin-left:auto;font-weight:400">${fmtQuito(ch.t0)}</span></div>` +
+      `<div class="meta">${ch.dual ? `start = vía ${({A:'aserrín',C:'chip',C2:'chip 2B',H:'Hombak'})[ch.minV]} · end = vía ${({A:'aserrín',C:'chip',C2:'chip 2B',H:'Hombak'})[ch.maxV]}` : 'marcador único (start=end)'}</div>` +
+      `<table><tr><td><b>Hito</b></td><td><b>start</b></td>${ch.dual ? '<td><b>end</b></td>' : ''}<td><b>estado</b></td></tr>${rows}</table></div>`;
+  }).join('');
+  list.querySelectorAll('.chg .hd').forEach(hd => hd.addEventListener('click', () => { selId = +hd.parentElement.dataset.n; updateReports(); }));
+}
+function refreshReportStates() {
+  document.querySelectorAll('#repList .chg').forEach(card => {
+    const ch = changes.find(c => c.n === +card.dataset.n);
+    if (!ch) return;
+    const t = elapsedOf(ch);
+    card.querySelectorAll('tr[data-t]').forEach(tr => {
+      const done = t >= +tr.dataset.t;
+      tr.classList.toggle('done', done);
+      tr.querySelector('.st').textContent = done ? '✓' : 'en ruta';
+    });
+  });
+}
+
+/* ---------- detalle ---------- */
+function showDetail(n) {
+  const status = n.vTbd ? '<span class="tbd">volumen m³ no confirmado</span>' : (n.ok ? '<span class="ok">confirmado</span>' : '<span class="tbd">por confirmar</span>');
+  document.getElementById('detail').innerHTML =
+    `<h3>${n.l} · ${status}</h3>` +
+    `<div>${n.d}</div>` + (n.eq ? `<div class="eq">${n.eq}</div>` : '') + `<div class="src">Fuente: ${n.src}</div>`;
+}
+
+/* ---------- panel de parámetros (pestaña propia) ---------- */
+const FIELDS = [
+  ['Vía aserrín', [['pila1_M','M pila 1','kg'],['pila1_F','F pila 1','kg/h'],['tDS','t clasificador','s'],['tr1','t transporte','s'],
+    ['s1.rho','silo1 ρ','kg/m³'],['s1.V','silo1 V','m³'],['s1.L','silo1 nivel','%'],['s1.F','silo1 F out','kg/h']]],
+  ['Vía chip / flakes', [['pila2_M','M pila 2','kg'],['pila2_F','F pila 2','kg/h'],['esperaDesv','espera desv.','s'],['tr2','t transporte','s'],
+    ['s2.rho','silo2A ρ','kg/m³'],['s2.V','silo2A V','m³'],['s2.L','silo2A nivel','%'],['s2.F','silo2A F out','kg/h'],
+    ['s2b.rho','silo2B ρ','kg/m³'],['s2b.V','silo2B V','m³'],['s2b.L','silo2B nivel','%'],['s2b.F','silo2B F out','kg/h']]],
+  ['Vía Hombak', [['tr3','t transporte','s'],['s3.rho','silo3 ρ','kg/m³'],['s3.V','silo3 V','m³'],['s3.L','silo3 nivel','%'],['s3.F','silo3 F out','kg/h']]],
+  ['Bunker + secadero', [['bk.rho','bunker ρ','kg/m³'],['bk.V','bunker V','m³'],['bk.L','bunker nivel','%'],['bk.F','bunker F','kg/h'],
+    ['trSec','t transp. sec','s'],['tauTambor','τ tambor','s']]],
+  ['Clasificación · cribas/clapetas', [['cribaF_F','Criba F cap.','kg/h'],['cribaG_F','Criba G cap.','kg/h'],['tCriba','t criba','s'],['tZar','t 3 zarandas','s'],
+    ['clapPos','clapeta POS','1–7'],['clapPct','clapeta %','%'],['splitCL','split CL','%'],['splitMacro','split SL Macro','%'],['splitMicro','split SL Micro','%'],['splitOver','split Part. Grandes','%'],['splitPolvo','split Polvo','%']]],
+  ['Clasificación · limpieza/refino', [['tColectCL','t colector CL','s'],['tColectSL','t colector SL','s'],['tColectOver','t colector oversize','s'],['tPolvo','t colector polvo','s'],
+    ['tWS1','t Windsifter 1','s'],['tWS2','t Windsifter 2','s'],['tWS3','t Windsifter 3','s'],['tFe','t imán Fe','s'],['tNeum','t neumático SL','s'],
+    ['ref1_F','Refinador 1 cap.','kg/h'],['ref2_F','Refinador 2 cap.','kg/h'],['tRef1','t refinador 1','s'],['tRef2','t refinador 2','s'],['tCiclon','t ciclones','s'],['tClasSL','t clasificadores','s'],['tReingresoSL','t reingreso SL','s']]],
+  ['Silos finales', [['s5.rho','silo5 ρ','kg/m³'],['s5.V','silo5 V','m³'],['s5.L','silo5 nivel','%'],['s5.Fmin','silo5 F out','kg/min'],
+    ['s6.rho','silo6 ρ','kg/m³'],['s6.V','silo6 V','m³'],['s6.L','silo6 nivel','%'],['s6.Fmin','silo6 F out','kg/min'],
+    ['s4.rho','silo4 polvo ρ','kg/m³'],['s4.V','silo4 V','m³'],['s4.L','silo4 nivel','%'],['s4.Fmin','silo4 F out','kg/min'],
+    ['s8.rho','silo8 TVM ρ','kg/m³'],['s8.V','silo8 V','m³'],['s8.L','silo8 nivel','%'],['s8.Fmin','silo8 F out','kg/min']]],
+  ['Parte 2 (defaults sim v3)', [['dosG.M','dos.gruesa M','kg'],['dosG.F','dos.gruesa F','kg/min'],['dosF.M','dos.fina M','kg'],['dosF.F','dos.fina F','kg/min'],
+    ['tEncCI','t enc. CI','s'],['tEncCE','t enc. CE','s'],
+    ['inclG.L','incl.G largo','m'],['inclG.v','incl.G vel','m/min'],['inclF.L','incl.F largo','m'],['inclF.v','incl.F vel','m/min']]],
+];
+const getP = p => p.split('.').reduce((o, k) => o[k], P);
+const setP = (p, v) => { const ks = p.split('.'); ks.slice(0, -1).reduce((o, k) => o[k], P)[ks[ks.length-1]] = v; };
+function buildParams() {
+  const grid = document.getElementById('pgrid');
+  grid.innerHTML = '';
+  for (const [title, rows] of FIELDS) {
+    const fs = document.createElement('fieldset');
+    fs.innerHTML = `<legend>${title}</legend>` + rows.map(([p, l, u]) => {
+      const cls = [PLACEHOLDER.has(p) ? 'ph' : '', UNKNOWN.has(p) ? 'unk' : ''].filter(Boolean).join(' ');
+      return `<div class="row"><label>${l}</label><input type="number" step="any" data-p="${p}" class="${cls}" value="${getP(p) ?? ''}"><span class="u">${u}</span></div>`;
+    }).join('');
+    grid.appendChild(fs);
+  }
+  grid.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+    const v = inp.value === '' ? null : +inp.value;
+    setP(inp.dataset.p, v === 0 ? null : v);
+    PLACEHOLDER.delete(inp.dataset.p); UNKNOWN.delete(inp.dataset.p); inp.classList.remove('ph'); inp.classList.remove('unk');
+    recompileAll();
+  }));
+}
+
+/* ---------- UI wiring ---------- */
+function syncUi() { document.getElementById('nChg').textContent = changes.length; }
+document.getElementById('tabLinea').addEventListener('click', () => setView('linea'));
+document.getElementById('tabParams').addEventListener('click', () => setView('params'));
+function setView(v) {
+  document.getElementById('viewLinea').classList.toggle('on', v === 'linea');
+  document.getElementById('viewParams').classList.toggle('on', v === 'params');
+  document.getElementById('tabLinea').classList.toggle('on', v === 'linea');
+  document.getElementById('tabParams').classList.toggle('on', v === 'params');
+}
+document.getElementById('zones').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.getElementById('diagwrap').scrollTo({ left: +b.dataset.x, behavior: 'smooth' });
+});
+document.getElementById('modeSel').addEventListener('change', e => mode = e.target.value);
+document.getElementById('speedSel').addEventListener('change', e => {
+  const now = Date.now(), elapsed = changes.map(ch => elapsedOf(ch));
+  speed = +e.target.value;
+  changes.forEach((ch, i) => { ch.t0 = now - elapsed[i] / speed * 1000; });  // re-ancla: tiempo simulado continuo
+  updateReports();
+});
+document.getElementById('mover').addEventListener('input', e => {
+  const sel = changes.find(c => c.n === selId); if (!sel) return;
+  sel.t0 = Date.now() - (+e.target.value) / speed * 1000;
+  updateReports();
+});
+document.getElementById('resetBtn').addEventListener('click', () => { changes = []; selId = null; updateReports(); syncUi(); });
+document.getElementById('reportsBtn').addEventListener('click', () => document.getElementById('reports').classList.toggle('hide'));
+document.getElementById('repClose').addEventListener('click', () => document.getElementById('reports').classList.add('hide'));
+
+buildParams(); updateReports(); tick();
+</script>
