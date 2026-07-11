@@ -90,6 +90,16 @@
 
 ## Historial
 
+### 2026-07-11 — Simulador profesional: Sección 1 rediseñada + fixes Sección 2 + sync de páginas desplegadas
+
+**Qué cambió:**
+- **Sync repo ↔ Vercel:** `/trazabilidad-preparacion` y `/trazabilidad-total` estaban desplegadas (deploy manual 10-jul) pero no versionadas — se agregan las fuentes (`parte-1-preparacion-madera/html-app/trazabilidad-preparacion/`, `parte-2-aglomerados/deck/trazabilidad-total/`) + rutas en `vercel.json` y `scripts/build-vercel-public.sh` + landing.
+- **Sección 1 (preparación de madera):** rediseño visual completo conservando el wireframe P&ID — header verde NOVOPAN con reloj amarillo, tipografía Barlow/Barlow Semi Condensed, toolbar sticky con pastillas y chips de zona, fondos tenues por zona, tarjetas blancas en Parámetros/Reportes/Detalle, paleta de trazadores igual a Sección 2 (con número de cambio sobre el marcador). Lógica y ecuaciones intactas (τ=M/F×60 · t=L/v×60 · receta start=min/end=max); placeholders naranja y volúmenes no confirmados en rojo se conservan.
+- **Sección 2 (línea horizontal, en `trazabilidad-linea` y `trazabilidad-total`):** des-aglomerado de la zona 2B — detector de metales más angosto con rótulo elevado y guía punteada, rótulo de cortadores de filo ya no pisa el detector, nariz de rechazo sin tambor duplicado; rótulos "IMÁN · BANDA → AZUL" y "BANDA → ROJA" subidos para que el colchón no los tape; "TABLERO · POST-PRENSA" movido para no quedar detrás de refila/sierra.
+- Verificado en navegador: selfTest v3 OK (346.5 s @ 14.5 · 452.2 s @ 11.11), inyecciones y reportes con hora de Quito en las 3 páginas, CSV del HMI en vivo, sin errores de consola.
+
+**Pendiente:** reemplazar los 27 placeholders y los 8 volúmenes m³ de silos cuando IT confirme los tags del HMI (los campos ya están listos en Parámetros).
+
 ### 2026-06-22 — Reorganización repo: Parte 1 / Parte 2 + sync local
 
 **Qué cambió:**

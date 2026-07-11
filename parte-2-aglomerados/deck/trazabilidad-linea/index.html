@@ -177,8 +177,8 @@
       <circle cx="6444" cy="412" r="16" fill="url(#steel)" stroke="#6B7886" stroke-width="1.5"/>
       <circle cx="1948" cy="412" r="17" fill="url(#steel)" stroke="#1565C0" stroke-width="2"/>
       <circle cx="3230" cy="412" r="17" fill="url(#steel)" stroke="#C62828" stroke-width="2"/>
-      <text x="1948" y="392" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="11" fill="#1565C0">IMÁN · BANDA → AZUL</text>
-      <text x="3230" y="392" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="11" fill="#C62828">BANDA → ROJA</text>
+      <text x="1948" y="356" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="11" fill="#1565C0">IMÁN · BANDA → AZUL</text>
+      <text x="3230" y="370" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="11" fill="#C62828">BANDA → ROJA</text>
       <text x="700" y="392" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="700" font-size="11" fill="#676E69">BANDA BLANCA</text>
 
       <!-- ── COLCHÓN (3 capas · poblado por JS) ── -->
@@ -188,7 +188,7 @@
       <!-- board darkening after press -->
       <rect x="3958" y="384" width="2486" height="17" fill="rgba(80,52,16,0.20)"/>
       <line x1="3966" y1="386" x2="6444" y2="386" stroke="#6E5018" stroke-width="1.4" opacity="0.55"/>
-      <text x="5660" y="372" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="12" fill="#6E5018">TABLERO · POST-PRENSA</text>
+      <text x="5330" y="372" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="12" fill="#6E5018">TABLERO · POST-PRENSA</text>
 
       <!-- ══════════ 2A · FORMACIÓN ══════════ -->
 
@@ -319,13 +319,14 @@
 
       <!-- METAL DETECTOR (37.69 m) -->
       <g class="s2-machine" data-inject-m="37.69" data-label="Detector de metales" transform="translate(2718 0)">
-        <rect x="-56" y="300" width="112" height="132" rx="12" fill="none" stroke="url(#steel)" stroke-width="14"/>
-        <rect x="-56" y="300" width="112" height="132" rx="12" fill="none" stroke="#6B7886" stroke-width="1"/>
-        <rect x="-64" y="292" width="128" height="20" rx="4" fill="url(#steel)" stroke="#6B7886"/>
-        <circle cx="48" cy="302" r="5" fill="#2E7D32" stroke="#1B5E20"/>
-        <rect x="-70" y="252" width="140" height="28" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="1.5"/>
-        <text x="0" y="266" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="12" fill="#1A1D1B">DETECTOR</text>
-        <text x="0" y="276" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#676E69">DE METALES</text>
+        <rect x="-38" y="304" width="76" height="128" rx="10" fill="none" stroke="url(#steel)" stroke-width="10"/>
+        <rect x="-38" y="304" width="76" height="128" rx="10" fill="none" stroke="#6B7886" stroke-width="1"/>
+        <rect x="-46" y="288" width="92" height="18" rx="4" fill="url(#steel)" stroke="#6B7886"/>
+        <circle cx="34" cy="297" r="4.5" fill="#2E7D32" stroke="#1B5E20"/>
+        <line x1="0" y1="268" x2="0" y2="286" stroke="#1565C0" stroke-width="1" stroke-dasharray="2 3"/>
+        <rect x="-60" y="240" width="120" height="28" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="1.5"/>
+        <text x="0" y="254" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="12" fill="#1A1D1B">DETECTOR</text>
+        <text x="0" y="264" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#676E69">DE METALES</text>
       </g>
 
       <!-- CORTADORES DE FILO (39.56 m) -->
@@ -353,9 +354,8 @@
 
       <!-- NARIZ (rechazo · ~44.9 m) -->
       <g class="s2-machine" data-inject-m="44.9" data-label="Nariz · rechazo" transform="translate(3223 0)">
-        <circle cx="0" cy="405" r="14" fill="url(#steel)" stroke="#6B7886" stroke-width="1.5"/>
-        <!-- normal: closed / aligned flap -->
-        <rect x="0" y="398" width="34" height="14" rx="3" fill="#8DA0B4" stroke="#5E7286"/>
+        <!-- normal: closed / aligned flap (nace en el tambor de transferencia) -->
+        <rect x="7" y="398" width="34" height="14" rx="3" fill="#8DA0B4" stroke="#5E7286"/>
         <!-- ghost open state -->
         <g opacity="0.32">
           <polygon points="0,404 26,404 40,452 14,452" fill="none" stroke="#C62828" stroke-width="2" stroke-dasharray="5 4"/>
