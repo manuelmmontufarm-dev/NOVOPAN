@@ -164,7 +164,7 @@
 
       <!-- ══════════ PARTE 1 · WIREFRAME ORIGINAL ══════════ -->
       <g id="part1Wireframe" class="wf" transform="translate(-2160 18)">
-        <rect x="0" y="0" width="2100" height="560" fill="#FFFFFF"/>
+        <rect x="0" y="0" width="2100" height="560" rx="16" fill="#FFFFFF" stroke="#D9DDD9" stroke-width="1.5"/>
         <line x1="185" y1="0" x2="185" y2="560" class="wf-bandline"/>
         <line x1="620" y1="0" x2="620" y2="560" class="wf-bandline"/>
         <line x1="790" y1="0" x2="790" y2="560" class="wf-bandline"/>
@@ -223,10 +223,10 @@
         <polyline class="wf-edge wf-edge-bio" points="136,620 1010,620 1010,560"/>
 
         <!-- conectores visuales hacia Sección 2 animada -->
-        <polyline class="wf-edge wf-bridge" points="1515,194 1620,194 1620,230 2040,230"/>
-        <polyline class="wf-edge wf-bridge" points="1475,390 1620,390 1620,358 2040,358"/>
-        <text x="1695" y="182" class="wf-elabel">CL/core → Silo 5 animado</text>
-        <text x="1695" y="380" class="wf-elabel">SL/capas → Silo 6 animado</text>
+        <polyline class="wf-edge wf-bridge" points="1515,194 1620,194 1620,230 2130,230" style="stroke:#0A7D5A"/>
+        <polyline class="wf-edge wf-bridge" points="1475,390 1620,390 1620,358 2130,358" style="stroke:#1565C0"/>
+        <text x="1695" y="182" class="wf-elabel" style="fill:#0A7D5A;font-weight:700">CL/core → Silo 5 animado</text>
+        <text x="1695" y="380" class="wf-elabel" style="fill:#1565C0;font-weight:700">SL/capas → Silo 6 animado</text>
 
         <!-- nodos -->
         <g class="wf-node" data-pre-stage="patios" data-label="Patios · cambio receta" transform="translate(92 310)">
@@ -433,10 +433,12 @@
         <rect x="-20" y="42" width="1880" height="520" fill="rgba(55,71,79,0.028)"/>
         <rect x="580" y="56" width="640" height="28" rx="14" fill="#37474F"/>
         <text x="900" y="75" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-size="16" font-weight="800" fill="#FFFFFF" letter-spacing=".06em">0 · SILOS · DOSIFICACIÓN Y ENCOLADO — MODELO V3</text>
-        <text x="900" y="103" text-anchor="middle" font-family="'Barlow',sans-serif" font-size="10" font-weight="700" fill="#676E69">cascada por tiempo de residencia (τ=M/F×60) → bandas inclinadas hacia formación</text>
-
-        <text x="255" y="120" font-family="'Barlow Semi Condensed',sans-serif" font-size="15" font-weight="800" fill="#1565C0">RUTA FINA · SL1 + SL2</text>
-        <text x="780" y="120" font-family="'Barlow Semi Condensed',sans-serif" font-size="15" font-weight="800" fill="#0A7D5A">RUTA GRUESA · CL (core)</text>
+        <g>
+          <rect x="60" y="88" width="210" height="26" rx="13" fill="#FFFFFF" stroke="#1565C0" stroke-width="1.5"/>
+          <text x="165" y="106" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-size="13" font-weight="800" fill="#1565C0">RUTA FINA · SL1 + SL2</text>
+          <rect x="940" y="88" width="230" height="26" rx="13" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="1.5"/>
+          <text x="1055" y="106" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-size="13" font-weight="800" fill="#0A7D5A">RUTA GRUESA · CL (core)</text>
+        </g>
 
         <!-- Silo 6 / línea fina -->
         <g class="s2-intake__node" data-pre-stage="silo6" data-label="Silo 6 · SL/capas" transform="translate(330 170)">
@@ -449,6 +451,7 @@
         </g>
         <g class="s2-intake__node" data-pre-stage="silo6" data-label="Dosing SL" transform="translate(330 330)">
           <rect x="-54" y="-60" width="108" height="82" rx="8" fill="url(#steelBlue)" stroke="#6B7886" stroke-width="2"/>
+          <rect x="-54" y="-60" width="108" height="10" rx="4" fill="#1565C0"/>
           <path d="M-54,22 L0,92 L54,22 Z" fill="#333D48"/>
           <rect x="-10" y="92" width="20" height="48" fill="#B8C6D2" stroke="#758697"/>
           <text x="-82" y="2" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">DOSING FINA</text>
