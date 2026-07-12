@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" />
-<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260710" />
+<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260711a" />
 <link rel="stylesheet" href="css/params.css?v=20260701" />
 </head>
 <body>
@@ -877,6 +877,79 @@
   </div>
 </div>
 
+<script>
+/* ── Decorador visual Parte 1 (solo presentación) ─────────────────────
+   Añade animaciones al wireframe sin tocar posiciones, textos, rutas ni
+   lógica: material fluyendo en cada tubería, rotores en molinos y
+   windsifters, nivel de llenado en silos, vapor en secaderos y llama en
+   el quemador. Todo se deriva de los nodos existentes. */
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var wf = document.getElementById('part1Wireframe');
+  if (!wf) return;
+  function el(tag, attrs) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  // 1) Flujo de material: overlay de guiones en movimiento sobre CADA tramo
+  wf.querySelectorAll('polyline.wf-edge').forEach(function (p) {
+    if (p.classList.contains('wf-edge-rec') || p.classList.contains('wf-edge-bio')) return; // sus guiones ya fluyen
+    var f = p.cloneNode(false);
+    f.setAttribute('class', 'wf-flow');
+    f.removeAttribute('marker-end');
+    if (p.classList.contains('wf-bridge')) f.removeAttribute('style'); // hereda blanco sobre el color de ruta
+    p.parentNode.insertBefore(f, p.nextSibling);
+  });
+  // 2) Rotores en equipos circulares (molinos, windsifters, refinadores, ciclones)
+  wf.querySelectorAll('.wf-node').forEach(function (node) {
+    var circle = node.querySelector('circle.wf-circle');
+    if (!circle) return;
+    var rotor = el('g', { class: 'wf-rotor' });
+    [0, 60, 120].forEach(function (a) {
+      var r = (a * Math.PI) / 180;
+      rotor.appendChild(el('line', {
+        x1: (-13 * Math.cos(r)).toFixed(1), y1: (-13 * Math.sin(r)).toFixed(1),
+        x2: (13 * Math.cos(r)).toFixed(1), y2: (13 * Math.sin(r)).toFixed(1),
+      }));
+    });
+    node.insertBefore(rotor, circle.nextSibling); // bajo el icono, sobre el cuerpo
+  });
+  // 3) Nivel de llenado en silos (color según el material de su etiqueta)
+  var FILL = [
+    ['Aserrín', '#ECC873'], ['Flakes', '#E4B657'], ['Hombak', '#C98B2E'],
+    ['CL/core', '#C98B2E'], ['SL/capas', '#E8CA74'], ['Polvo', '#B8AFA0'], ['TVM', '#B8AFA0'],
+  ];
+  wf.querySelectorAll('.wf-node').forEach(function (node) {
+    if (!node.querySelector('path.wf-silo')) return;
+    var name = (node.querySelector('.wf-nlabel') || {}).textContent || '';
+    var color = '#D9C89A';
+    FILL.some(function (f) { if (name.indexOf(f[0]) !== -1) { color = f[1]; return true; } });
+    var lvl = el('rect', { class: 'wf-fill', x: -14, y: -8, width: 28, height: 16, rx: 2, fill: color });
+    var ell = node.querySelector('ellipse.wf-silo');
+    node.insertBefore(lvl, ell ? ell.nextSibling : node.firstChild);
+  });
+  // 4) Vapor en secaderos + llama del quemador
+  wf.querySelectorAll('.wf-node').forEach(function (node) {
+    if (node.querySelector('rect.wf-drum')) {
+      var steam = el('g', { class: 'wf-steam' });
+      [[-24, 2.4, '0s'], [0, 3, '.8s'], [22, 2.2, '1.5s']].forEach(function (s) {
+        var e = el('ellipse', { cx: s[0], cy: -24, rx: 8, ry: 5, opacity: 0 });
+        e.setAttribute('style', 'animation: wfMist 2.6s ease-in-out infinite; animation-delay:' + s[2]);
+        steam.appendChild(e);
+      });
+      node.appendChild(steam);
+    }
+    var side = node.querySelector('rect.wf-side');
+    if (side && /Quemador/.test(node.textContent)) {
+      var flame = el('g', { class: 'wf-flame' });
+      flame.appendChild(el('path', { d: 'M-8,-16 Q-10,-26 0,-32 Q10,-26 8,-16 Q4,-20 0,-14 Q-4,-20 -8,-16 Z', fill: '#E8892B', opacity: '.85' }));
+      flame.appendChild(el('path', { d: 'M-3.5,-16 Q-4,-22 0,-26 Q4,-22 3.5,-16 Q1.5,-18 0,-15.5 Q-1.5,-18 -3.5,-16 Z', fill: '#FFCF7A' }));
+      node.appendChild(flame);
+    }
+  });
+})();
+</script>
 <script type="module" src="js/combined-app.js?v=20260710"></script>
 </body>
 </html>
