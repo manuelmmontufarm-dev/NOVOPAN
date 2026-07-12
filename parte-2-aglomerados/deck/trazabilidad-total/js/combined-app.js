@@ -62,24 +62,35 @@ function nextWaypoint(posM) {
 // Paleta de colores para cambios simultáneos (se cicla si hay más de 8 activos).
 const CHANGE_COLORS = ['#FFDE00', '#FF7A33', '#29B6F6', '#AB47BC', '#EC407A', '#26A69A', '#8BC34A', '#EF5350'];
 
+/* Waypoints con `via`: puntos intermedios (solo geometría) para que el
+   marcador RECORRA las tuberías dibujadas en vez de volar en línea recta.
+   Coordenadas globales del SVG (wireframe local + translate(-2160, 18)). */
 const PRE_WAYPOINTS = {
   patios: { x: -2068, y: 328, label: 'Patios · rumas' },
-  silosVerdes: { x: -1460, y: 300, label: 'Silos verdes 1/2/3' },
-  bunker: { x: -1305, y: 338, label: 'Dosing Bunker IMAL' },
-  secadero: { x: -1200, y: 320, label: 'Secaderos 1/2' },
-  clasificacion: { x: -1020, y: 338, label: 'Cribas F/G + 3 zarandas' },
-  silo5: { x: -665, y: 212, label: 'Silo 5 · CL/core' },
-  silo6: { x: -705, y: 408, label: 'Silo 6 · SL/capas' },
-  activeSilo5: { x: 860, y: 155, label: 'Silo 5 · gruesa animado' },
+  // vía chip: patios → molino → piso móvil 2 → flakes → desviador → Silo 2A
+  silosVerdes: { x: -1488, y: 283, via: [[-1550, 328], [-1550, 283]], label: 'Silos verdes 1/2/3' },
+  // Silo 2A → colector vertical x=790 → Dosing Bunker
+  bunker: { x: -1305, y: 338, via: [[-1370, 283], [-1370, 338]], label: 'Dosing Bunker IMAL' },
+  // Bunker → subida selector Maestro → Secadero 1
+  secadero: { x: -1200, y: 248, via: [[-1248, 338], [-1248, 248]], label: 'Secaderos 1/2' },
+  // Secadero 1 → Tamiz F → bajada x=1100 → Zaranda 2
+  clasificacion: { x: -1020, y: 338, via: [[-1060, 248], [-1060, 338]], label: 'Tamices F/G + 3 zarandas' },
+  // Zaranda 2 → subida x=1210 → Silo 5 (wireframe)
+  silo5: { x: -665, y: 212, via: [[-950, 338], [-950, 212]], label: 'Silo 5 · CL/core' },
+  // Zaranda 2 → W1 → W2 → diagonal → Silo 6 (wireframe)
+  silo6: { x: -705, y: 408, via: [[-900, 338], [-820, 338]], label: 'Silo 6 · SL/capas' },
+  // Transportadores aéreos hacia los silos animados (mismo dibujo de #aerialBridges)
+  activeSilo5: { x: 860, y: 155, via: [[-582, 212], [-582, 14], [860, 14]], label: 'Silo 5 · gruesa animado' },
   activeDosingCL: { x: 860, y: 305, label: 'Dosing gruesa' },
   activeEncCI: { x: 860, y: 460, label: 'Encolador CI' },
-  activeSilo6: { x: 330, y: 185, label: 'Silo 6 · fina animado' },
+  activeSilo6: { x: 330, y: 185, via: [[-618, 408], [-618, 30], [330, 30]], label: 'Silo 6 · fina animado' },
   activeDosingSL: { x: 330, y: 330, label: 'Dosing fina' },
   activeEncCE: { x: 330, y: 500, label: 'Encolador CE' },
   polvo: { x: -910, y: 578, label: 'Polvo → Silo 4/8 · quemador' },
-  clGate: { x: 2970, y: 248, label: 'Entrada CL a Esparcidor 2' },
-  sl1Gate: { x: 2444, y: 360, label: 'Entrada SL a Esparcidor 1' },
-  sl2Gate: { x: 3538, y: 360, label: 'Entrada SL a Esparcidor 3' },
+  // Bandas inclinadas dibujadas → esparcidoras de la Sección 2
+  clGate: { x: 2970, y: 248, via: [[928, 494], [2750, 494]], label: 'Entrada CL a Esparcidor 2' },
+  sl1Gate: { x: 2444, y: 360, via: [[398, 534], [2100, 534]], label: 'Entrada SL a Esparcidor 1' },
+  sl2Gate: { x: 3538, y: 360, via: [[398, 534], [2100, 534]], label: 'Entrada SL a Esparcidor 3' },
 };
 
 const PRE_STAGE_INDEX = {
@@ -185,6 +196,8 @@ function preMilestonesFor(stage, branch, params) {
   });
 }
 
+/* El tramo a→b puede llevar `via` (polilínea que sigue la tubería dibujada):
+   el tiempo del tramo se reparte proporcional a la LONGITUD de cada segmento. */
 function posOnPreRoute(miles, elapsed) {
   if (elapsed <= 0) return miles[0];
   const last = miles[miles.length - 1];
@@ -194,10 +207,27 @@ function posOnPreRoute(miles, elapsed) {
     const b = miles[i];
     if (elapsed <= b.t) {
       const f = (elapsed - a.t) / Math.max(1, b.t - a.t);
-      return {
-        x: a.x + (b.x - a.x) * f,
-        y: a.y + (b.y - a.y) * f,
-      };
+      const pts = [[a.x, a.y], ...(b.via ?? []), [b.x, b.y]];
+      const lens = [];
+      let L = 0;
+      for (let j = 1; j < pts.length; j++) {
+        const d = Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]);
+        lens.push(d);
+        L += d;
+      }
+      if (L <= 0) return { x: b.x, y: b.y };
+      let target = f * L;
+      for (let j = 1; j < pts.length; j++) {
+        if (target <= lens[j - 1]) {
+          const g = lens[j - 1] > 0 ? target / lens[j - 1] : 0;
+          return {
+            x: pts[j - 1][0] + (pts[j][0] - pts[j - 1][0]) * g,
+            y: pts[j - 1][1] + (pts[j][1] - pts[j - 1][1]) * g,
+          };
+        }
+        target -= lens[j - 1];
+      }
+      return { x: b.x, y: b.y };
     }
   }
   return last;

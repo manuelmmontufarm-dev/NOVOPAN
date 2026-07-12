@@ -167,7 +167,7 @@
   <div class="legend">
     <span><b>Clic en un equipo</b> = inyectar un cambio ahí (nace a la hora real de Quito y avanza solo — sin botón de iniciar).</span>
     <span><b>Patios · rumas</b> = cambio de receta: nace con 2 marcadores (start = vía más rápida · end = la más lenta).</span>
-    <span>Clasificación: Cribas F/G → 3 zarandas con clapetas → CL a Silo 5 · SL por WS1/WS2 a Silo 6 · oversize por WS3+refinadores · polvo a combustible.</span>
+    <span>Clasificación: Tamices F/G → 3 zarandas con clapetas → CL a Silo 5 · SL por WS1/WS2 a Silo 6 · oversize por WS3+refinadores · polvo a combustible.</span>
   </div>
   <div id="detail"><h3>Detalle</h3><div>Modo "Inyectar": clic en un equipo crea un cambio ahí. Modo "Ver info": clic muestra qué es, su ecuación y fuente. Los tiempos usan los Parámetros (pestaña arriba); lo vacío es <span class="tbd">TBD</span> y cuenta 0 s.</div></div>
 </div>
@@ -184,7 +184,7 @@
 </div>
 
 <footer>
-  Simulador Sección 1 (preparación de madera) con el mismo lenguaje visual y modelo en vivo de la Sección 2: sin botón de iniciar, hora real de Quito, clic = inyección, parámetros en su propia pestaña. Ecuaciones: τ=M/F×60 · t=L/v×60 · receta: start=min(vías) · end=max(vías). Clasificación HMI 10-jul-2026: Cribas F/G, 3 zarandas con clapetas, 5 fracciones, regla POS 7/100% → todo CL. Fuentes: fotos HMI 10-jul-2026 · audio 41 · HANDOFF_SIMULADOR.md · NOVOPAN-2 @ cc2a6d5.
+  Simulador Sección 1 (preparación de madera) con el mismo lenguaje visual y modelo en vivo de la Sección 2: sin botón de iniciar, hora real de Quito, clic = inyección, parámetros en su propia pestaña. Ecuaciones: τ=M/F×60 · t=L/v×60 · receta: start=min(vías) · end=max(vías). Clasificación HMI 10-jul-2026: Tamices F/G ("criba" sin evidencia en fuentes; glosario usa tamiz/zaranda), 3 zarandas con clapetas, 5 fracciones, regla POS 7/100% → todo CL. Fuentes: fotos HMI 10-jul-2026 · audio 41 · HANDOFF_SIMULADOR.md · NOVOPAN-2 @ cc2a6d5.
 </footer>
 
 <script>
@@ -254,7 +254,7 @@ const DUR = {
   's3>bunker': () => [tauSiloH(P.s3, 'V silo 3')],
   'bunker>sec1': () => [tauSiloH(P.bk, 'V bunker'), tFix(P.trSec, 't transp. secadero')],
   'sec1>crf': () => [tFix(P.tauTambor, 'τ tambor')],
-  'crf>z2': () => [tFix(P.tCriba, 't criba F/G'), tFix(P.tZar, 't 3 zarandas')],
+  'crf>z2': () => [tFix(P.tCriba, 't tamiz F/G'), tFix(P.tZar, 't 3 zarandas')],
   'z2>s5': () => [tFix(P.tColectCL, 't colector CL')],
   's5>dosG': () => [tauSiloM(P.s5, 'V silo 5')],
   'dosG>encCI': () => [tauMF(P.dosG, 'dosing gruesa')],
@@ -405,7 +405,7 @@ const NODES = [
   { id:'pm2', x:408, y:330, g:'piso', l:'Piso Móvil 2', s:'receta · 16–23 t/h', ok:1, d:'Pila de chip; dosifica por palas.', eq:'τ = M_pila/F·3600 [s]', src:'HMI' },
   { id:'flex', x:552, y:330, g:'mill', ic:'FX', l:'Molinos Flakes 1·2', s:'cuchillas 10 h/1.6 h', ok:1, d:'Flakers (¿Mayer+Globus?). 309/250 A. Desviador a 2A/2B: 180 s de 360 s.', eq:'t≈0 · espera desviador ∈ [0,180 s]', src:'HMI · Manuel' },
   { id:'pm1', x:300, y:140, g:'piso', l:'Piso móvil 1', s:'solo aserrín', ok:1, d:'Pila de aserrín comprado.', eq:'τ = M_pila/F·3600 [s]', src:'HMI P.Mo.1' },
-  { id:'ds', x:470, y:140, g:'mill', ic:'DS', l:'Clasificador', s:'¿Dynescreen?', ok:1, d:'Criba del aserrín antes del Silo 1.', eq:'t_DS = plug fijo [s]', src:'Manuel · IMALPAL' },
+  { id:'ds', x:470, y:140, g:'mill', ic:'DS', l:'Clasificador', s:'¿Dynescreen?', ok:1, d:'Tamiz del aserrín antes del Silo 1.', eq:'t_DS = plug fijo [s]', src:'Manuel · IMALPAL' },
   { id:'hom', x:400, y:540, g:'mill', ic:'HB', l:'Hombak U100+U112', s:'escama 0.45 mm', ok:1, d:'Rolliza entera → viruta. U100 336 A · U112 263/259 A.', eq:'t≈0 (transformación)', src:'HMI U100/U112' },
   { id:'s1', x:700, y:140, g:'silo', l:'Silo 1 · Aserrín', s:'ρ 271 · 7 t/h', ok:1, vTbd:1, d:'Silo verde ①. Densidad y caudal validados; volumen m³ no confirmado.', eq:'τ = (ρ·V·L%)/F', src:'HMI Viruta Húmeda' },
   { id:'s2a', x:672, y:285, g:'silo', l:'Silo 2A · Flakes 1', s:'ρ 230 · L 25.4 %', ok:1, vTbd:1, d:'Silo verde ②a. Volumen m³ no confirmado.', eq:'τ = (ρ·V·L%)/F', src:'HMI' },
@@ -414,8 +414,8 @@ const NODES = [
   { id:'bunker', x:855, y:340, g:'piso', l:'Dosing Bunker', s:'IMAL · selector Maestro', ok:1, d:'Mezcla por receta % (24/47/29). Selector Maestro → Secadero 1 ó 2.', eq:'τ_b = (ρ·V·L%)/F · F húmedo 27,005 kg/h', src:'HMI Viruta Húmeda' },
   { id:'sec1', x:960, y:250, g:'drum', l:'Secadero 1', s:'260→132 °C', ok:1, d:'Tambor rotatorio. 27,005 kg/h húmedo → 15,235 kg/h seco + 11,776 kg/h agua evaporada; 10.2 MW; combustible = polvo.', eq:'τ_tambor = M_holdup/F [placeholder]', src:'HMI Secador 10-jul-2026' },
   { id:'sec2', x:960, y:430, g:'drum', l:'Secadero 2', s:'polvo combustible', ok:1, d:'Segundo secadero seleccionado por Maestro; usa el mismo modelo temporal que Secadero 1 para trazabilidad.', eq:'F_evap = F_in − F_out', src:'HMI Secador' },
-  { id:'crf', x:1048, y:250, g:'screen', l:'Criba F', s:'26 T/h', ok:1, d:'Criba a la salida de secaderos antes de las zarandas.', eq:'F_F = 26 T/h · t_criba plug', src:'Fotos HMI 10-jul-2026' },
-  { id:'crg', x:1048, y:430, g:'screen', l:'Criba G', s:'21 T/h', ok:1, d:'Criba paralela antes de las zarandas.', eq:'F_G = 21 T/h · mismo t_criba del modelo', src:'Fotos HMI 10-jul-2026' },
+  { id:'crf', x:1048, y:250, g:'screen', l:'Tamiz F', s:'26 T/h', ok:1, d:'Tamiz a la salida de secaderos antes de las zarandas (nombre HMI por confirmar).', eq:'F_F = 26 T/h · t_tamiz plug', src:'Fotos HMI 10-jul-2026' },
+  { id:'crg', x:1048, y:430, g:'screen', l:'Tamiz G', s:'21 T/h', ok:1, d:'Tamiz paralelo antes de las zarandas (nombre HMI por confirmar).', eq:'F_G = 21 T/h · mismo t_tamiz del modelo', src:'Fotos HMI 10-jul-2026' },
   { id:'z1', x:1140, y:215, g:'screen', l:'Zaranda 1', s:'clapetas 1–7', ok:1, d:'Una de tres zarandas con clapetas ajustables; separa fracciones hacia colectores CL, SL-Macro, SL-Micro, Part. Grandes y Polvo.', eq:'POS 7 ó 100% = TODO AL SILO CL', src:'Fotos HMI 10-jul-2026' },
   { id:'z2', x:1140, y:340, g:'screen', l:'Zaranda 2', s:'5 fracciones', ok:1, d:'Nodo de división del modelo: CL/core, SL-Macro, SL-Micro, Part. Grandes y Polvo. Las variables de clapeta gobiernan el split conceptual.', eq:'POS 7 ó 100% = TODO AL SILO CL', src:'Fotos HMI 10-jul-2026' },
   { id:'z3', x:1140, y:465, g:'screen', l:'Zaranda 3', s:'clapetas 1–7', ok:1, d:'Tercera zaranda del banco de clasificación. Equivale a Z2 para tiempos de simulación.', eq:'t_zarandas = plug [s]', src:'Fotos HMI 10-jul-2026' },
@@ -653,7 +653,7 @@ const FIELDS = [
   ['Vía Hombak', [['tr3','t transporte','s'],['s3.rho','silo3 ρ','kg/m³'],['s3.V','silo3 V','m³'],['s3.L','silo3 nivel','%'],['s3.F','silo3 F out','kg/h']]],
   ['Bunker + secadero', [['bk.rho','bunker ρ','kg/m³'],['bk.V','bunker V','m³'],['bk.L','bunker nivel','%'],['bk.F','bunker F','kg/h'],
     ['trSec','t transp. sec','s'],['tauTambor','τ tambor','s']]],
-  ['Clasificación · cribas/clapetas', [['cribaF_F','Criba F cap.','kg/h'],['cribaG_F','Criba G cap.','kg/h'],['tCriba','t criba','s'],['tZar','t 3 zarandas','s'],
+  ['Clasificación · tamices/clapetas', [['cribaF_F','Tamiz F cap.','kg/h'],['cribaG_F','Tamiz G cap.','kg/h'],['tCriba','t tamiz','s'],['tZar','t 3 zarandas','s'],
     ['clapPos','clapeta POS','1–7'],['clapPct','clapeta %','%'],['splitCL','split CL','%'],['splitMacro','split SL Macro','%'],['splitMicro','split SL Micro','%'],['splitOver','split Part. Grandes','%'],['splitPolvo','split Polvo','%']]],
   ['Clasificación · limpieza/refino', [['tColectCL','t colector CL','s'],['tColectSL','t colector SL','s'],['tColectOver','t colector oversize','s'],['tPolvo','t colector polvo','s'],
     ['tWS1','t Windsifter 1','s'],['tWS2','t Windsifter 2','s'],['tWS3','t Windsifter 3','s'],['tFe','t imán Fe','s'],['tNeum','t neumático SL','s'],

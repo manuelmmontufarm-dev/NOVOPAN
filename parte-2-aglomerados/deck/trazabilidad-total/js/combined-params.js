@@ -40,7 +40,7 @@ export const P1_PARAMS = [
   { key: 'p1:bk_F', label: 'Bunker F húmedo', unit: 'kg/h', default: 27005, group: 'Parte 1 · Mezcla/secado' },
   { key: 'p1:trSec', label: 't transp. secadero', unit: 's', default: 30, group: 'Parte 1 · Mezcla/secado' },
   { key: 'p1:tauTambor', label: 'τ tambor secadero', unit: 's', default: 900, group: 'Parte 1 · Mezcla/secado' },
-  { key: 'p1:tCriba', label: 't cribas F/G', unit: 's', default: 8, group: 'Parte 1 · Clasificación' },
+  { key: 'p1:tCriba', label: 't tamices F/G', unit: 's', default: 8, group: 'Parte 1 · Clasificación' },
   { key: 'p1:tZar', label: 't 3 zarandas', unit: 's', default: 15, group: 'Parte 1 · Clasificación' },
   { key: 'p1:tColectCL', label: 't colector CL', unit: 's', default: 12, group: 'Parte 1 · Clasificación' },
   { key: 'p1:tColectSL', label: 't colector SL', unit: 's', default: 12, group: 'Parte 1 · Clasificación' },
