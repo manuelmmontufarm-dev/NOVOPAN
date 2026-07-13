@@ -966,7 +966,7 @@ function initSimulation() {
   // Pestaña Parámetros: ahora LEE del CSV del HMI (fuente de verdad).
   const paramsApi = initParams({
     speedGetter: () => vPrensa,
-    onChange: (params) => { modelParams = params; recomputeActivePre(); },
+    onChange: (params) => { modelParams = params; recomputeActivePre(); renderIntakeTaus(); },
   });
 
   /* Recalcula la línea de tiempo de los cambios upstream ACTIVOS cuando cambian
@@ -980,6 +980,17 @@ function initSimulation() {
     }
   }
 
+  /* Muestra el τ de residencia REAL de cada encolador (tEncCE fina · tEncCI core)
+     en los chips de la zona de entrada, sincronizado con el modelo/CSV del HMI. */
+  function renderIntakeTaus() {
+    const set = (id, key) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = `${Math.round(Number(modelParams?.[key]) || 0)} s`;
+    };
+    set('intakeTauEncCE', 'p1:tEncCE');
+    set('intakeTauEncCI', 'p1:tEncCI');
+  }
+
   // ── HMI en vivo vía CSV local (releído cada 2 s; estático ahora, listo para el servidor) ──
   const hmiStatusEl = document.getElementById('hmiStatus');
   const hmiStatus2 = document.getElementById('hmiStatus2');
@@ -991,6 +1002,7 @@ function initSimulation() {
       paramsApi.applyExternal(data);            // pisa los params del modelo con el CSV
       modelParams = paramsApi.getParams();
       recomputeActivePre();
+      renderIntakeTaus();
       if (data.vPrensa != null) setSpeed(data.vPrensa);
     },
   });
@@ -1003,6 +1015,7 @@ function initSimulation() {
   // Botón "Conectar CSV local" del panel de parámetros → mismo picker que el de la barra
   document.getElementById('hmiConnectBtn2')?.addEventListener('click', () => document.getElementById('hmiConnectBtn')?.click());
 
+  renderIntakeTaus();   // pinta el τ real de las encoladoras en los chips de entrada
   selfTest();
 }
 
