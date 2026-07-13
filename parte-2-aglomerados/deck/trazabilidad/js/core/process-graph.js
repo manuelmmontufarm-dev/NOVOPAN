@@ -101,7 +101,7 @@ export const FINE_PREFIX = [
     sublabel: 'Resina + parafina + agua',
     kind: 'retention',
     model: 'fixed',
-    retentionSec: 30,
+    retentionSec: 40,
     layout: 'process',
     source: {
       kind: 'estimated',
@@ -229,7 +229,7 @@ export const PATHS = {
         sublabel: '+ parafina',
         kind: 'retention',
         model: 'fixed',
-        retentionSec: 30,
+        retentionSec: 40,
         layout: 'process',
         source: {
           kind: 'estimated',
