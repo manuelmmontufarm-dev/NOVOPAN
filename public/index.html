@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>NOVOPAN — Entregables pasantía</title>
+  <style>
+    :root {
+      --green: #004e38;
+      --yellow: #f5c518;
+      --bg: #f4f6f5;
+      --card: #fff;
+      --text: #1a2e28;
+      --muted: #5a6f66;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--green);
+      color: #fff;
+      padding: 2rem 1.5rem;
+      padding-top: calc(2rem + env(safe-area-inset-top, 0px));
+      border-bottom: 4px solid var(--yellow);
+    }
+    header h1 { font-size: 1.75rem; font-weight: 800; }
+    header p { margin-top: 0.5rem; opacity: 0.9; max-width: 42rem; }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+      padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+    }
+    h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 1rem; }
+    ul { list-style: none; display: flex; flex-direction: column; gap: 1rem; padding: 0; }
+    li { width: 100%; }
+    a.card {
+      display: block;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid #d8e0dc;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(0, 78, 56, 0.12);
+      position: relative;
+      z-index: 1;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    a.card * { pointer-events: none; }
+    a.card:hover,
+    a.card:active {
+      border-color: var(--green);
+      box-shadow: 0 4px 16px rgba(0, 78, 56, 0.08);
+    }
+    a.card strong { display: block; font-size: 1.125rem; color: var(--green); margin-bottom: 0.35rem; }
+    a.card span { font-size: 0.9375rem; color: var(--muted); }
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #d8e0dc;
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+    code { font-size: 0.85em; background: #e8eeeb; padding: 0.1em 0.35em; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NOVOPAN — Entregables</h1>
+    <p>Herramientas HTML de la pasantía: simulador de trazabilidad Línea 1 y guía de recepción de madera (patios), en versión estática e interactiva.</p>
+  </header>
+  <main>
+    <h2>Herramientas</h2>
+    <ul>
+      <li>
+        <a class="card" href="/trazabilidad-total">
+          <strong>Línea 1 — Trazabilidad total · Parte 1 + Sección 2</strong>
+          <span>Simulador combinado: preparación de madera, secado, clasificación real, Silos 5/6 y flujo completo hacia formación, prensa y control de calidad.</span>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="/trazabilidad-linea">
+          <strong>Línea 1 · Sección 2 — Vista línea horizontal</strong>
+          <span>Formación del colchón, bandas blanca/roja/prensa, trazador en vivo y distancias medidas.</span>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="/trazabilidad-preparacion">
+          <strong>Línea 1 · Sección 1 — Preparación de madera · trazabilidad en vivo</strong>
+          <span>Wireframe con diseño Sección 2: reducción, silos verdes, secaderos, clasificación real con cribas F/G, 3 zarandas, WS1/WS2/WS3, refinadores y silos finales.</span>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="/trazabilidad">
+          <strong>Línea 1 — Trazabilidad P&amp;ID (clásico)</strong>
+          <span>Simulador de cambios: parámetros m y τ, 3 rutas a esparcidoras, reloj y diagrama interactivo.</span>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="/patios">
+          <strong>Recepción de madera — guía estática</strong>
+          <span>IJP-REC en HTML pre-renderizado: balanza, humedad, patios, descarga y Factory Track.</span>
+        </a>
+      </li>
+      <li>
+        <a class="card" href="/patios-interactivo">
+          <strong>Recepción de madera — app interactiva</strong>
+          <span>Misma guía con navegación por secciones, React/Babel y diseño Novopan.</span>
+        </a>
+      </li>
+    </ul>
+    <footer>
+      <p>Repo: <code>NOVOPAN</code> · Despliegue estático en Vercel.</p>
+    </footer>
+  </main>
+</body>
+</html>

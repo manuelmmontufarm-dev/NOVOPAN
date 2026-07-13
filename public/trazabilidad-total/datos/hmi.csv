@@ -1,0 +1,49 @@
+# ============================================================
+# NOVOPAN · Línea 1 · Trazabilidad total — datos del HMI
+# ------------------------------------------------------------
+# Formato: VARIABLE:VALOR;   (clave y valor separados por ':',
+# cada registro terminado en ';'). Una o varias por línea.
+# Valor vacío (VARIABLE:;) = no tocar (conserva el default).
+# Comentarios con '#' o '//'. Decimal '.' o ','.
+#
+# En planta: un job de SQL Server / WinCC / script sobrescribe
+# este archivo cada pocos segundos. El simulador lo relee cada
+# 2 s (fetch no-cache). Estático ahora = listo para el servidor.
+# Marcar el tag que NO se mide dejándolo vacío → se ve TBD.
+# ============================================================
+
+# ── Velocidad de prensa (máster de la línea) ──
+V_PRENSA_M_MIN: 14.5;
+
+# ── Reducción · pilas y transporte ──
+PILA1_ASERRIN_M_KG: 5000;   PILA1_ASERRIN_F_KGH: 7000;
+PILA2_CHIP_M_KG: 10000;     PILA2_CHIP_F_KGH: 20000;
+T_HOMBAK_S3_S: 60;
+
+# ── Silos verdes (ρ·V·L%/F) · V m³ pendiente de confirmar ──
+SILO1_RHO_KGM3: 271;  SILO1_V_M3: 150;  SILO1_L_PCT: 50;   SILO1_FOUT_KGH: 7000;
+SILO2A_RHO_KGM3: 230; SILO2A_V_M3: 200; SILO2A_L_PCT: 25.4; SILO2A_FOUT_KGH: 13990;
+SILO3_RHO_KGM3: 211;  SILO3_V_M3: 250;  SILO3_L_PCT: 30;   SILO3_FOUT_KGH: 8700;
+
+# ── Dosing Bunker + secado ──
+BUNKER_RHO_KGM3: 290;  BUNKER_V_M3: 40;  BUNKER_L_PCT: 55;  BUNKER_FHUM_KGH: 27005;
+T_TRANSP_SECADERO_S: 30;  TAU_TAMBOR_S: 900;
+
+# ── Clasificación (tamices + zarandas + colectores) ──
+T_TAMICES_FG_S: 8;   T_ZARANDAS_S: 15;
+T_COLECT_CL_S: 12;   T_COLECT_SL_S: 12;
+T_WS1_S: 10;  T_WS2_S: 10;  T_WS3_S: 10;
+
+# ── Oversize / refino ──
+T_REF1_S: 25;  T_REF2_S: 25;  T_CICLON_S: 8;  T_CLAS_SL_S: 12;  T_REINGRESO_SL_S: 10;
+
+# ── Silos finales 5 (CL/core) y 6 (SL/capas) · V m³ pendiente ──
+SILO5_RHO_KGM3: 135;  SILO5_V_M3: 120;  SILO5_L_PCT: 44;  SILO5_FOUT_KGMIN: 302;
+SILO6_RHO_KGM3: 188;  SILO6_V_M3: 120;  SILO6_L_PCT: 31;  SILO6_FOUT_KGMIN: 108;
+
+# ── Entrada a Parte 2 (dosing, encolado, bandas inclinadas) ──
+DOSING_CL_M_KG: 25;   DOSING_CL_F_KGMIN: 302;
+DOSING_SL_M_KG: 20;   DOSING_SL_F_KGMIN: 108;
+T_ENC_CI_S: 30;       T_ENC_CE_S: 30;
+INCL_CL_L_M: 68.5;    INCL_CL_V_MMIN: 96.5;
+INCL_SL_L_M: 64.57;   INCL_SL_V_MMIN: 99.5;

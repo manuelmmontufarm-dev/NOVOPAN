@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tiempo de residencia · L1 Sección 2</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+  :root{
+    --ink:#1f2d3d; --muted:#5f6b7a; --line:#e4e8ee;
+    --hmi-bg:#E6F1FB; --hmi-tx:#185FA5;
+    --med-bg:#EAF3DE; --med-tx:#3B6D11;
+    --tst-bg:#FAEEDA; --tst-tx:#854F0B;
+    --tbd-bg:#F1EFE8; --tbd-tx:#5F5E5A;
+  }
+  .reveal{font-family:"Source Sans Pro",-apple-system,Helvetica,Arial,sans-serif;color:var(--ink);font-size:30px}
+  .reveal h1,.reveal h2,.reveal h3{text-transform:none;font-weight:600;color:var(--ink);letter-spacing:normal}
+  .reveal h1{font-size:1.7em}
+  .reveal h2{font-size:1.25em;margin-bottom:.4em}
+  .reveal h3{font-size:1.0em}
+  .reveal section{text-align:left}
+  .reveal .center{text-align:center}
+  .reveal p,.reveal li{color:var(--ink)}
+  .sub{color:var(--muted);font-size:.72em;font-weight:400}
+  .note{color:var(--muted);font-size:.62em;line-height:1.5;margin-top:.5em}
+  .val{color:var(--muted);font-size:.66em;font-family:"SFMono-Regular",Menlo,monospace;margin-top:.4em}
+  .tbd{color:var(--tst-tx);font-weight:600}
+  .badge{display:inline-block;font-size:.5em;font-weight:600;padding:4px 12px;border-radius:20px;vertical-align:middle;margin-left:8px}
+  .b-hmi{background:var(--hmi-bg);color:var(--hmi-tx)}
+  .b-med{background:var(--med-bg);color:var(--med-tx)}
+  .b-tst{background:var(--tst-bg);color:var(--tst-tx)}
+  .b-tbd{background:var(--tbd-bg);color:var(--tbd-tx)}
+  .legend{display:flex;gap:14px;justify-content:center;margin-top:1.2em;flex-wrap:wrap}
+  .stage{border-top:1px solid var(--line);padding-top:.5em;margin-top:.5em}
+  .stagehd{display:flex;align-items:center;gap:6px;font-size:.82em;font-weight:600}
+  .eq{text-align:center;margin:.55em 0}
+  .eq .katex{font-size:1.35em}
+  .eq.big .katex{font-size:1.55em}
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;justify-content:center;gap:8px 6px;margin-top:.6em}
+  .node{background:#fff;border:1px solid var(--line);border-top:3px solid var(--tbd-tx);border-radius:8px;padding:9px 12px;font-size:.5em;font-weight:600;line-height:1.2;min-width:96px;text-align:center}
+  .node small{display:block;font-weight:400;color:var(--muted);font-size:.85em;margin-top:3px}
+  .node.hmi{border-top-color:var(--hmi-tx)} .node.med{border-top-color:var(--med-tx)}
+  .node.tst{border-top-color:var(--tst-tx)} .node.tbd{border-top-color:var(--tbd-tx);border-style:dashed}
+  .ar{align-self:center;color:var(--muted);font-size:.6em}
+  .reveal table{font-size:.62em;margin:.4em auto}
+  .reveal table th{background:#f6f8fb;color:var(--ink);font-weight:600;border-bottom:1px solid var(--line)}
+  .reveal table td,.reveal table th{padding:6px 12px;border:none;border-bottom:1px solid var(--line)}
+  .goes{font-size:.6em;font-family:"SFMono-Regular",Menlo,monospace;color:var(--muted);line-height:1.9;margin-top:.3em}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+  .card{background:#fbfcfd;border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:.66em}
+  .card h3{font-size:.9em;margin:.1em 0 .3em}
+  .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:.5em}
+  .reveal .slide-number{font-size:14px}
+  .kicker{font-size:.6em;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<section class="center">
+  <p class="kicker">Novopan · Línea 1 · Sección 2</p>
+  <h1>Tiempo de residencia</h1>
+  <p class="sub">Trazabilidad de un cambio de material a lo largo de la línea: silos → prensa</p>
+  <div class="legend">
+    <span class="badge b-hmi">HMI · lo que leo</span>
+    <span class="badge b-med">Medido · lo que mido</span>
+    <span class="badge b-tst">Test · lo que pruebo</span>
+  </div>
+</section>
+
+<section>
+  <h2>La línea, de un vistazo</h2>
+  <div class="flow">
+    <div class="node hmi">Silos 5·6<small>HMI · Test</small></div><span class="ar">→</span>
+    <div class="node hmi">Dosing<small>HMI</small></div><span class="ar">→</span>
+    <div class="node tst">Encolador<small>Test</small></div><span class="ar">→</span>
+    <div class="node med">Banda inclinada<small>Medido</small></div><span class="ar">→</span>
+    <div class="node med">Esparcidores<small>HMI · Medido</small></div><span class="ar">→</span>
+    <div class="node med">Colchón · merge<small>Medido</small></div><span class="ar">→</span>
+    <div class="node med">Banda blanca<small>Medido</small></div><span class="ar">→</span>
+    <div class="node med">Banda roja<small>Medido</small></div><span class="ar">→</span>
+    <div class="node med">Prensa<small>Medido</small></div><span class="ar">→</span>
+    <div class="node tbd">Corte·Enfriado·Estacado<small>TBD</small></div>
+  </div>
+  <p class="note center">Cada etapa se modela como <strong>recipiente</strong> (Little), <strong>banda</strong> (L/v) o <strong>prueba</strong>.</p>
+</section>
+
+<section>
+  <h2>Supuestos + Little's Law</h2>
+  <ul style="font-size:.66em">
+    <li>El flujo <em>F</em> se conserva a lo largo de la línea (estado estable).</li>
+    <li>Recipiente → <em>τ = M/F</em> · Banda → <em>t = L/v</em> · Encolador → prueba.</li>
+    <li>Sprays: eliminados del modelo.</li>
+  </ul>
+  <p class="note">Little's Law — masa retenida = flujo × tiempo, luego despejamos el tiempo:</p>
+  <div class="eq">\[ M\,[\mathrm{kg}] \;=\; F\,[\mathrm{kg/min}]\;\times\;\tau\,[\mathrm{min}] \]</div>
+  <div class="eq big">\[ \tau\,[\mathrm{min}] \;=\; \frac{M\,[\mathrm{kg}]}{F\,[\mathrm{kg/min}]} \qquad\Longrightarrow\qquad \tau\,[\mathrm{s}] \;=\; \frac{M}{F}\times 60 \]</div>
+</section>
+
+<section>
+  <h2>Silos 5 (gruesa) · 6 (fina) <span class="badge b-hmi">HMI</span><span class="badge b-tst">Test</span></h2>
+  <p class="note">Masa por geometría → luego Little's con el caudal de <strong>descarga (salida)</strong>:</p>
+  <div class="eq big">\[ M\,[\mathrm{kg}] \;=\; \rho\,[\mathrm{kg/m^3}]\;\cdot\;V_{cap}\,[\mathrm{m^3}]\;\cdot\;L_{\%}\,[-] \]</div>
+  <div class="eq big">\[ \tau_{silo}\,[\mathrm{s}] \;=\; \frac{M\,[\mathrm{kg}]}{F_{out}\,[\mathrm{kg/min}]}\times 60 \]</div>
+  <p class="val">ρ, V_cap, L%, F_out — <span class="tbd">TBD</span></p>
+</section>
+
+<section>
+  <h2>Dosing bin + Encolador</h2>
+  <div class="stage">
+    <div class="stagehd">Dosing bin (gruesa · fina) <span class="badge b-hmi">HMI</span></div>
+    <div class="eq big">\[ \tau_{dos}\,[\mathrm{s}] \;=\; \frac{M\,[\mathrm{kg}]}{F\,[\mathrm{kg/min}]}\times 60 \]</div>
+  </div>
+  <div class="stage">
+    <div class="stagehd">Encolador (CE fina · CI gruesa) <span class="badge b-tst">Test</span></div>
+    <div class="eq">\[ t_{enc}\,[\mathrm{s}] \quad\text{— prueba de trazador} \]</div>
+    <p class="note">El HMI da el caudal DESCARGA por corriente del motor (CE ≈ 111 kg/min · CI ≈ 282 kg/min), pero la <strong>residencia</strong> se mide por prueba.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Banda inclinada + Esparcidor</h2>
+  <div class="stage">
+    <div class="stagehd">Banda inclinada azul (fina · gruesa) <span class="badge b-med">Medido</span></div>
+    <div class="eq big">\[ t_{incl}\,[\mathrm{s}] \;=\; \frac{L\,[\mathrm{m}]}{v_{banda}\,[\mathrm{m/min}]}\times 60 \]</div>
+    <p class="val">fina: 64.57 / 99.5 × 60 = 38.9 s · gruesa: 68.5 / 96.5 × 60 = 42.6 s · velocidad fija HMI</p>
+  </div>
+  <div class="stage">
+    <div class="stagehd">Esparcidor (e1 · e2 · e3) <span class="badge b-hmi">HMI</span><span class="badge b-med">Medido</span></div>
+    <div class="eq big">\[ \tau_{esp}\,[\mathrm{s}] \;=\; \frac{M\,[\mathrm{kg}]}{F\,[\mathrm{kg/min}]}\times 60 \]</div>
+  </div>
+</section>
+
+<section>
+  <h2>Registrar el último cambio en llegar <span class="badge b-med">Medido</span></h2>
+  <p class="note">Las tres capas llegan a sus esparcidores con hasta <strong>~2 s de diferencia</strong>. El cambio se registra cuando llega la <strong>ÚLTIMA</strong>. No basta ver la CL: la SL1 puede no haberse unido aún.</p>
+  <div class="eq">\[ T_{antes,e}=\tau_{silo}+\tau_{dos}+t_{enc}+t_{incl}+\tau_{esp,e} \]</div>
+  <div class="eq big">\[ t_{reg}\,[\mathrm{s}] \;=\; \max\!\big(T_{antes,SL1},\,T_{antes,CL},\,T_{antes,SL2}\big) \]</div>
+  <p class="note">Desde ese registro se mide desde el punto de <strong>SL1</strong> (cae en 1.42 m, la más atrás) hasta los <strong>sensores</strong> del final — la referencia más importante de la línea. e ∈ {SL1, CL, SL2}.</p>
+</section>
+
+<section>
+  <h2>Punto SL1 → sensores <span class="badge b-med">Medido</span></h2>
+  <div class="eq big">\[ t_{SL1\rightarrow sens}\,[\mathrm{s}] \;=\; \frac{83.73\,[\mathrm{m}]}{v_{prensa}\,[\mathrm{m/min}]}\times 60 \]</div>
+  <table>
+    <tr><th>Tramo</th><th>Largo</th></tr>
+    <tr><td>Resto banda blanca (1.42 → 45 m)</td><td>43.58 m</td></tr>
+    <tr><td>Banda roja</td><td>10.0 m</td></tr>
+    <tr><td>Prensa metálica (19 marcos)</td><td>16.6 m</td></tr>
+    <tr><td>Corte → sensores</td><td>13.55 m</td></tr>
+    <tr><td><strong>Total SL1 → sensores</strong></td><td><strong>83.73 m</strong></td></tr>
+  </table>
+  <div class="goes center">346.5 s @ 14.5 m/min &nbsp;·&nbsp; 452.1 s @ 11.11 m/min</div>
+</section>
+
+<section>
+  <h2>Qué va dónde — banda blanca</h2>
+  <div class="goes">
+    SL1 · Esparcidor 1 &nbsp;—&nbsp; 1.42 – 8.37 m<br>
+    CL &nbsp;· Esparcidor 2 &nbsp;—&nbsp; 11.72 – 16.10 m<br>
+    SL2 · Esparcidor 3 &nbsp;—&nbsp; 17.47 – 23.86 m<br>
+    Pre-prensa &nbsp;—&nbsp; 29.08 – 33.78 m<br>
+    Imán 26.68 m &nbsp;·&nbsp; Sprays 35.99 m &nbsp;·&nbsp; Detector 37.69 m &nbsp;·&nbsp; Cuchillas 39.56 m<br><br>
+    <strong>Banda roja</strong> &nbsp;—&nbsp; Vapor · Dynasteam 1.86 – 4.15 m
+  </div>
+</section>
+
+<section>
+  <h2>Repetibilidad de las bandas</h2>
+  <p class="note">Cronómetro, 3 corridas @ 11.11 m/min. El tiempo total de banda es muy consistente:</p>
+  <table>
+    <tr><th>Banda</th><th>Corrida 1</th><th>Corrida 2</th><th>Corrida 3</th><th>Promedio</th><th>Variación</th></tr>
+    <tr><td>Blanca</td><td>242.0 s</td><td>243.4 s</td><td>243.2 s</td><td><strong>242.9 s</strong></td><td><strong>±0.3 %</strong></td></tr>
+    <tr><td>Roja</td><td>53.7 s</td><td>54.5 s</td><td>54.4 s</td><td><strong>54.2 s</strong></td><td><strong>±0.4 %</strong></td></tr>
+  </table>
+  <p class="note center">Los tramos individuales varían más (±4–11 % por lap), pero el <strong>total converge</strong> → mediciones confiables.</p>
+</section>
+
+<section>
+  <h2>Después de la prensa — corte → sensores <span class="badge b-med">Medido</span></h2>
+  <table>
+    <tr><th>Tramo (desde salida de prensa)</th><th>Largo</th></tr>
+    <tr><td>Salida prensa → cuchillas de filo</td><td>6.7 m</td></tr>
+    <tr><td>Cuchillas de filo</td><td>1.35 m</td></tr>
+    <tr><td>gap</td><td>0.7 m</td></tr>
+    <tr><td>Cortadora</td><td>2.3 m</td></tr>
+    <tr><td>gap → sensores</td><td>2.5 m</td></tr>
+    <tr><td><strong>Total → sensores</strong></td><td><strong>13.55 m</strong></td></tr>
+  </table>
+  <p class="note center">Enfriadoras estrella + estacado quedan <strong>después de los sensores</strong> (fuera de la medición). <span class="tbd">TBD</span></p>
+</section>
+
+<section>
+  <h2 class="center">Ecuación maestra</h2>
+  <div class="eq big">\[ t_{tot}\,[\mathrm{s}] \;=\; \max_e\!\left(T_{antes,e}\right) \;+\; \frac{83.73\,[\mathrm{m}]}{v_{prensa}\,[\mathrm{m/min}]}\times 60 \]</div>
+  <p class="note center">Se registra el último cambio en llegar al esparcidor, y se mide desde el punto de SL1 hasta los sensores.<br>e ∈ {SL1, CL, SL2} &nbsp;·&nbsp; 83.73 = 43.58 + 10 + 16.6 + 13.55 &nbsp;·&nbsp; referencia final = sensores</p>
+</section>
+
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+  Reveal.initialize({ hash:true, controls:true, progress:true, slideNumber:'c/t', transition:'slide', width:1080, height:760, margin:0.06 });
+  renderMathInElement(document.querySelector('.reveal'), {
+    delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],
+    throwOnError:false
+  });
+</script>
+</body>
+</html>

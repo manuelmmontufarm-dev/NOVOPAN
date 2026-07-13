@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <base href="/trazabilidad-linea/">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<title>Parte 1 + Parte 2 · Preparación → tablero · NOVOPAN</title>
+<title>Sección 2 · Línea horizontal · NOVOPAN</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23004E38'/%3E%3Ctext x='50' y='72' font-family='Helvetica,Arial,sans-serif' font-size='68' font-weight='700' text-anchor='middle' fill='white'%3EN%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" />
-<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260711a" />
-<link rel="stylesheet" href="css/params.css?v=20260701" />
+<link rel="stylesheet" href="css/seccion2-linea.css?v=20260709e" />
+<link rel="stylesheet" href="css/params.css?v=20260709e" />
 </head>
 <body>
 
@@ -20,13 +21,13 @@
   <!-- ══ HEADER CHROME ══ -->
   <div class="s2-header">
     <div>
-      <div class="s2-header__eyebrow">NOVOPAN · Línea 1 · Trazabilidad total</div>
-      <h1 class="s2-header__title">Parte 1 + Parte 2 · Preparación → tablero</h1>
+      <div class="s2-header__eyebrow">NOVOPAN · Línea 1 · Trazabilidad en vivo</div>
+      <h1 class="s2-header__title">Sección 2 · Formación, prensa y sensores</h1>
     </div>
     <div class="s2-header__right">
       <div class="s2-header__meta">
-        <span>Inicio: <strong>patios · reducción · secado · clasificación</strong></span>
-        <span>Salida: <strong>Silo 5 CL + Silo 6 SL → Sección 2</strong></span>
+        <span>Colchón: <strong>3 capas → tablero</strong></span>
+        <span>Ruta trazador: <strong>TOP · CORE · BOTTOM</strong></span>
       </div>
       <div class="s2-clocks">
         <div class="s2-clock">
@@ -43,13 +44,6 @@
       <button type="button" class="s2-viewtab is-active" data-view="linea" id="tabLinea">Línea</button>
       <button type="button" class="s2-viewtab" data-view="params" id="tabParams">Parámetros</button>
     </div>
-    <div class="s2-hmi">
-      <span class="s2-hmi-status is-idle" id="hmiStatus" title="Lectura del CSV del HMI">● HMI CSV · —</span>
-      <button type="button" class="s2-hmi__btn" id="hmiConnectBtn" title="Elegir un CSV local del HMI (fallback)">
-        <span class="ms">upload_file</span> Conectar CSV
-      </button>
-      <input type="file" id="hmiFileInput" accept=".csv,.txt" hidden />
-    </div>
     <div class="s2-linea-controls" id="lineaControls">
     <div class="s2-speed">
       <span class="s2-speed__label"><span class="ms">speed</span> Velocidad de prensa</span>
@@ -62,59 +56,31 @@
     <span class="s2-toolbar__label">Ir a zona</span>
     <div class="s2-zones">
       <button type="button" class="s2-zone-btn" data-scroll="0">
-        <span class="s2-zone-btn__dot" style="background:#7A5D00;"></span>
-        <strong>1</strong> Preparación
-      </button>
-      <button type="button" class="s2-zone-btn" data-scroll="2200">
         <span class="s2-zone-btn__dot" style="background:#37474F;"></span>
         <strong>0</strong> Silos
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="4100">
+      <button type="button" class="s2-zone-btn" data-scroll="1920">
         <span class="s2-zone-btn__dot" style="background:#004E38;"></span>
         <strong>2A</strong> Formación
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="5928">
+      <button type="button" class="s2-zone-btn" data-scroll="3748">
         <span class="s2-zone-btn__dot" style="background:#1565C0;"></span>
         <strong>2B</strong> Precompresión
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="7210">
+      <button type="button" class="s2-zone-btn" data-scroll="5030">
         <span class="s2-zone-btn__dot" style="background:#C62828;"></span>
         <strong>2C</strong> Precalent.
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="7910">
+      <button type="button" class="s2-zone-btn" data-scroll="5730">
         <span class="s2-zone-btn__dot" style="background:#2A2A2A;"></span>
         <strong>2D</strong> Prensado
       </button>
-      <button type="button" class="s2-zone-btn" data-scroll="9032">
+      <button type="button" class="s2-zone-btn" data-scroll="6852">
         <span class="s2-zone-btn__dot" style="background:#0A7D5A;"></span>
         <strong>2E</strong> Calidad
       </button>
     </div>
-    <span class="s2-toolbar__label">Inyectar P1</span>
-    <div class="s2-preinject">
-      <button type="button" class="s2-preinject__btn" data-pre-trigger="patios" data-label="Patios · cambio receta">
-        <span class="ms">yard</span> Patios
-      </button>
-      <button type="button" class="s2-preinject__btn" data-pre-trigger="silo5" data-label="Silo 5 · CL/core">
-        <span class="ms">inventory_2</span> Silo 5
-      </button>
-      <button type="button" class="s2-preinject__btn" data-pre-trigger="silo6" data-label="Silo 6 · SL/capas">
-        <span class="ms">inventory_2</span> Silo 6
-      </button>
-    </div>
     <div class="s2-toolbar__spacer"></div>
-    <label class="s2-time-scale">
-      <span class="ms">timer</span>
-      <span>Tiempo</span>
-      <select id="timeScaleSelect" aria-label="Multiplicador de tiempo">
-        <option value="1">1×</option>
-        <option value="60">60×</option>
-        <option value="300" selected>300×</option>
-        <option value="1800">1800×</option>
-        <option value="3600">3600×</option>
-        <option value="36000">36000× P1 · 300× P2</option>
-      </select>
-    </label>
     <div class="s2-mover">
       <span class="s2-mover__label"><span class="ms">drag_pan</span> Mover cambio seleccionado</span>
       <input type="range" class="s2-mover__range" id="moverRange" min="0" max="85.15" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
@@ -140,11 +106,23 @@
     </div>
   </div>
 
+  <!-- ══ BARRA MODELO v3: ecuación maestra + estado del CSV del HMI ══ -->
+  <div class="s2-v3bar" id="v3Bar">
+    <div class="s2-v3-readout" id="v3Readout">t_tot = …</div>
+    <div class="s2-hmi">
+      <button type="button" class="btn btn--secondary s2-hmi__btn" id="hmiConnectBtn" title="Elegir el CSV exportado del HMI (se relee solo al cambiar)">
+        <span class="ms">upload_file</span> Conectar CSV del HMI
+      </button>
+      <span class="s2-hmi-status is-idle" id="hmiStatus">● HMI CSV · —</span>
+      <input type="file" id="hmiFileInput" accept=".csv,.txt" hidden />
+    </div>
+  </div>
+
   <!-- ══ CANVAS ══ -->
-  <!-- Escala lineal real: x = 80 + 70 × metros. Tramo medido 0→85.15 m
-       (0→80 · 45→3230 · 55→3930 · 71.6→5092 · 85.15→6040.5) + margen hasta 91 m. -->
+  <!-- x < 1920: carril upstream ESQUEMÁTICO (silos → esparcidores, por tiempos τ).
+       x ≥ 1920: escala lineal real x = 1920 + 80 + 70 × metros. Tramo medido 0→85.15 m. -->
   <div class="s2-canvas" id="canvasScroll">
-    <svg id="lineCanvas" width="10650" height="650" viewBox="-2200 0 10650 650">
+    <svg width="8470" height="580" viewBox="0 0 8470 580">
       <defs>
         <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#EAEEF2"/><stop offset="0.5" stop-color="#C3CCD6"/><stop offset="1" stop-color="#98A6B4"/>
@@ -161,374 +139,15 @@
         <radialGradient id="heat" cx="0.5" cy="0.5" r="0.6">
           <stop offset="0" stop-color="#FFCF7A"/><stop offset="0.55" stop-color="#E8892B"/><stop offset="1" stop-color="#B55512" stop-opacity="0"/>
         </radialGradient>
-        <marker id="wfArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#111"/>
-        </marker>
-        <marker id="wfArrowRec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#D47A00"/>
-        </marker>
       </defs>
 
-      <!-- ══════════ PARTE 1 · WIREFRAME ORIGINAL ══════════ -->
-      <g id="part1Wireframe" class="wf" transform="translate(-2160 18)">
-        <rect x="0" y="0" width="2100" height="614" rx="16" fill="#FFFFFF" stroke="#D9DDD9" stroke-width="1.5"/>
-        <line x1="185" y1="0" x2="185" y2="614" class="wf-bandline"/>
-        <line x1="620" y1="0" x2="620" y2="614" class="wf-bandline"/>
-        <line x1="790" y1="0" x2="790" y2="614" class="wf-bandline"/>
-        <line x1="1005" y1="0" x2="1005" y2="614" class="wf-bandline"/>
-        <line x1="1515" y1="0" x2="1515" y2="614" class="wf-bandline"/>
-        <line x1="1620" y1="0" x2="1620" y2="614" class="wf-bandline"/>
-        <text x="92" y="22" class="wf-band">PATIOS</text>
-        <text x="402" y="22" class="wf-band">REDUCCIÓN · 3 VÍAS</text>
-        <text x="705" y="22" class="wf-band">SILOS VERDES</text>
-        <text x="898" y="22" class="wf-band">DOSIF. · SECADO</text>
-        <text x="1260" y="22" class="wf-band">CLASIFICACIÓN REAL</text>
-        <text x="1568" y="80" class="wf-band">SILOS 5/6</text>
-        <text x="1855" y="80" class="wf-band">PASA A SECCIÓN 2 ANIMADA →</text>
-        <line x1="0" y1="42" x2="2100" y2="42" stroke="#111" stroke-width="1.5"/>
+      <!-- ── CARRIL UPSTREAM (silos → esparcidores · esquemático · poblado por JS) ── -->
+      <g id="upstreamRoot"></g>
+      <g id="upstreamTracers"></g>
 
-        <text x="205" y="96" class="wf-lane">VÍA ASERRÍN</text>
-        <text x="205" y="286" class="wf-lane">VÍA CHIP</text>
-        <text x="205" y="496" class="wf-lane">VÍA HOMBAK</text>
+      <!-- ── TRAMO MÉTRICO (todo lo existente, corrido +1920 px sin tocar coordenadas) ── -->
+      <g id="downstreamRoot" transform="translate(1920 0)">
 
-        <!-- flujo principal -->
-        <polyline class="wf-edge" points="136,120 252,120"/>
-        <polyline class="wf-edge" points="348,120 454,120"/>
-        <polyline class="wf-edge" points="486,120 680,120"/>
-        <polyline class="wf-edge" points="136,310 246,310"/>
-        <polyline class="wf-edge" points="278,310 368,310"/>
-        <polyline class="wf-edge" points="448,310 536,310"/>
-        <polyline class="wf-edge" points="568,310 610,310 610,265 652,265"/>
-        <polyline class="wf-edge" points="568,310 622,310 622,340 712,340"/>
-        <polyline class="wf-edge" points="136,310 160,310 160,520 384,520"/>
-        <polyline class="wf-edge" points="416,520 680,520"/>
-        <polyline class="wf-edge" points="720,120 790,120 790,320 815,320"/>
-        <polyline class="wf-edge" points="692,265 790,265 790,320 815,320"/>
-        <polyline class="wf-edge" points="760,340 790,340 790,320 815,320"/>
-        <polyline class="wf-edge" points="720,520 790,520 790,320 815,320"/>
-        <polyline class="wf-edge" points="895,320 912,320 912,230 918,230"/>
-        <polyline class="wf-edge" points="895,320 912,320 912,410 918,410"/>
-        <polyline class="wf-edge" points="1002,230 1030,230"/>
-        <polyline class="wf-edge" points="1002,410 1030,410"/>
-        <polyline class="wf-edge" points="1065,230 1100,230 1100,320 1110,320"/>
-        <polyline class="wf-edge" points="1065,410 1100,410 1100,320 1110,320"/>
-        <polyline class="wf-edge" points="1170,320 1210,320 1210,194 1475,194"/>
-        <polyline class="wf-edge" points="1170,320 1244,320"/>
-        <polyline class="wf-edge" points="1276,320 1324,320"/>
-        <polyline class="wf-edge" points="1356,320 1435,390"/>
-        <polyline class="wf-edge wf-edge-rec" points="1170,320 1208,320 1208,505 1234,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1266,505 1304,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1338,500 1374,473"/>
-        <polyline class="wf-edge wf-edge-rec" points="1338,510 1374,537"/>
-        <polyline class="wf-edge wf-edge-rec" points="1406,473 1432,501"/>
-        <polyline class="wf-edge wf-edge-rec" points="1406,537 1432,509"/>
-        <polyline class="wf-edge wf-edge-rec" points="1462,505 1494,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1526,505 1560,505 1560,296 1260,296 1260,300"/>
-        <polyline class="wf-edge wf-edge-bio" points="1170,320 1190,320 1190,582 1218,582"/>
-        <polyline class="wf-edge wf-edge-bio" points="1262,582 1296,582"/>
-        <polyline class="wf-edge wf-edge-bio" points="1318,596 1318,612 1032,612 1032,596"/>
-        <polyline class="wf-edge wf-edge-bio" points="136,622 988,622 988,596"/>
-
-        <!-- conectores visuales hacia Sección 2 animada -->
-        <text x="1720" y="200" class="wf-elabel" style="fill:#0A7D5A;font-weight:700">CL/core → Silo 5 animado · transportador aéreo</text>
-        <text x="1700" y="396" class="wf-elabel" style="fill:#1565C0;font-weight:700">SL/capas → Silo 6 animado · transportador aéreo</text>
-
-        <!-- nodos -->
-        <g class="wf-node" data-pre-stage="patios" data-label="Patios · cambio receta" transform="translate(92 310)">
-          <rect x="-48" y="-18" width="96" height="36" class="wf-box"/>
-          <text y="34" class="wf-nlabel">Patios · rumas</text>
-          <text y="48" class="wf-nsub">CLIC = cambio receta</text>
-        </g>
-        <g class="wf-node" transform="translate(92 120)">
-          <rect x="-48" y="-18" width="96" height="36" class="wf-box"/>
-          <text y="34" class="wf-nlabel">Aserrín comprado</text>
-          <text y="48" class="wf-nsub">~9 t/h</text>
-        </g>
-        <g class="wf-node" data-pre-stage="wf-pm1" transform="translate(300 120)">
-          <rect x="-38" y="-12" width="76" height="24" class="wf-machine"/>
-          <path d="M-18,-4 l8,4 l-8,4 M0,-4 l8,4 l-8,4 M18,-4 l8,4 l-8,4" class="wf-mark"/>
-          <text y="34" class="wf-nlabel">Piso móvil 1</text>
-          <text y="48" class="wf-nsub">solo aserrín</text>
-        </g>
-        <g class="wf-node" data-pre-stage="wf-ds" transform="translate(470 120)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">DS</text>
-          <text y="34" class="wf-nlabel">Clasificador</text>
-          <text y="48" class="wf-nsub">¿Dynescreen?</text>
-        </g>
-        <g class="wf-node" data-pre-stage="silo1" data-label="Silos verdes 1/2/3" transform="translate(700 120)">
-          <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
-          <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
-          <text y="42" class="wf-nlabel">Silo 1 · Aserrín</text>
-          <text y="56" class="wf-nsub">ρ 271 · 7 t/h</text>
-          <text y="70" class="wf-unk">V m³ ?</text>
-        </g>
-        <g class="wf-node" data-pre-stage="wf-ch" transform="translate(262 310)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">CH</text>
-          <text y="34" class="wf-nlabel">Molino Chips</text>
-          <text y="48" class="wf-nsub">194 A</text>
-        </g>
-        <g class="wf-node" data-pre-stage="wf-pm2" transform="translate(408 310)">
-          <rect x="-38" y="-12" width="76" height="24" class="wf-machine"/>
-          <path d="M-18,-4 l8,4 l-8,4 M0,-4 l8,4 l-8,4 M18,-4 l8,4 l-8,4" class="wf-mark"/>
-          <text y="34" class="wf-nlabel">Piso Móvil 2</text>
-          <text y="48" class="wf-nsub">receta · 16–23 t/h</text>
-        </g>
-        <g class="wf-node" data-pre-stage="wf-flex" transform="translate(552 310)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">FX</text>
-          <text y="34" class="wf-nlabel">Molinos Flakes 1·2</text>
-          <text y="48" class="wf-nsub">cuchillas 10 h/1.6 h</text>
-        </g>
-        <g class="wf-node" data-pre-stage="silo2a" data-label="Silos verdes 1/2/3" transform="translate(672 265)">
-          <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
-          <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
-          <text y="42" class="wf-nlabel">Silo 2A · Flakes 1</text>
-          <text y="56" class="wf-nsub">ρ 230 · L 25.4%</text>
-          <text y="70" class="wf-unk">V m³ ?</text>
-        </g>
-        <g class="wf-node" data-pre-stage="silo2b" data-label="Silos verdes 1/2/3" transform="translate(736 340)">
-          <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
-          <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
-          <text y="42" class="wf-nlabel">Silo 2B · Flakes 2</text>
-          <text y="56" class="wf-nsub">ρ 232 · L 41.5%</text>
-          <text y="70" class="wf-unk">V m³ ?</text>
-        </g>
-        <g class="wf-node" data-pre-stage="wf-hb" transform="translate(400 520)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">HB</text>
-          <text y="34" class="wf-nlabel">Hombak U100+U112</text>
-          <text y="48" class="wf-nsub">escama 0.45 mm</text>
-        </g>
-        <g class="wf-node" data-pre-stage="silo3" data-label="Silos verdes 1/2/3" transform="translate(700 520)">
-          <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
-          <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
-          <text y="42" class="wf-nlabel">Silo 3 · Hombak</text>
-          <text y="56" class="wf-nsub">ρ 211 · 8.7 t/h</text>
-          <text y="70" class="wf-unk">V m³ ?</text>
-        </g>
-        <g class="wf-node" data-pre-stage="bunker" data-label="Dosing Bunker · IMAL" transform="translate(855 320)">
-          <rect x="-38" y="-12" width="76" height="24" class="wf-machine"/>
-          <path d="M-18,-4 l8,4 l-8,4 M0,-4 l8,4 l-8,4 M18,-4 l8,4 l-8,4" class="wf-mark"/>
-          <text y="34" class="wf-nlabel">Dosing Bunker</text>
-          <text y="48" class="wf-nsub">IMAL · selector Maestro</text>
-        </g>
-        <g class="wf-node" data-pre-stage="secadero1" data-label="Secaderos 1/2" transform="translate(960 230)">
-          <rect x="-42" y="-15" width="84" height="30" rx="14" class="wf-drum"/>
-          <line x1="-22" y1="-15" x2="-30" y2="15" class="wf-green-line"/><line x1="4" y1="-15" x2="-4" y2="15" class="wf-green-line"/><line x1="30" y1="-15" x2="22" y2="15" class="wf-green-line"/>
-          <text y="34" class="wf-nlabel">Secadero 1</text>
-          <text y="48" class="wf-nsub">260→132 °C</text>
-        </g>
-        <g class="wf-node" data-pre-stage="secadero2" data-label="Secaderos 1/2" transform="translate(960 410)">
-          <rect x="-42" y="-15" width="84" height="30" rx="14" class="wf-drum"/>
-          <line x1="-22" y1="-15" x2="-30" y2="15" class="wf-green-line"/><line x1="4" y1="-15" x2="-4" y2="15" class="wf-green-line"/><line x1="30" y1="-15" x2="22" y2="15" class="wf-green-line"/>
-          <text y="34" class="wf-nlabel">Secadero 2</text>
-          <text y="48" class="wf-nsub">polvo combustible</text>
-        </g>
-        <g class="wf-node" data-pre-stage="cribaF" data-label="Tamices F/G + 3 zarandas" transform="translate(1048 230)">
-          <rect x="-30" y="-12" width="60" height="24" class="wf-screen"/>
-          <line x1="-15" y1="-12" x2="-15" y2="12" class="wf-green-line"/><line x1="0" y1="-12" x2="0" y2="12" class="wf-green-line"/><line x1="15" y1="-12" x2="15" y2="12" class="wf-green-line"/>
-          <text y="34" class="wf-nlabel">Tamiz F</text>
-          <text y="48" class="wf-nsub">26 T/h</text>
-        </g>
-        <g class="wf-node" data-pre-stage="cribaG" data-label="Tamices F/G + 3 zarandas" transform="translate(1048 410)">
-          <rect x="-30" y="-12" width="60" height="24" class="wf-screen"/>
-          <line x1="-15" y1="-12" x2="-15" y2="12" class="wf-green-line"/><line x1="0" y1="-12" x2="0" y2="12" class="wf-green-line"/><line x1="15" y1="-12" x2="15" y2="12" class="wf-green-line"/>
-          <text y="34" class="wf-nlabel">Tamiz G</text>
-          <text y="48" class="wf-nsub">21 T/h</text>
-        </g>
-        <g class="wf-node" data-pre-stage="zaranda1" data-label="Tamices F/G + 3 zarandas" transform="translate(1140 195)">
-          <rect x="-30" y="-12" width="60" height="24" class="wf-screen"/>
-          <text y="34" class="wf-nlabel">Zaranda 1</text>
-          <text y="48" class="wf-nsub">clapetas 1–7</text>
-        </g>
-        <g class="wf-node" data-pre-stage="zaranda2" data-label="Tamices F/G + 3 zarandas" transform="translate(1140 320)">
-          <rect x="-30" y="-12" width="60" height="24" class="wf-screen"/>
-          <text y="34" class="wf-nlabel">Zaranda 2</text>
-          <text y="48" class="wf-nsub">5 fracciones</text>
-        </g>
-        <g class="wf-node" data-pre-stage="zaranda3" data-label="Tamices F/G + 3 zarandas" transform="translate(1140 445)">
-          <rect x="-30" y="-12" width="60" height="24" class="wf-screen"/>
-          <text y="34" class="wf-nlabel">Zaranda 3</text>
-          <text y="48" class="wf-nsub">clapetas 1–7</text>
-        </g>
-        <text x="1188" y="168" class="wf-elabel wf-rec-text">regla HMI: POS 7 / 100% = todo al Silo CL</text>
-        <text x="1196" y="286" class="wf-elabel">5 fracciones: CL · SL-Macro · SL-Micro · Part. Grandes · Polvo</text>
-        <g class="wf-node" data-pre-stage="partG" transform="translate(1250 505)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">PG</text>
-          <text y="34" class="wf-nlabel">Part. Grandes</text>
-          <text y="48" class="wf-nsub">oversize</text>
-        </g>
-        <g class="wf-node" data-pre-stage="ws1" transform="translate(1260 320)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">W1</text>
-          <text y="34" class="wf-nlabel">Windsifter 1</text>
-          <text y="48" class="wf-nsub">línea SL</text>
-        </g>
-        <g class="wf-node" data-pre-stage="ws2" transform="translate(1340 320)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">W2</text>
-          <text y="34" class="wf-nlabel">Windsifter 2</text>
-          <text y="48" class="wf-nsub">línea SL</text>
-        </g>
-        <g class="wf-node" data-pre-stage="w3" transform="translate(1320 505)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">W3</text>
-          <text y="34" class="wf-nlabel">Windsifter 3</text>
-          <text y="48" class="wf-nsub">arena/piedras</text>
-        </g>
-        <g class="wf-node" data-pre-stage="r1" transform="translate(1390 465)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">R1</text>
-          <text y="34" class="wf-nlabel">Refinador 1</text>
-          <text y="48" class="wf-nsub">6.8 T/h</text>
-        </g>
-        <g class="wf-node" data-pre-stage="r2" transform="translate(1390 545)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">R2</text>
-          <text y="34" class="wf-nlabel">Refinador 2</text>
-          <text y="48" class="wf-nsub">8.0 T/h</text>
-        </g>
-        <g class="wf-node" data-pre-stage="cy" transform="translate(1446 505)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">CY</text>
-          <text y="34" class="wf-nlabel">Ciclones</text>
-        </g>
-        <g class="wf-node" data-pre-stage="clasSL" transform="translate(1510 505)">
-          <circle r="18" class="wf-circle"/>
-          <text y="4" class="wf-icon">CL</text>
-          <text y="34" class="wf-nlabel">Clasificadores</text>
-        </g>
-        <g class="wf-node" data-pre-stage="silo5" data-label="Silo 5 · CL/core" transform="translate(1495 194)">
-          <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
-          <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
-          <text y="42" class="wf-nlabel">Silo 5 · CL/core</text>
-          <text y="56" class="wf-nsub">ρ 128–135 · L 44%</text>
-          <text y="70" class="wf-unk">V m³ ?</text>
-        </g>
-        <g class="wf-node" data-pre-stage="silo6" data-label="Silo 6 · SL/capas" transform="translate(1455 390)">
-          <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
-          <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
-          <text y="42" class="wf-nlabel">Silo 6 · SL/capas</text>
-          <text y="56" class="wf-nsub">ρ 161–188 · L 31%</text>
-          <text y="70" class="wf-unk">V m³ ?</text>
-        </g>
-        <g class="wf-node" data-pre-stage="silo4" transform="translate(1240 582)">
-          <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
-          <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
-          <text y="42" class="wf-nlabel">Silo 4 · Polvo</text>
-        </g>
-        <g class="wf-node" data-pre-stage="silo8" transform="translate(1318 582)">
-          <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
-          <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
-          <text y="42" class="wf-nlabel">Silo 8 · TVM</text>
-        </g>
-        <g class="wf-node" transform="translate(1010 580)">
-          <rect x="-44" y="-16" width="88" height="32" class="wf-side"/>
-          <text y="34" class="wf-nlabel">Quemador</text>
-          <text y="48" class="wf-nsub">corteza+polvo</text>
-        </g>
-      </g>
-      <!-- Transportadores aéreos P1 → silos animados (mismo camino que siguen los trazadores) -->
-      <g id="aerialBridges" fill="none">
-        <path d="M -685 408 H -630 Q -618 408 -618 396 V 42 Q -618 30 -606 30 H 318 Q 330 30 330 42 V 100" stroke="#1565C0" stroke-width="4" stroke-linecap="round"/>
-        <path d="M -685 408 H -630 Q -618 408 -618 396 V 42 Q -618 30 -606 30 H 318 Q 330 30 330 42 V 100" class="wf-flow"/>
-        <polygon points="323,98 337,98 330,110" fill="#1565C0"/>
-        <path d="M -645 212 H -594 Q -582 212 -582 200 V 26 Q -582 14 -570 14 H 848 Q 860 14 860 26 V 66" stroke="#0A7D5A" stroke-width="4" stroke-linecap="round"/>
-        <path d="M -645 212 H -594 Q -582 212 -582 200 V 26 Q -582 14 -570 14 H 848 Q 860 14 860 26 V 66" class="wf-flow"/>
-        <polygon points="853,64 867,64 860,76" fill="#0A7D5A"/>
-      </g>
-
-      <!-- ══════════ 0 · SILOS · DOSIFICACIÓN Y ENCOLADO — ANIMADO ══════════ -->
-      <g id="section2Intake" class="s2-intake">
-        <rect x="-20" y="42" width="1880" height="520" fill="rgba(55,71,79,0.028)"/>
-        <rect x="580" y="56" width="640" height="28" rx="14" fill="#37474F"/>
-        <text x="900" y="75" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-size="16" font-weight="800" fill="#FFFFFF" letter-spacing=".06em">0 · SILOS · DOSIFICACIÓN Y ENCOLADO — MODELO V3</text>
-        <g>
-          <rect x="60" y="88" width="210" height="26" rx="13" fill="#FFFFFF" stroke="#1565C0" stroke-width="1.5"/>
-          <text x="165" y="106" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-size="13" font-weight="800" fill="#1565C0">RUTA FINA · SL1 + SL2</text>
-          <rect x="940" y="88" width="230" height="26" rx="13" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="1.5"/>
-          <text x="1055" y="106" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-size="13" font-weight="800" fill="#0A7D5A">RUTA GRUESA · CL (core)</text>
-        </g>
-
-        <!-- Silo 6 / línea fina -->
-        <g class="s2-intake__node" data-pre-stage="active-silo6" data-label="Silo 6 · fina" transform="translate(330 170)">
-          <rect x="-58" y="-66" width="116" height="74" rx="10" fill="#DCE4EC" stroke="#758697" stroke-width="2"/>
-          <rect x="-50" y="-26" width="100" height="36" rx="4" fill="#E8CA74" opacity=".88"/>
-          <path d="M-58,10 L0,78 L58,10 Z" fill="#C5D0DA" stroke="#758697" stroke-width="2"/>
-          <rect x="-12" y="78" width="24" height="34" fill="#9DB1C2" stroke="#758697"/>
-          <text x="-82" y="0" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">SILO 6 · FINA</text>
-          <text x="-82" y="15" text-anchor="end" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">τ = ρ·V·L% / F_out ×60 · V TBD</text>
-        </g>
-        <g class="s2-intake__node" data-pre-stage="active-dosSL" data-label="Dosing fina" transform="translate(330 330)">
-          <rect x="-54" y="-60" width="108" height="82" rx="8" fill="url(#steelBlue)" stroke="#6B7886" stroke-width="2"/>
-          <rect x="-54" y="-60" width="108" height="10" rx="4" fill="#1565C0"/>
-          <path d="M-54,22 L0,92 L54,22 Z" fill="#333D48"/>
-          <rect x="-10" y="92" width="20" height="48" fill="#B8C6D2" stroke="#758697"/>
-          <text x="-82" y="2" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">DOSING FINA</text>
-          <text x="-82" y="17" text-anchor="end" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">τ = M/F_descarga ×60 · HMI</text>
-        </g>
-        <g class="s2-intake__node" data-pre-stage="active-encCE" data-label="Encolador CE" transform="translate(330 500)">
-          <rect x="-70" y="-34" width="140" height="68" rx="28" fill="#B7C4D2" stroke="#758697" stroke-width="2"/>
-          <g stroke="#758697" stroke-width="3" opacity=".75"><line x1="-42" y1="-24" x2="-30" y2="24"/><line x1="-12" y1="-24" x2="0" y2="24"/><line x1="18" y1="-24" x2="30" y2="24"/></g>
-          <text x="-82" y="-4" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADOR CE</text>
-          <text x="-82" y="11" text-anchor="end" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">capas externas</text>
-        </g>
-
-        <!-- Silo 5 / línea gruesa -->
-        <g class="s2-intake__node" data-pre-stage="active-silo5" data-label="Silo 5 · gruesa" transform="translate(860 145)">
-          <rect x="-58" y="-66" width="116" height="74" rx="10" fill="#DCE4EC" stroke="#758697" stroke-width="2"/>
-          <rect x="-50" y="-26" width="100" height="36" rx="4" fill="#C98B2E" opacity=".88"/>
-          <path d="M-58,10 L0,78 L58,10 Z" fill="#C5D0DA" stroke="#758697" stroke-width="2"/>
-          <rect x="-12" y="78" width="24" height="34" fill="#9DB1C2" stroke="#758697"/>
-          <text x="72" y="-10" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">SILO 5 · GRUESA</text>
-          <text x="72" y="5" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">τ = ρ·V·L% / F_out ×60 · V TBD</text>
-        </g>
-        <g class="s2-intake__node" data-pre-stage="active-dosCL" data-label="Dosing gruesa" transform="translate(860 305)">
-          <rect x="-54" y="-60" width="108" height="82" rx="8" fill="url(#steelBlue)" stroke="#6B7886" stroke-width="2"/>
-          <rect x="-54" y="-60" width="108" height="10" rx="4" fill="#0A7D5A"/>
-          <path d="M-54,22 L0,92 L54,22 Z" fill="#333D48"/>
-          <rect x="-10" y="92" width="20" height="44" fill="#B8C6D2" stroke="#758697"/>
-          <text x="72" y="-4" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">DOSING GRUESA</text>
-          <text x="72" y="11" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">τ = M/F_descarga ×60 · HMI</text>
-        </g>
-        <g class="s2-intake__node" data-pre-stage="active-encCI" data-label="Encolador CI" transform="translate(860 460)">
-          <rect x="-70" y="-34" width="140" height="68" rx="28" fill="#B7C4D2" stroke="#758697" stroke-width="2"/>
-          <g stroke="#758697" stroke-width="3" opacity=".75"><line x1="-42" y1="-24" x2="-30" y2="24"/><line x1="-12" y1="-24" x2="0" y2="24"/><line x1="18" y1="-24" x2="30" y2="24"/></g>
-          <text x="72" y="-4" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADOR CI</text>
-          <text x="72" y="11" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">core</text>
-        </g>
-
-        <!-- Tiempos y bandas inclinadas hacia la Sección 2 real -->
-        <g font-family="'Barlow Semi Condensed',sans-serif" font-size="12" font-weight="800" fill="#1B5E20" text-anchor="middle">
-          <rect x="450" y="186" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="493" y="202">185.6 s</text>
-          <rect x="560" y="141" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="603" y="157">211.2 s</text>
-          <rect x="450" y="342" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="493" y="358">10.8 s</text>
-          <rect x="560" y="296" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="603" y="312">5.3 s</text>
-          <rect x="450" y="501" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="493" y="517">10.0 s</text>
-          <rect x="560" y="455" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="603" y="471">12.0 s</text>
-        </g>
-        <line x1="398" y1="534" x2="2100" y2="534" stroke="#2C80D8" stroke-width="8" stroke-linecap="round"/>
-        <line x1="398" y1="534" x2="2100" y2="534" stroke="#BFDDFB" stroke-width="2" stroke-dasharray="22 18" stroke-linecap="round"/>
-        <line x1="928" y1="494" x2="2750" y2="494" stroke="#2C80D8" stroke-width="8" stroke-linecap="round"/>
-        <line x1="928" y1="494" x2="2750" y2="494" stroke="#BFDDFB" stroke-width="2" stroke-dasharray="22 18" stroke-linecap="round"/>
-        <circle cx="398" cy="534" r="13" fill="#C5D0DA" stroke="#758697" stroke-width="2"/>
-        <circle cx="928" cy="494" r="13" fill="#C5D0DA" stroke="#758697" stroke-width="2"/>
-        <rect x="1410" y="484" width="270" height="38" rx="8" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="2"/>
-        <text x="1545" y="500" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="15" fill="#1A1D1B">BANDA INCLINADA · GRUESA</text>
-        <text x="1545" y="515" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">68.5 m @ 96.5 m/min · Medido</text>
-        <rect x="1240" y="548" width="270" height="38" rx="8" fill="#FFFFFF" stroke="#1565C0" stroke-width="2"/>
-        <text x="1375" y="564" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="15" fill="#1A1D1B">BANDA INCLINADA · FINA</text>
-        <text x="1375" y="579" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">64.57 m @ 99.5 m/min · Medido</text>
-        <rect x="1518" y="546" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/>
-        <text x="1561" y="562" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-size="12" font-weight="800" fill="#1B5E20">42.6 s</text>
-        <rect x="1338" y="590" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/>
-        <text x="1381" y="606" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-size="12" font-weight="800" fill="#1B5E20">38.9 s</text>
-      </g>
-
-      <g id="section2Animated" transform="translate(1900 0)">
       <!-- ── ZONE BACKGROUNDS (metros) ── -->
       <rect x="80" y="42" width="1868" height="410" fill="rgba(0,78,56,0.035)"/>       <!-- 2A 0→26.68 -->
       <rect x="1948" y="42" width="1282" height="410" fill="rgba(21,101,192,0.04)"/>    <!-- 2B 26.68→45 -->
@@ -858,9 +477,8 @@
 
       <!-- ── TRAZADORES (uno por cada cambio inyectado · poblado por JS, colores distintos) ── -->
       <g id="tracers"></g>
-      </g>
-      <!-- Trazadores upstream ARRIBA de todo (z-order) -->
-      <g id="preTracers"></g>
+
+      </g><!-- /downstreamRoot -->
     </svg>
   </div>
 
@@ -871,109 +489,29 @@
     <span><i class="s2-legend__swatch" style="background:#E4B657;"></i> capa inferior (SL1)</span>
     <span><i class="s2-legend__dot"></i> trazador de cambio</span>
     <span class="s2-legend__hint"><span class="ms">ads_click</span> clic en un equipo = crea un cambio nuevo (color distinto) desde el inicio de ese proceso</span>
+    <span class="s2-legend__hint"><span class="ms">flag</span> registro (v3) = el cambio nace en el colchón cuando llega la ÚLTIMA capa (t_reg = max) · se mide desde el punto SL1 (1.42 m)</span>
+    <span class="s2-legend__hint"><span class="badge badge--tbd">TBD</span> pendiente de medir (silos · t_enc) — aporta 0 s hasta tener dato</span>
     <span class="s2-legend__hint"><span class="ms">receipt_long</span> reportes = hora real (Quito) en que cada cambio pasó por cada equipo</span>
     <span class="s2-legend__reject"><span class="ms">arrow_downward</span> ruta ghost = nariz abierta (rechazo)</span>
-    <span class="s2-legend__spacer">Preparación wireframe → Silo 5/6 → Sección 2 animada → prensa → tablero</span>
+    <span class="s2-legend__spacer">Colchón: blanca → azul → roja → prensa → tablero · Simulador P&amp;ID clásico: <a href="../trazabilidad/">trazabilidad/</a></span>
   </div>
 
   <!-- ══ PANEL PARÁMETROS ══ -->
   <div class="s2-params is-hidden" id="panelParams">
     <div class="s2-params__section">
-      <h3>Parámetros de planta · leídos del CSV del HMI</h3>
-      <div class="s2-csv-banner" id="csvBanner">
-        <span class="ms">sync</span>
-        <span>Estos valores <strong>se leen del CSV del HMI</strong> (<code>datos/hmi.csv</code>), releído cada 2&nbsp;s.
-        En planta, un job sobrescribe ese archivo; aquí es estático pero la tubería HMI→simulador está probada y lista para el servidor.</span>
-        <span class="s2-hmi-status is-idle" id="hmiStatus2">● —</span>
-      </div>
+      <h3>Parámetros de planta</h3>
       <div class="s2-params__actions">
-        <button type="button" class="btn btn--secondary" id="hmiConnectBtn2"><span class="ms">upload_file</span> Conectar CSV local</button>
-        <button type="button" class="btn btn--secondary" id="resetParamsBtn"><span class="ms">restart_alt</span> Defaults (sin CSV)</button>
+        <button type="button" class="btn btn--primary" id="saveParamsBtn"><span class="ms">save</span> Guardar</button>
+        <button type="button" class="btn btn--secondary" id="loadParamsBtn"><span class="ms">upload</span> Cargar</button>
+        <button type="button" class="btn btn--secondary" id="resetParamsBtn"><span class="ms">restart_alt</span> Defaults</button>
         <span class="param-save-feedback" id="saveFeedback" aria-live="polite"></span>
       </div>
-      <details class="s2-csv-view" id="csvViewWrap">
-        <summary><span class="ms">description</span> Ver CSV crudo del HMI (<span id="csvTagCount">0</span> tags)</summary>
-        <pre class="s2-csv-raw" id="csvRaw">— aún no leído —</pre>
-      </details>
-      <p class="s2-params__hint">Ecuaciones del modelo: τ = M/F×60 · τ_silo = ρ·V·L%/F×60 · t = L/v×60. Los campos con badge <strong>HMI</strong> vienen en vivo del CSV; <strong>Estim.</strong> = plug pendiente de instrumentar.</p>
+      <p class="s2-params__hint">Compartidos con el simulador clásico (mismo localStorage). Mismas ecuaciones τ = M/F×60 · t = L/v×60.</p>
       <div id="paramsGridTab"></div>
     </div>
   </div>
 </div>
 
-<script>
-/* ── Decorador visual Parte 1 (solo presentación) ─────────────────────
-   Añade animaciones al wireframe sin tocar posiciones, textos, rutas ni
-   lógica: material fluyendo en cada tubería, rotores en molinos y
-   windsifters, nivel de llenado en silos, vapor en secaderos y llama en
-   el quemador. Todo se deriva de los nodos existentes. */
-(function () {
-  var NS = 'http://www.w3.org/2000/svg';
-  var wf = document.getElementById('part1Wireframe');
-  if (!wf) return;
-  function el(tag, attrs) {
-    var n = document.createElementNS(NS, tag);
-    for (var k in attrs) n.setAttribute(k, attrs[k]);
-    return n;
-  }
-  // 1) Flujo de material: overlay de guiones en movimiento sobre CADA tramo
-  wf.querySelectorAll('polyline.wf-edge').forEach(function (p) {
-    if (p.classList.contains('wf-edge-rec') || p.classList.contains('wf-edge-bio')) return; // sus guiones ya fluyen
-    var f = p.cloneNode(false);
-    f.setAttribute('class', 'wf-flow');
-    f.removeAttribute('marker-end');
-    if (p.classList.contains('wf-bridge')) f.removeAttribute('style'); // hereda blanco sobre el color de ruta
-    p.parentNode.insertBefore(f, p.nextSibling);
-  });
-  // 2) Rotores en equipos circulares (molinos, windsifters, refinadores, ciclones)
-  wf.querySelectorAll('.wf-node').forEach(function (node) {
-    var circle = node.querySelector('circle.wf-circle');
-    if (!circle) return;
-    var rotor = el('g', { class: 'wf-rotor' });
-    [0, 60, 120].forEach(function (a) {
-      var r = (a * Math.PI) / 180;
-      rotor.appendChild(el('line', {
-        x1: (-13 * Math.cos(r)).toFixed(1), y1: (-13 * Math.sin(r)).toFixed(1),
-        x2: (13 * Math.cos(r)).toFixed(1), y2: (13 * Math.sin(r)).toFixed(1),
-      }));
-    });
-    node.insertBefore(rotor, circle.nextSibling); // bajo el icono, sobre el cuerpo
-  });
-  // 3) Nivel de llenado en silos (color según el material de su etiqueta)
-  var FILL = [
-    ['Aserrín', '#ECC873'], ['Flakes', '#E4B657'], ['Hombak', '#C98B2E'],
-    ['CL/core', '#C98B2E'], ['SL/capas', '#E8CA74'], ['Polvo', '#B8AFA0'], ['TVM', '#B8AFA0'],
-  ];
-  wf.querySelectorAll('.wf-node').forEach(function (node) {
-    if (!node.querySelector('path.wf-silo')) return;
-    var name = (node.querySelector('.wf-nlabel') || {}).textContent || '';
-    var color = '#D9C89A';
-    FILL.some(function (f) { if (name.indexOf(f[0]) !== -1) { color = f[1]; return true; } });
-    var lvl = el('rect', { class: 'wf-fill', x: -14, y: -8, width: 28, height: 16, rx: 2, fill: color });
-    var ell = node.querySelector('ellipse.wf-silo');
-    node.insertBefore(lvl, ell ? ell.nextSibling : node.firstChild);
-  });
-  // 4) Vapor en secaderos + llama del quemador
-  wf.querySelectorAll('.wf-node').forEach(function (node) {
-    if (node.querySelector('rect.wf-drum')) {
-      var steam = el('g', { class: 'wf-steam' });
-      [[-24, 2.4, '0s'], [0, 3, '.8s'], [22, 2.2, '1.5s']].forEach(function (s) {
-        var e = el('ellipse', { cx: s[0], cy: -24, rx: 8, ry: 5, opacity: 0 });
-        e.setAttribute('style', 'animation: wfMist 2.6s ease-in-out infinite; animation-delay:' + s[2]);
-        steam.appendChild(e);
-      });
-      node.appendChild(steam);
-    }
-    var side = node.querySelector('rect.wf-side');
-    if (side && /Quemador/.test(node.textContent)) {
-      var flame = el('g', { class: 'wf-flame' });
-      flame.appendChild(el('path', { d: 'M-8,-16 Q-10,-26 0,-32 Q10,-26 8,-16 Q4,-20 0,-14 Q-4,-20 -8,-16 Z', fill: '#E8892B', opacity: '.85' }));
-      flame.appendChild(el('path', { d: 'M-3.5,-16 Q-4,-22 0,-26 Q4,-22 3.5,-16 Q1.5,-18 0,-15.5 Q-1.5,-18 -3.5,-16 Z', fill: '#FFCF7A' }));
-      node.appendChild(flame);
-    }
-  });
-})();
-</script>
-<script type="module" src="js/combined-app.js?v=20260713a"></script>
+<script type="module" src="js/line-app.js?v=20260709e"></script>
 </body>
 </html>

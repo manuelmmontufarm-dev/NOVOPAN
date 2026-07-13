@@ -90,6 +90,19 @@
 
 ## Historial
 
+### 2026-07-13 — trazabilidad-total: inyección por-nodo (grafo del proceso) + z-order de marcadores
+
+Reporte del usuario (probando en localhost): (a) clic en Silo 2B ponía el cambio en Silo 1/2A; (b) los cambios solo aparecían en Zaranda 2 (las otras zarandas "desconectadas"); (c) los marcadores en la zona de silos se escondían detrás de las imágenes. Todos reales — mi fix anterior solo cubría las 6 máquinas del intake animado; los ~30 nodos del wireframe seguían colapsando a un punto compartido por zona (silos-verdes → Silo 2A, clasificacion → Zaranda 2) o no eran clicables.
+
+**Fix (combined-app.js + index.html):**
+- **Modelo de inyección = grafo del proceso.** `NODE_POS` (posición global de cada equipo), `LINEAR_NEXT` + `succ(key,branch)` (sucesor por rama, bifurca CL/SL en Zaranda 2), `EDGE_VIA` (codos/aéreos/bandas), `GATE_LAUNCH`. `preMilestonesFor` ahora **recorre el grafo** desde el nodo clicado: el cambio NACE en ese equipo y avanza siguiendo las tuberías dibujadas hasta la entrada a la Sección 2 (o al quemador, ruta de polvo). Validado en Node: **87/87** combinaciones nodo×rama arrancan en su posición y terminan en una compuerta o el quemador.
+- **30 equipos clicables** (antes ~11 colapsados): silos 1/2A/2B/3, secaderos 1/2, tamices F/G, zarandas 1/2/3, molinos/pisos, W1/2/3, refinadores, ciclones, clasificadores, silos 4/8, silos 5/6 y las 6 del intake. Cada uno con su `data-pre-stage` propio.
+- **Z-order:** `#preTracers` movido al final del SVG → los marcadores se dibujan ENCIMA de todo (antes quedaban detrás del intake). Verificado: `preTracersIsLast=true`.
+- **Ruta de polvo/biomasa** (Silo 4/8 → quemador) no entra a P2: se registra como completada en el quemador.
+- Verificado en navegador: 6 cambios simultáneos, cada uno sobre SU equipo con color propio, visibles; Zaranda 3 recorre grafo→P2; selfTest verde; 0 errores.
+
+**Nota Vercel:** el sitio desplegado sigue en el commit viejo (Vercel devuelve 402 = sobre el límite, no compila). Probar en localhost (`~/novopan-preview`, `python3 -m http.server 8080`). Al reponerse el límite, `main` despliega solo.
+
 ### 2026-07-11 (noche) — trazabilidad-total: auditoría profunda + CSV del HMI + fix de inyección + optimización
 
 Auditoría multi-agente (24 hallazgos confirmados, verificados contra el código) + ejecución autónoma:

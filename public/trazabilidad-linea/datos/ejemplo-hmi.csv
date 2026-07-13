@@ -1,0 +1,32 @@
+# CSV del HMI · NOVOPAN Línea 1
+# Formato: VARIABLE:VALOR;  — clave y valor separados por ':', cada
+#   registro terminado en ';'. Una variable por línea (o varias en la misma).
+# Separador decimal: '.' o ',' (ambos válidos). Valor VACÍO (VARIABLE:;) =
+#   no tocar ese parámetro (conserva el TBD del simulador).
+# Para conectar en vivo: guardar/exportar este archivo como datos/hmi.csv
+#   junto al sitio hosteado; el simulador lo relee cada 2 segundos.
+V_PRENSA_M_MIN:14.5;
+PESO_MANTA_KGM2:11.5;
+F_SL_KGMIN:147.6;
+F_CL_KGMIN:118;
+PCT_SL1:47.1;
+PCT_SL2:52.9;
+M_DOSING_FINA_KG:20;
+M_DOSING_GRUESA_KG:25;
+M_ESP1_KG:12.5;
+M_ESP2_KG:40;
+M_ESP3_KG:15;
+F_CE_KGMIN:111;
+F_CI_KGMIN:282;
+V_INCL_FINA_M_MIN:99.5;
+V_INCL_GRUESA_M_MIN:96.5;
+SILO6_RHO_KGM3:;
+SILO6_VCAP_M3:;
+SILO6_LEVEL_PCT:;
+SILO6_FOUT_KGMIN:;
+SILO5_RHO_KGM3:;
+SILO5_VCAP_M3:;
+SILO5_LEVEL_PCT:;
+SILO5_FOUT_KGMIN:;
+T_ENC_CE_S:;
+T_ENC_CI_S:;

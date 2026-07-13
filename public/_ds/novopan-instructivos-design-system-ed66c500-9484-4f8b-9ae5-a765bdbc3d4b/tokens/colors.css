@@ -1,0 +1,71 @@
+/* Novopan — Color tokens
+   Base palette sampled from the brand logo, plus an institutional safety system. */
+
+:root {
+  /* ---- Brand (sampled from logo) ---- */
+  --novopan-green: #004E38;   /* deep pine — primary brand */
+  --novopan-green-700: #00684A;
+  --novopan-green-600: #0A7D5A;
+  --novopan-yellow: #FFDE00;  /* vivid brand yellow */
+  --novopan-yellow-600: #F2C200;
+
+  /* ---- Neutrals (warm grey, paper-like) ---- */
+  --ink-900: #1A1D1B;   /* primary text */
+  --ink-700: #3D423F;   /* secondary text */
+  --ink-500: #676E69;   /* muted / captions */
+  --ink-300: #AEB4B0;   /* disabled / hairlines on dark */
+  --line-200: #D9DDD9;  /* borders */
+  --line-100: #E8EBE7;  /* subtle dividers */
+  --surface-0: #FFFFFF; /* cards */
+  --surface-50: #F6F7F4;/* page background, warm off-white */
+  --surface-100: #EEF0EB;
+
+  /* ---- Safety / status system ---- */
+  /* Advertencia (warning) — amber, distinct from brand yellow */
+  --warn-bg: #FFF3D1;
+  --warn-border: #E8A700;
+  --warn-ink: #6B4E00;
+  --warn-accent: #F6B40A;
+
+  /* Prohibido / peligro (prohibited / danger) — red */
+  --danger-bg: #FCE7E5;
+  --danger-border: #C62828;
+  --danger-ink: #8E1B1B;
+  --danger-accent: #D32F2F;
+
+  /* Correcto / cumple (ok) — green */
+  --ok-bg: #E3F1E8;
+  --ok-border: #2E7D32;
+  --ok-ink: #1B5E20;
+  --ok-accent: #2E7D32;
+
+  /* Nota / información (info) — slate blue */
+  --info-bg: #E4EEF5;
+  --info-border: #1565C0;
+  --info-ink: #0D3C75;
+  --info-accent: #1976D2;
+
+  /* ---- Semantic aliases ---- */
+  --brand: var(--novopan-green);
+  --brand-contrast: #FFFFFF;
+  --accent: var(--novopan-yellow);
+  --accent-ink: var(--novopan-green);
+
+  --text-strong: var(--ink-900);
+  --text-body: var(--ink-700);
+  --text-muted: var(--ink-500);
+  --text-on-brand: #FFFFFF;
+  --text-on-accent: var(--novopan-green);
+
+  --surface-page: var(--surface-50);
+  --surface-card: var(--surface-0);
+  --surface-sunken: var(--surface-100);
+  --surface-brand: var(--novopan-green);
+  --surface-accent: var(--novopan-yellow);
+
+  --border-default: var(--line-200);
+  --border-strong: var(--ink-700);
+  --divider: var(--line-100);
+
+  --focus-ring: #0A7D5A;
+}

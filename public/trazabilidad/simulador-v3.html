@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Simulador trazabilidad L1 · v3 (silos → sensores)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 system-ui, sans-serif; color: #111; }
+  header { padding: 8px 12px; border-bottom: 1px solid #000; display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+  h1 { font-size: 15px; margin: 0 0 2px; }
+  .sub { font-size: 11px; color: #555; }
+  .quito { text-align:right; font-variant-numeric: tabular-nums; }
+  .quito b { font-size: 20px; }
+  .wrap { display: flex; gap: 0; align-items: stretch; }
+  .side { width: 320px; padding: 10px 12px; border-right: 1px solid #000; overflow-y: auto; height: calc(100vh - 58px); }
+  .stage { flex: 1; overflow: auto; height: calc(100vh - 58px); }
+  .row { display: flex; gap: 6px; align-items: center; margin: 4px 0; }
+  .row label { flex: 1; }
+  .row input { width: 68px; font: inherit; text-align: right; }
+  fieldset { border: 1px solid #999; margin: 8px 0; padding: 6px 8px; }
+  legend { font-weight: 700; font-size: 12px; }
+  .tbd { color: #b00; font-weight: 700; }
+  .ok { color: #060; }
+  button { font: inherit; padding: 4px 10px; cursor: pointer; }
+  .controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+  .readout { font-size: 12px; }
+  .readout b { font-size: 14px; }
+  table.res { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 4px; }
+  table.res td, table.res th { border: 1px solid #ccc; padding: 3px 6px; text-align: right; white-space:nowrap; }
+  table.res th { text-align: left; background:#f4f4f4; }
+  tr.passed { color:#060; }
+  tr.now { background:#fff3cd; font-weight:700; }
+  tr.pending { color:#777; }
+  .gov { background:#ffe; }
+  svg text { font: 10px system-ui, sans-serif; }
+  svg .node { cursor:pointer; }
+  code { background: #f0f0f0; padding: 0 3px; }
+  .hint { font-size:11px; color:#555; margin:2px 0 6px; }
+  select { font: inherit; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Simulador trazabilidad · Línea 1 Sección 2 — modelo v3</h1>
+    <div class="sub">Clic en un nodo = punto donde empieza el cambio. Registro = max de capas. Endpoint = sensores.</div>
+  </div>
+  <div class="quito">
+    <div class="sub">Hora Quito (America/Guayaquil)</div>
+    <b id="quitoClock">--:--:--</b>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="side" id="side"></aside>
+  <main class="stage">
+    <div style="padding:8px 12px;">
+      <div class="controls">
+        <label><b>Inicio del cambio:</b>
+          <select id="injSel"></select>
+        </label>
+        <button id="playBtn">▶ Iniciar</button>
+        <button id="resetBtn">⟲ Reset</button>
+      </div>
+      <div class="controls">
+        <label>v_prensa <input id="vPrensa" type="number" step="0.05" value="14.5" style="width:70px"> m/min</label>
+        <label style="flex:1">t <input id="scrub" type="range" min="0" max="600" step="0.1" value="0" style="width:60%"></label>
+        <span class="readout">t = <b id="clk">0.0</b> s <span class="sub">(tiempo real 1×)</span></span>
+      </div>
+      <div class="readout" id="master"></div>
+      <div class="hint" id="nextHint"></div>
+    </div>
+    <svg id="svg" width="1320" height="440" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div style="padding:0 12px 24px;">
+      <h3 style="margin:6px 0 2px;font-size:13px;">Reporte del cambio (ruta que gobierna → sensores)</h3>
+      <table class="res" id="resTable"></table>
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+ * MODELO v3 — tiempos reales, todo editable, TBD visible.
+ *   recipiente: τ = M/F × 60 · silo: M=ρ·V·L% · banda incl (v fija HMI): t=L/v×60
+ *   encolador: t_enc (prueba, TBD) · banda downstream: t = L/v_prensa × 60
+ *   T_antes,e = τ_silo+τ_dos+t_enc+t_incl+τ_esp,e   t_reg = max_e  t_tot = t_reg + 83.73/v_prensa×60
+ * ==========================================================================*/
+const P = {
+  siloFina:  { rho: null, Vcap: null, Lpct: null, Fout: null },
+  siloGruesa:{ rho: null, Vcap: null, Lpct: null, Fout: null },
+  dosFina:   { M: 20, F: 111 },
+  dosGruesa: { M: 25, F: 282 },
+  encCE:     { t_enc: null },
+  encCI:     { t_enc: null },
+  inclFina:  { L: 64.57, v: 99.5 },
+  inclGruesa:{ L: 68.5,  v: 96.5 },
+  esp1: { M: 12.5, F: 69.5 },
+  esp2: { M: 40,   F: 118 },
+  esp3: { M: 15,   F: 78.1 },
+  down: { restoBlanca: 43.58, roja: 10, prensa: 16.6, corteSensores: 13.55 },
+};
+let vPrensa = 14.5;
+let injId = 'silos';
+
+const tauMF = (M, F) => (M > 0 && F > 0) ? (M / F) * 60 : 0;
+function tauSilo(s) {
+  const { rho, Vcap, Lpct, Fout } = s;
+  if (!rho || !Vcap || !Lpct || !Fout) return { t: 0, tbd: true };
+  return { t: (rho * Vcap * (Lpct / 100) / Fout) * 60, tbd: false };
+}
+const tEnc = e => (e.t_enc == null || e.t_enc === '') ? { t: 0, tbd: true } : { t: +e.t_enc, tbd: false };
+const tBand = (L, v) => (L > 0 && v > 0) ? (L / v) * 60 : 0;
+
+// Cadena por capa con ids estables. FINA prefix compartido por SL1 y SL2.
+function chainFor(layer) {
+  const silo = layer === 'CL' ? tauSilo(P.siloGruesa) : tauSilo(P.siloFina);
+  const dos  = layer === 'CL' ? tauMF(P.dosGruesa.M, P.dosGruesa.F) : tauMF(P.dosFina.M, P.dosFina.F);
+  const enc  = layer === 'CL' ? tEnc(P.encCI) : tEnc(P.encCE);
+  const incl = layer === 'CL' ? tBand(P.inclGruesa.L, P.inclGruesa.v) : tBand(P.inclFina.L, P.inclFina.v);
+  const esp  = layer === 'SL1' ? tauMF(P.esp1.M, P.esp1.F) : layer === 'CL' ? tauMF(P.esp2.M, P.esp2.F) : tauMF(P.esp3.M, P.esp3.F);
+  if (layer === 'CL') return [
+    { id: 'silo5', label: 'Silo 5', kind: 'circle', t: silo.t, tbd: silo.tbd },
+    { id: 'dosGruesa', label: 'Dosing gruesa', kind: 'circle', t: dos, tbd: dos === 0 },
+    { id: 'encCI', label: 'Enc. CI', kind: 'circle', t: enc.t, tbd: enc.tbd },
+    { id: 'inclGruesa', label: 'Incl. gruesa', kind: 'line', t: incl, tbd: incl === 0 },
+    { id: 'esp2', label: 'Esp.2', kind: 'circle', t: esp, tbd: esp === 0 },
+  ];
+  const espNode = layer === 'SL1'
+    ? { id: 'esp1', label: 'Esp.1', kind: 'circle', t: esp, tbd: esp === 0 }
+    : { id: 'esp3', label: 'Esp.3', kind: 'circle', t: esp, tbd: esp === 0 };
+  return [
+    { id: 'silo6', label: 'Silo 6', kind: 'circle', t: silo.t, tbd: silo.tbd },
+    { id: 'dosFina', label: 'Dosing fina', kind: 'circle', t: dos, tbd: dos === 0 },
+    { id: 'encCE', label: 'Enc. CE', kind: 'circle', t: enc.t, tbd: enc.tbd },
+    { id: 'inclFina', label: 'Incl. fina', kind: 'line', t: incl, tbd: incl === 0 },
+    espNode,
+  ];
+}
+const FINA_IDS = ['silo6', 'dosFina', 'encCE', 'inclFina'];
+const GRUESA_IDS = ['silo5', 'dosGruesa', 'encCI', 'inclGruesa', 'esp2'];
+const DOWN_IDS = ['restoBlanca', 'roja', 'prensa', 'corteSensores'];
+const DOWN_LABEL = { restoBlanca: 'Resto blanca', roja: 'Roja', prensa: 'Prensa', corteSensores: 'Corte→sens.' };
+
+function downstreamChain() {
+  return DOWN_IDS.map(id => ({ id, label: DOWN_LABEL[id], kind: 'line', t: tBand(P.down[id], vPrensa) }));
+}
+
+// ¿Qué capas lleva el cambio según dónde se inyecta? (misma lógica física que el clásico)
+function activeInfo(id) {
+  if (id === 'silos') return { layers: ['SL1', 'CL', 'SL2'], startId: null };
+  if (FINA_IDS.includes(id)) return { layers: ['SL1', 'SL2'], startId: id };
+  if (id === 'esp1') return { layers: ['SL1'], startId: id };
+  if (id === 'esp3') return { layers: ['SL2'], startId: id };
+  if (GRUESA_IDS.includes(id)) return { layers: ['CL'], startId: id };
+  if (DOWN_IDS.includes(id)) return { layers: [], startId: null, downFrom: id };
+  return { layers: ['SL1', 'CL', 'SL2'], startId: null };
+}
+
+/* Construye la línea de tiempo de la RUTA QUE GOBIERNA (max) + downstream.
+   Devuelve hitos: {label, cum, seg, tbd} y metadatos. */
+function buildTimeline() {
+  const info = activeInfo(injId);
+  const down = downstreamChain();
+  const ms = [];
+  let govLayer = null, govSlice = [], tReg = 0, anyTbd = false;
+
+  if (info.layers.length) {
+    let best = null;
+    for (const L of info.layers) {
+      const ch = chainFor(L);
+      const si = info.startId ? ch.findIndex(n => n.id === info.startId) : 0;
+      const slice = ch.slice(si < 0 ? 0 : si);
+      const sum = slice.reduce((a, n) => a + n.t, 0);
+      if (!best || sum > best.sum) best = { L, slice, sum };
+    }
+    govLayer = best.L; govSlice = best.slice; tReg = best.sum;
+    let cum = 0;
+    for (let i = 0; i < govSlice.length; i++) {
+      const n = govSlice[i];
+      if (n.tbd) anyTbd = true;
+      ms.push({ label: '▶ ' + n.label, cum, seg: i === 0 ? 0 : govSlice[i - 1].t, tbd: n.tbd });
+      cum += n.t;
+    }
+    ms.push({ label: '◆ REGISTRO (colchón · punto SL1)', cum: tReg, seg: govSlice.length ? govSlice[govSlice.length - 1].t : 0, reg: true });
+    // downstream desde REGISTRO
+    let c = tReg;
+    const names = ['entra Roja', 'entra Prensa', 'entra Corte→sens.', '■ SENSORES'];
+    down.forEach((n, i) => { c += n.t; ms.push({ label: names[i], cum: c, seg: n.t }); });
+    return { ms, tReg, tDown: down.reduce((a, n) => a + n.t, 0), tTot: c, govLayer, govSlice, info, anyTbd };
+  }
+
+  // Inyección downstream: arranca en un nodo de la banda común.
+  const startIdx = DOWN_IDS.indexOf(info.downFrom);
+  let cum = 0;
+  ms.push({ label: '◆ ' + DOWN_LABEL[info.downFrom] + ' (inicio)', cum: 0, seg: 0, reg: true });
+  const names = ['entra Roja', 'entra Prensa', 'entra Corte→sens.', '■ SENSORES'];
+  for (let i = startIdx; i < down.length; i++) { cum += down[i].t; ms.push({ label: names[i], cum, seg: down[i].t }); }
+  return { ms, tReg: 0, tDown: cum, tTot: cum, govLayer: 'downstream', govSlice: [], info, anyTbd: false };
+}
+
+// ---- Reloj: tiempo real 1× (1 s simulada = 1 s real), anclado a hora Quito ----
+const clock = {
+  t: 0, playing: false, max: Infinity, iv: null, startWall: null, last: 0,
+  set(v) { this.t = Math.max(0, Math.min(v, this.max)); render(); },
+  reset() { this.pause(); this.t = 0; this.startWall = null; render(); },
+  play() {
+    if (this.playing) return;
+    if (this.t >= this.max) this.t = 0;              // reiniciar si terminó
+    if (this.t === 0 || this.startWall == null) this.startWall = Date.now();
+    this.playing = true;
+    this.last = performance.now();
+    this.iv = setInterval(() => this.tick(), 33);
+    syncBtn();
+  },
+  pause() { this.playing = false; if (this.iv) clearInterval(this.iv); this.iv = null; syncBtn(); },
+  toggle() { this.playing ? this.pause() : this.play(); },
+  tick() {
+    const now = performance.now();
+    const d = (now - this.last) / 1000;              // delta real en segundos
+    this.last = now;
+    this.t = Math.min(this.t + d, this.max);
+    if (this.t >= this.max) this.pause();
+    render();
+  },
+};
+
+// hora Quito de un instante (ms) o del arranque + cum segundos
+const fmtQuito = ms => new Intl.DateTimeFormat('es-EC', { timeZone: 'America/Guayaquil', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(ms));
+function tickQuitoClock() { document.getElementById('quitoClock').textContent = fmtQuito(Date.now()); }
+setInterval(tickQuitoClock, 1000); tickQuitoClock();
+
+// ============================ RENDER ==============================
+const svg = document.getElementById('svg');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (n, a, txt) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+
+const ROWS = { SL1: 60, CL: 135, SL2: 210, down: 330 };
+const X0 = 80, XSTEP = 96, XREG = 80 + 5 * 96, XD0 = XREG + 44, XDSTEP = 150, XSENS = XD0 + 4 * 150;
+
+// El marcador se desliza de forma CONTINUA por cada etapa (también en retención),
+// para que siempre se vea moverse: x avanza de xStart → xStart+XSTEP durante el t del nodo.
+function markerOnChain(chain, x0, elapsed, park, stepPx) {
+  const step = stepPx || XSTEP;
+  let acc = 0;
+  for (let i = 0; i < chain.length; i++) {
+    const s = chain[i], xStart = x0 + i * step;
+    if (s.t <= 0) { if (elapsed <= acc) return { x: xStart }; continue; }
+    if (elapsed < acc + s.t) { const f = (elapsed - acc) / s.t; return { x: xStart + f * step }; }
+    acc += s.t;
+  }
+  return { x: park, done: true };
+}
+
+function render() {
+  const T = buildTimeline();
+  clock.max = T.tTot > 0 ? T.tTot : Infinity;
+  document.getElementById('clk').textContent = clock.t.toFixed(1);
+  const scrub = document.getElementById('scrub');
+  scrub.max = T.tTot > 0 ? T.tTot.toFixed(1) : 600;
+  scrub.value = clock.t.toFixed(1);
+
+  const expat = { 14.5: 346.5, 11.11: 452.1 }[+vPrensa.toFixed(2)];
+  const chk = expat ? ` · esperado t_down@${vPrensa}=${expat}s → <span class="${Math.abs(T.tDown - expat) < 0.6 ? 'ok' : 'tbd'}">calc ${T.tDown.toFixed(1)}s</span>` : '';
+  document.getElementById('master').innerHTML =
+    `<b>t_tot = ${T.tTot.toFixed(1)} s</b> = t_reg ${T.tReg.toFixed(1)} (gobierna <b>${T.govLayer}</b>) + t_down ${T.tDown.toFixed(1)}` +
+    (T.anyTbd ? ` &nbsp;<span class="tbd">⚠ hay TBD — t_reg usa solo lo conocido</span>` : '') + chk;
+
+  // hint: tiempo hasta el próximo punto
+  const nextMs = T.ms.find(m => m.cum > clock.t + 1e-6);
+  const nh = document.getElementById('nextHint');
+  if (nextMs && clock.t > 0) nh.textContent = `Próximo punto: ${nextMs.label.replace(/^[▶◆■]\s?/, '')} · faltan ${(nextMs.cum - clock.t).toFixed(1)} s (llega ${clock.startWall ? fmtQuito(clock.startWall + nextMs.cum * 1000) : '—'})`;
+  else nh.textContent = clock.t >= T.tTot && T.tTot > 0 ? '✓ El cambio llegó a los sensores.' : 'Elige inicio del cambio y pulsa Iniciar.';
+
+  drawSvg(T);
+  renderReport(T);
+}
+
+function drawSvg(T) {
+  svg.innerHTML = '';
+  const active = new Set(T.info.layers);
+  const isDownInj = T.govLayer === 'downstream';
+
+  const drawChain = (chain, y, left, dim, injStartId) => {
+    svg.appendChild(el('text', { x: 8, y: y + 4, 'font-weight': 700, fill: dim ? '#bbb' : '#000' }, left));
+    const stroke = dim ? '#ccc' : '#000';
+    for (let i = 0; i < chain.length; i++) {
+      const s = chain[i], x = X0 + i * XSTEP, xn = X0 + (i + 1) * XSTEP;
+      svg.appendChild(el('line', { x1: x, y1: y, x2: xn, y2: y, stroke, 'stroke-width': s.kind === 'line' ? 2 : 1, 'stroke-dasharray': s.kind === 'line' ? '' : '3 3' }));
+      const isInj = s.id === injId || (injStartId && s.id === injStartId);
+      const g = el('g', { class: 'node' }); g.addEventListener('click', () => setInjection(s.id));
+      if (s.kind === 'circle') g.appendChild(el('circle', { cx: x, cy: y, r: isInj ? 12 : 9, fill: isInj ? '#ff0' : '#fff', stroke: s.tbd ? '#b00' : stroke, 'stroke-width': 2 }));
+      else { g.appendChild(el('rect', { x: x - 5, y: y - 5, width: 10, height: 10, fill: s.tbd ? '#b00' : stroke })); if (isInj) g.appendChild(el('circle', { cx: x, cy: y, r: 13, fill: 'none', stroke: '#e80', 'stroke-width': 2 })); }
+      g.appendChild(el('text', { x, y: y - 15, 'text-anchor': 'middle', fill: dim ? '#bbb' : '#000' }, s.label));
+      g.appendChild(el('text', { x, y: y + 24, 'text-anchor': 'middle', fill: s.tbd ? '#b00' : (dim ? '#ccc' : '#333') }, s.tbd ? 'TBD' : s.t.toFixed(1) + 's'));
+      svg.appendChild(g);
+    }
+  };
+
+  const info = T.info;
+  drawChain(chainFor('SL1'), ROWS.SL1, 'SL1', !active.has('SL1'), info.startId);
+  drawChain(chainFor('CL'),  ROWS.CL,  'CL',  !active.has('CL'),  info.startId);
+  drawChain(chainFor('SL2'), ROWS.SL2, 'SL2', !active.has('SL2'), info.startId);
+
+  // REGISTRO
+  const yReg = ROWS.CL;
+  for (const y of [ROWS.SL1, ROWS.SL2]) svg.appendChild(el('line', { x1: XREG, y1: y, x2: XREG, y2: yReg, stroke: '#000' }));
+  svg.appendChild(el('circle', { cx: XREG, cy: yReg, r: 14, fill: '#ffe', stroke: '#000', 'stroke-width': 2 }));
+  svg.appendChild(el('text', { x: XREG, y: yReg - 22, 'text-anchor': 'middle', 'font-weight': 700 }, 'REGISTRO'));
+  svg.appendChild(el('text', { x: XREG, y: yReg + 30, 'text-anchor': 'middle' }, 't_reg=' + T.tReg.toFixed(1) + 's'));
+
+  // downstream
+  svg.appendChild(el('line', { x1: XREG, y1: yReg, x2: XD0, y2: ROWS.down, stroke: '#000' }));
+  const down = downstreamChain();
+  svg.appendChild(el('text', { x: 8, y: ROWS.down + 4, 'font-weight': 700 }, 'blanca→sens'));
+  for (let i = 0; i < down.length; i++) {
+    const s = down[i], x = XD0 + i * XDSTEP, xn = XD0 + (i + 1) * XDSTEP;
+    svg.appendChild(el('line', { x1: x, y1: ROWS.down, x2: xn, y2: ROWS.down, stroke: '#000', 'stroke-width': 2 }));
+    const g = el('g', { class: 'node' }); g.addEventListener('click', () => setInjection(s.id));
+    const isInj = s.id === injId;
+    g.appendChild(el('rect', { x: x - 5, y: ROWS.down - 5, width: 10, height: 10, fill: '#000' }));
+    if (isInj) g.appendChild(el('circle', { cx: x, cy: ROWS.down, r: 13, fill: 'none', stroke: '#e80', 'stroke-width': 2 }));
+    g.appendChild(el('text', { x, y: ROWS.down - 15, 'text-anchor': 'middle' }, s.label));
+    g.appendChild(el('text', { x, y: ROWS.down + 24, 'text-anchor': 'middle', fill: '#333' }, s.t.toFixed(1) + 's'));
+    svg.appendChild(g);
+  }
+  svg.appendChild(el('line', { x1: XD0 + 4 * XDSTEP - XDSTEP, y1: ROWS.down, x2: XSENS, y2: ROWS.down, stroke: '#000', 'stroke-width': 2 }));
+  svg.appendChild(el('circle', { cx: XSENS, cy: ROWS.down, r: 12, fill: '#cfc', stroke: '#000', 'stroke-width': 2 }));
+  svg.appendChild(el('text', { x: XSENS, y: ROWS.down - 16, 'text-anchor': 'middle', 'font-weight': 700 }, 'SENSORES'));
+
+  // Marcadores
+  const dot = (x, y, color) => svg.appendChild(el('circle', { cx: x, cy: y, r: 6, fill: color, stroke: '#000' }));
+  if (!isDownInj) {
+    for (const [layer, y] of [['SL1', ROWS.SL1], ['CL', ROWS.CL], ['SL2', ROWS.SL2]]) {
+      if (!active.has(layer)) continue;
+      const ch = chainFor(layer);
+      const si = info.startId ? Math.max(0, ch.findIndex(n => n.id === info.startId)) : 0;
+      const m = markerOnChain(ch.slice(si), X0 + si * XSTEP, clock.t, XREG);
+      dot(m.x, y, m.done ? '#888' : (layer === T.govLayer ? '#c00' : '#06c'));
+    }
+    if (clock.t >= T.tReg && T.tReg >= 0) {
+      const md = markerOnChain(down, XD0, clock.t - T.tReg, XSENS, XDSTEP);
+      dot(md.x, ROWS.down, '#093');
+    }
+  } else {
+    const si = DOWN_IDS.indexOf(info.downFrom);
+    const md = markerOnChain(down.slice(si), XD0 + si * XDSTEP, clock.t, XSENS, XDSTEP);
+    dot(md.x, ROWS.down, '#093');
+  }
+}
+
+function renderReport(T) {
+  const anchor = clock.startWall != null ? clock.startWall : Date.now();
+  const rows = T.ms.map((m, i) => {
+    const state = clock.t + 1e-6 >= m.cum ? 'passed' : (T.ms[i - 1] && clock.t + 1e-6 >= T.ms[i - 1].cum && clock.t < m.cum ? 'now' : 'pending');
+    const mark = state === 'passed' ? '✓' : state === 'now' ? '●' : '·';
+    const till = state === 'now' ? (m.cum - clock.t).toFixed(1) + ' s' : (state === 'pending' ? '' : '—');
+    return `<tr class="${state}"><td style="text-align:left">${mark} ${m.label}</td>` +
+      `<td>${m.seg > 0 ? m.seg.toFixed(1) : (m.reg && i === 0 ? '—' : '0.0')}</td>` +
+      `<td>${m.cum.toFixed(1)}</td>` +
+      `<td>${fmtQuito(anchor + m.cum * 1000)}</td>` +
+      `<td>${till}</td></tr>`;
+  }).join('');
+  document.getElementById('resTable').innerHTML =
+    `<tr><th>Punto</th><th>Proceso previo (s)</th><th>Acumulado (s)</th><th>Llega (Quito)${clock.startWall ? '' : ' *si empieza ahora'}</th><th>Faltan</th></tr>${rows}`;
+}
+
+// ============================ PANEL EDITABLE ==============================
+function num(obj, key, label, unit) {
+  const v = obj[key], tbd = (v == null || v === ''), id = 'f_' + Math.random().toString(36).slice(2);
+  const html = `<div class="row"><label for="${id}">${label}${tbd ? ' <span class="tbd">TBD</span>' : ''}</label>` +
+    `<input id="${id}" type="number" step="any" value="${tbd ? '' : v}" placeholder="TBD"> <span style="width:34px">${unit}</span></div>`;
+  return { html, id, apply: input => { const raw = input.value.trim(); obj[key] = raw === '' ? null : +raw; } };
+}
+function buildSide() {
+  const side = document.getElementById('side'), fields = [];
+  const fs = (legend, items) => `<fieldset><legend>${legend}</legend>${items.map(it => { fields.push(it); return it.html; }).join('')}</fieldset>`;
+  side.innerHTML =
+    fs('Silo 6 · fina (TBD)', [num(P.siloFina, 'rho', 'ρ', 'kg/m³'), num(P.siloFina, 'Vcap', 'V_cap', 'm³'), num(P.siloFina, 'Lpct', 'L%', '%'), num(P.siloFina, 'Fout', 'F_out', 'kg/min')]) +
+    fs('Silo 5 · gruesa (TBD)', [num(P.siloGruesa, 'rho', 'ρ', 'kg/m³'), num(P.siloGruesa, 'Vcap', 'V_cap', 'm³'), num(P.siloGruesa, 'Lpct', 'L%', '%'), num(P.siloGruesa, 'Fout', 'F_out', 'kg/min')]) +
+    fs('Dosing fina (HMI)', [num(P.dosFina, 'M', 'M', 'kg'), num(P.dosFina, 'F', 'F (CE)', 'kg/min')]) +
+    fs('Dosing gruesa (HMI)', [num(P.dosGruesa, 'M', 'M', 'kg'), num(P.dosGruesa, 'F', 'F (CI)', 'kg/min')]) +
+    fs('Encolador (prueba trazador · TBD)', [num(P.encCE, 't_enc', 't_enc CE (fina)', 's'), num(P.encCI, 't_enc', 't_enc CI (gruesa)', 's')]) +
+    fs('Bandas inclinadas (v fija HMI)', [num(P.inclFina, 'L', 'L fina', 'm'), num(P.inclFina, 'v', 'v fina', 'm/min'), num(P.inclGruesa, 'L', 'L gruesa', 'm'), num(P.inclGruesa, 'v', 'v gruesa', 'm/min')]) +
+    fs('Esparcidores (τ=M/F · split TBD)', [num(P.esp1, 'M', 'M Esp.1', 'kg'), num(P.esp1, 'F', 'F Esp.1', 'kg/min'), num(P.esp2, 'M', 'M Esp.2', 'kg'), num(P.esp2, 'F', 'F Esp.2', 'kg/min'), num(P.esp3, 'M', 'M Esp.3', 'kg'), num(P.esp3, 'F', 'F Esp.3', 'kg/min')]) +
+    fs('Downstream a v_prensa (m)', [num(P.down, 'restoBlanca', 'Resto blanca', 'm'), num(P.down, 'roja', 'Roja', 'm'), num(P.down, 'prensa', 'Prensa', 'm'), num(P.down, 'corteSensores', 'Corte→sens.', 'm')]);
+  for (const f of fields) {
+    const input = document.getElementById(f.id);
+    input.addEventListener('input', () => { f.apply(input); render(); });
+    input.addEventListener('change', () => { f.apply(input); buildSide(); render(); });
+  }
+}
+
+// ============================ INYECCIÓN + CONTROLES ==============================
+const INJ_OPTIONS = [
+  { v: 'silos', t: 'Silos — cambio de receta (todo)' },
+  { v: 'silo6', t: 'Silo 6 · fina (SL1+SL2)' }, { v: 'dosFina', t: 'Dosing fina (SL1+SL2)' },
+  { v: 'encCE', t: 'Encolador CE (SL1+SL2)' }, { v: 'inclFina', t: 'Banda inclinada fina (SL1+SL2)' },
+  { v: 'esp1', t: 'Esparcidor 1 (SL1)' }, { v: 'esp3', t: 'Esparcidor 3 (SL2)' },
+  { v: 'silo5', t: 'Silo 5 · gruesa (CL)' }, { v: 'dosGruesa', t: 'Dosing gruesa (CL)' },
+  { v: 'encCI', t: 'Encolador CI (CL)' }, { v: 'inclGruesa', t: 'Banda inclinada gruesa (CL)' }, { v: 'esp2', t: 'Esparcidor 2 (CL)' },
+  { v: 'restoBlanca', t: 'Banda blanca (común)' }, { v: 'roja', t: 'Banda roja (común)' }, { v: 'prensa', t: 'Prensa (común)' }, { v: 'corteSensores', t: 'Corte→sensores (común)' },
+];
+const injSel = document.getElementById('injSel');
+injSel.innerHTML = INJ_OPTIONS.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+injSel.value = injId;
+injSel.onchange = () => setInjection(injSel.value);
+function setInjection(id) { injId = id; injSel.value = id; clock.reset(); }
+
+function syncBtn() { document.getElementById('playBtn').textContent = clock.playing ? '⏸ Pausar' : '▶ Iniciar'; }
+document.getElementById('playBtn').onclick = () => clock.toggle();
+document.getElementById('resetBtn').onclick = () => clock.reset();
+document.getElementById('scrub').oninput = e => { clock.pause(); clock.set(+e.target.value); };
+document.getElementById('vPrensa').oninput = e => { const v = +e.target.value; if (v > 0) { vPrensa = v; render(); } };
+
+buildSide();
+render();
+</script>
+</body>
+</html>
