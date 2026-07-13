@@ -12,6 +12,7 @@ import {
 import {
   tauForNode, transportForNode, flowFor,
 } from '../../trazabilidad/js/core/trace-engine.js';
+import { KIND_BY_KEY } from './hmi-csv.js';
 
 const STORAGE_KEY = 'novopan-trazabilidad-params-v9';
 const P1_STORAGE_KEY = 'novopan-trazabilidad-total-p1-v1';
@@ -165,6 +166,7 @@ function renderGlobalsCard(params) {
       </ul>
       <p class="legend__eq"><strong>Ecuaciones del motor:</strong></p>
       <ul class="legend__eqs">
+        <li><code>τ_silo = ρ·V·L% / F × 60</code> (silos)</li>
         <li><code>τ_bin = M_bin / F × 60</code> (dosing)</li>
         <li><code>τ_enc = t fijo (s)</code> (encolador)</li>
         <li><code>τ_esp = M_hopper / F_capa × 60</code> (esparcidores)</li>
@@ -308,6 +310,13 @@ function renderStageCard(stage, v, params) {
   return card;
 }
 
+function p1BadgeHtml(key) {
+  const kind = KIND_BY_KEY[key];
+  if (kind === 'hmi') return '<span class="badge badge--hmi">HMI</span>';
+  if (kind === 'est') return '<span class="badge badge--est">Estim.</span>';
+  return '';
+}
+
 function renderPart1Cards(params) {
   const frag = document.createDocumentFragment();
   const groups = [...new Set(P1_PARAMS.map((p) => p.group))];
@@ -318,12 +327,12 @@ function renderPart1Cards(params) {
     card.innerHTML = `
       <header class="p1-param-card__hd">
         <h4>${group}</h4>
-        <p>${group.includes('Silos') ? 'Volúmenes m³ en rojo = no confirmados' : 'Parte del modelo τ=M/F×60 · t=L/v×60'}</p>
+        <p>${group.includes('Silos') ? 'Volúmenes m³ en rojo = no confirmados · τ_silo = ρ·V·L%/F×60' : 'τ=M/F×60 · τ_silo=ρ·V·L%/F×60 · t=L/v×60'}</p>
       </header>
       <div class="p1-param-grid">
         ${rows.map((p) => `
           <label class="p1-param-field">
-            <span>${p.label}</span>
+            <span>${p.label} ${p1BadgeHtml(p.key)}</span>
             <span class="p1-param-field__input">
               <input type="number" step="any" min="0" data-key="${p.key}" data-unknown="${p.unknown ? '1' : '0'}" value="${params[p.key] ?? p.default}">
               <span class="p1-param-field__unit">${p.unit}</span>
@@ -451,10 +460,37 @@ export function initParams({ speedGetter, onChange }) {
     params = { ...defaultParams(), ...defaultPart1Params() };
     build();
     onChange?.(params);
-    showFeedback('Defaults restaurados');
+    showFeedback('Defaults restaurados (se re-leerá el CSV en ≤2 s)');
   });
+
+  /* Aplica los valores del CSV del HMI: pisa los params, actualiza los inputs
+     visibles en vivo (con un flash) y refresca el visor de CSV crudo. El CSV es
+     la fuente de verdad de los campos HMI → esto es lo que hace "el tab lee del CSV". */
+  function applyExternal({ updates, rawText, count } = {}) {
+    let changed = false;
+    for (const [key, val] of Object.entries(updates ?? {})) {
+      if (params[key] !== val) { params[key] = val; changed = true; }
+      if (built) {
+        const inp = grid.querySelector(`input[data-key="${CSS.escape(key)}"]`);
+        if (inp && document.activeElement !== inp) {
+          inp.value = val;
+          inp.classList.remove('is-hmi-flash');
+          void inp.offsetWidth;      // reinicia la animación de flash
+          inp.classList.add('is-hmi-flash');
+        }
+      }
+    }
+    // Visor de CSV crudo (siempre, aunque el tab no esté construido)
+    const raw = document.getElementById('csvRaw');
+    if (raw && rawText != null) raw.textContent = rawText;
+    const tagCount = document.getElementById('csvTagCount');
+    if (tagCount && count != null) tagCount.textContent = String(count);
+    if (changed) onChange?.(params);
+    return changed;
+  }
 
   return {
     getParams: () => params,
+    applyExternal,
   };
 }

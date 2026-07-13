@@ -17,6 +17,7 @@
 import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
 import { buildAnnotations, PROCESS_TOTAL_M } from './line-bridge.js';
 import { initParams, loadPart1Params } from './combined-params.js';
+import { initHmiCsv } from './hmi-csv.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const QUITO_TZ = 'America/Guayaquil';
@@ -93,14 +94,27 @@ const PRE_WAYPOINTS = {
   sl2Gate: { x: 3538, y: 360, via: [[398, 534], [2100, 534]], label: 'Entrada SL a Esparcidor 3' },
 };
 
-const PRE_STAGE_INDEX = {
-  patios: 0,
-  'silos-verdes': 1,
-  bunker: 2,
-  secadero: 3,
-  clasificacion: 4,
-  silo5: 5,
-  silo6: 5,
+/* Configuración por punto de inyección (data-pre-stage): qué ramas arrastra
+   y en qué waypoint ARRANCA el trazador. `startAt` = clave del waypoint donde
+   nace el marcador → así, al hacer clic en una máquina concreta (Encolador CE,
+   Dosing, Silo animado…) el cambio aparece AHÍ y sigue la tubería real, en vez
+   de nacer siempre en el silo del wireframe. Las ramas sl1/sl2 comparten la
+   ruta fina (Silo 6 → Dosing SL → Encolador CE) y difieren en el esparcidor. */
+const STAGE_CONFIG = {
+  patios:          { branches: ['cl', 'sl1', 'sl2'], startAt: 'patios' },
+  'silos-verdes':  { branches: ['cl', 'sl1', 'sl2'], startAt: 'silosVerdes' },
+  bunker:          { branches: ['cl', 'sl1', 'sl2'], startAt: 'bunker' },
+  secadero:        { branches: ['cl', 'sl1', 'sl2'], startAt: 'secadero' },
+  clasificacion:   { branches: ['cl', 'sl1', 'sl2'], startAt: 'clasificacion' },
+  silo5:           { branches: ['cl'],               startAt: 'silo5' },
+  silo6:           { branches: ['sl1', 'sl2'],       startAt: 'silo6' },
+  // Máquinas de la zona animada (intake) — cada una arranca en su propio punto
+  'active-silo5':  { branches: ['cl'],               startAt: 'activeSilo5' },
+  'active-dosCL':  { branches: ['cl'],               startAt: 'activeDosingCL' },
+  'active-encCI':  { branches: ['cl'],               startAt: 'activeEncCI' },
+  'active-silo6':  { branches: ['sl1', 'sl2'],       startAt: 'activeSilo6' },
+  'active-dosSL':  { branches: ['sl1', 'sl2'],       startAt: 'activeDosingSL' },
+  'active-encCE':  { branches: ['sl1', 'sl2'],       startAt: 'activeEncCE' },
 };
 
 const num = (params, key, fallback = 0) => Number(params?.[key] ?? fallback) || 0;
@@ -163,32 +177,39 @@ function buildPreDurations(params) {
   };
 }
 
-function preMilestonesFor(stage, branch, params) {
+/* Construye la cadena de hitos de una rama. Cada hito lleva `key` (nombre del
+   waypoint) para poder recortar desde una máquina concreta. */
+function preMilestonesFor(startAt, branch, params) {
   const d = buildPreDurations(params);
+  const wp = (key, extra) => ({ key, ...PRE_WAYPOINTS[key], ...extra });
   const common = [
-    { ...PRE_WAYPOINTS.patios, dt: 0 },
-    { ...PRE_WAYPOINTS.silosVerdes, dt: d.reduction },
-    { ...PRE_WAYPOINTS.bunker, dt: d.bunker },
-    { ...PRE_WAYPOINTS.secadero, dt: d.secado },
-    { ...PRE_WAYPOINTS.clasificacion, dt: d.clasifBase },
+    wp('patios', { dt: 0 }),
+    wp('silosVerdes', { dt: d.reduction }),
+    wp('bunker', { dt: d.bunker }),
+    wp('secadero', { dt: d.secado }),
+    wp('clasificacion', { dt: d.clasifBase }),
   ];
   const tail = branch === 'cl'
     ? [
-      { ...PRE_WAYPOINTS.silo5, dt: d.toS5 },
-      { ...PRE_WAYPOINTS.activeSilo5, dt: 1 },
-      { ...PRE_WAYPOINTS.activeDosingCL, dt: d.clSilo },
-      { ...PRE_WAYPOINTS.activeEncCI, dt: d.clDosing + d.clEnc },
-      { ...PRE_WAYPOINTS.clGate, dt: d.clIncl, launchM: 15.0, launchLabel: 'CL/core entra a Esparcidor 2' },
+      wp('silo5', { dt: d.toS5 }),
+      wp('activeSilo5', { dt: 1 }),
+      wp('activeDosingCL', { dt: d.clSilo }),
+      wp('activeEncCI', { dt: d.clDosing + d.clEnc }),
+      wp('clGate', { dt: d.clIncl, launchM: 15.0, launchLabel: 'CL/core entra a Esparcidor 2' }),
     ]
     : [
-      { ...PRE_WAYPOINTS.silo6, dt: d.toS6 + d.overToSL },
-      { ...PRE_WAYPOINTS.activeSilo6, dt: 1 },
-      { ...PRE_WAYPOINTS.activeDosingSL, dt: d.slSilo },
-      { ...PRE_WAYPOINTS.activeEncCE, dt: d.slDosing + d.slEnc },
-      { ...(branch === 'sl2' ? PRE_WAYPOINTS.sl2Gate : PRE_WAYPOINTS.sl1Gate), dt: d.slIncl, launchM: branch === 'sl2' ? 22.25 : 6.63, launchLabel: branch === 'sl2' ? 'SL entra a Esparcidor 3' : 'SL entra a Esparcidor 1' },
+      wp('silo6', { dt: d.toS6 + d.overToSL }),
+      wp('activeSilo6', { dt: 1 }),
+      wp('activeDosingSL', { dt: d.slSilo }),
+      wp('activeEncCE', { dt: d.slDosing + d.slEnc }),
+      branch === 'sl2'
+        ? wp('sl2Gate', { dt: d.slIncl, launchM: 22.25, launchLabel: 'SL entra a Esparcidor 3' })
+        : wp('sl1Gate', { dt: d.slIncl, launchM: 6.63, launchLabel: 'SL entra a Esparcidor 1' }),
     ];
   const all = [...common, ...tail];
-  const startIdx = Math.min(PRE_STAGE_INDEX[stage] ?? 0, all.length - 2);
+  let startIdx = all.findIndex((m) => m.key === startAt);
+  if (startIdx < 0) startIdx = 0;
+  startIdx = Math.min(startIdx, all.length - 2);   // deja al menos un tramo por recorrer
   let t = 0;
   return all.slice(startIdx).map((m, i) => {
     t += i === 0 ? 0 : Math.max(1, m.dt);
@@ -606,6 +627,7 @@ function initSimulation() {
     selectedId = ch.id;
     syncMoverEnabled();
     renderReportsList(); // el reporte nace con el cambio, no solo al completarse
+    ensureRunning();
   }
 
   function injectDownstreamFromPre(parent, m, label) {
@@ -631,23 +653,23 @@ function initSimulation() {
     renderReportsList();
   }
 
+  const BRANCH_LABEL = { cl: 'CL/core → Sección 2', sl1: 'SL → Esparcidor 1', sl2: 'SL → Esparcidor 3' };
+
   function injectPre(stage, label) {
+    const cfg = STAGE_CONFIG[stage] ?? STAGE_CONFIG.patios;
     changeSeq += 1;
     const seq = changeSeq;
     const color = CHANGE_COLORS[(seq - 1) % CHANGE_COLORS.length];
-    const branchSpecs = stage === 'silo5'
-      ? [['cl', 'CL/core → Sección 2']]
-      : stage === 'silo6'
-        ? [['sl1', 'SL → Esparcidor 1'], ['sl2', 'SL → Esparcidor 3']]
-        : [['cl', 'CL/core → Sección 2'], ['sl1', 'SL → Esparcidor 1'], ['sl2', 'SL → Esparcidor 3']];
 
-    for (const [branch, branchLabel] of branchSpecs) {
-      const miles = preMilestonesFor(stage, branch, modelParams);
+    for (const branch of cfg.branches) {
+      const branchLabel = BRANCH_LABEL[branch];
+      const miles = preMilestonesFor(cfg.startAt, branch, modelParams);
       const ch = {
         id: `pre-${seq}-${branch}`,
         seq,
         color,
         branch,
+        startAt: cfg.startAt,   // para recalcular la línea de tiempo si cambian los params/CSV
         branchLabel,
         elapsed: 0,
         total: miles[miles.length - 1].t,
@@ -663,10 +685,21 @@ function initSimulation() {
     selectedId = null;
     syncMoverEnabled();
     renderReportsList();
+    ensureRunning();
   }
 
-  // Bucle continuo — la línea nunca deja de moverse; cada cambio activo avanza a v_prensa.
+  // Bucle auto-suspendible: solo corre cuando hay cambios activos (idle = 0 CPU).
   let last = performance.now();
+  let running = false;
+  let rafId = 0;
+  let cdAccum = 0;   // acumulador para throttlear los countdowns a ~3 Hz
+  function ensureRunning() {
+    if (running) return;
+    running = true;
+    last = performance.now();
+    cdAccum = 999;
+    rafId = requestAnimationFrame(frame);
+  }
   function frame(now) {
     const dt = Math.min(0.25, (now - last) / 1000);
     last = now;
@@ -702,12 +735,22 @@ function initSimulation() {
       else updateTracerEl(ch);
     }
     if (crossed) renderReportsList(); // llena en vivo el reporte de cada cambio activo
-    if (changes.length || preChanges.length) updateReportCountdowns();
+    // Countdowns solo ~3 veces/s (no 60 fps): recorta el churn de querySelector/Intl.
+    cdAccum += dt;
+    if ((changes.length || preChanges.length) && cdAccum >= 0.33) {
+      cdAccum = 0;
+      updateReportCountdowns();
+    }
     if (selectedId && moverRange && document.activeElement !== moverRange) {
       const sel = changes.find((c) => c.id === selectedId);
       if (sel) moverRange.value = sel.posM.toFixed(1);
     }
-    requestAnimationFrame(frame);
+    // Suspende el bucle cuando no queda nada activo (idle = 0 CPU).
+    if (changes.length || preChanges.length) {
+      rafId = requestAnimationFrame(frame);
+    } else {
+      running = false;
+    }
   }
 
   // Velocidad de prensa (único parámetro operador visible en la barra).
@@ -791,6 +834,8 @@ function initSimulation() {
     reports.length = 0;
     changeSeq = 0;
     selectedId = null;
+    if (rafId) cancelAnimationFrame(rafId);
+    running = false;   // el bucle se reanuda solo al inyectar el próximo cambio
     syncMoverEnabled();
     renderReportsList();
   }
@@ -798,14 +843,64 @@ function initSimulation() {
 
   syncMoverEnabled();
   renderReportsList();
-  updateReportCountdowns();
-  requestAnimationFrame(frame);
+  // El bucle arranca solo cuando hay un cambio (ensureRunning en inject/injectPre).
 
-  // Pestaña Parámetros: comparte localStorage con el clásico y refleja v_prensa.
-  initParams({
+  // Pestaña Parámetros: ahora LEE del CSV del HMI (fuente de verdad).
+  const paramsApi = initParams({
     speedGetter: () => vPrensa,
-    onChange: (params) => { modelParams = params; },
+    onChange: (params) => { modelParams = params; recomputeActivePre(); },
   });
+
+  /* Recalcula la línea de tiempo de los cambios upstream ACTIVOS cuando cambian
+     los parámetros (CSV o edición): conserva el tiempo transcurrido y re-mapea
+     los hitos con las nuevas duraciones. */
+  function recomputeActivePre() {
+    for (const ch of preChanges) {
+      const fresh = preMilestonesFor(ch.startAt, ch.branch, modelParams);
+      ch.miles = fresh;
+      ch.total = fresh[fresh.length - 1].t;
+    }
+  }
+
+  // ── HMI en vivo vía CSV local (releído cada 2 s; estático ahora, listo para el servidor) ──
+  const hmiStatusEl = document.getElementById('hmiStatus');
+  const hmiStatus2 = document.getElementById('hmiStatus2');
+  initHmiCsv({
+    statusEl: hmiStatusEl,
+    connectBtn: document.getElementById('hmiConnectBtn'),
+    fileInput: document.getElementById('hmiFileInput'),
+    applyData: (data) => {
+      paramsApi.applyExternal(data);            // pisa los params del modelo con el CSV
+      modelParams = paramsApi.getParams();
+      recomputeActivePre();
+      if (data.vPrensa != null) setSpeed(data.vPrensa);
+    },
+  });
+  // Espeja el pill de estado de la barra en el banner del panel de parámetros.
+  if (hmiStatusEl && hmiStatus2) {
+    const mirror = () => { hmiStatus2.textContent = hmiStatusEl.textContent; hmiStatus2.className = hmiStatusEl.className; };
+    mirror();
+    setInterval(mirror, 1000);
+  }
+  // Botón "Conectar CSV local" del panel de parámetros → mismo picker que el de la barra
+  document.getElementById('hmiConnectBtn2')?.addEventListener('click', () => document.getElementById('hmiConnectBtn')?.click());
+
+  selfTest();
+}
+
+/* Diagnóstico en consola: valida que las ecuaciones y los puntos de inyección
+   son coherentes (se ve en la consola del navegador, como el selfTest del deck
+   de línea). No afecta la UI. */
+function selfTest() {
+  try {
+    const p = loadPart1Params();
+    const d = buildPreDurations(p);
+    const finite = Object.values(d).every((v) => Number.isFinite(v) && v >= 0);
+    const clOk = STAGE_CONFIG['active-encCI'].startAt === 'activeEncCI';
+    const slOk = STAGE_CONFIG['active-encCE'].startAt === 'activeEncCE';
+    const msg = `[combined] selfTest: duraciones ${finite ? 'OK' : 'FALLO'} · inyección encolador ${clOk && slOk ? 'OK (nace en la máquina)' : 'FALLO'}`;
+    (finite && clOk && slOk ? console.info : console.error)(msg, d);
+  } catch (e) { console.error('[combined] selfTest error', e); }
 }
 
 // scroll suave a una zona (chips 2A–2E), portado del handoff

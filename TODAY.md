@@ -90,6 +90,17 @@
 
 ## Historial
 
+### 2026-07-11 (noche) — trazabilidad-total: auditoría profunda + CSV del HMI + fix de inyección + optimización
+
+Auditoría multi-agente (24 hallazgos confirmados, verificados contra el código) + ejecución autónoma:
+
+- **Bug de inyección (crítico) corregido:** al hacer clic en Encolador CE/CI, Dosing fina/gruesa o los silos animados, el marcador nacía en el silo del *wireframe* (x≈−705, fuera de pantalla) en vez de en la máquina. Causa: todas compartían `data-pre-stage="silo6/silo5"` y `preMilestonesFor` arrancaba en un índice fijo. Ahora cada máquina tiene su `data-pre-stage` propio (`active-silo6/dosSL/encCE/silo5/dosCL/encCI`) y `STAGE_CONFIG` define dónde arranca cada una. Verificado (Node + navegador): las 12 puntos inyectan con d=0 sobre la máquina clicada.
+- **CSV del HMI (nuevo, releído cada 2 s):** `datos/hmi.csv` (formato `VARIABLE:VALOR;`, 54 tags P1+P2) + `js/hmi-csv.js` (fetch no-cache cada 2 s, fallback a archivo local, parser tolerante, mapa tag→p1:*). Pill de estado en la barra + latido cada 2 s. Estático ahora, listo para el servidor (un job sobrescribe el archivo). Verificado: poll cada 2000 ms, cambio en vivo 44→77→44 reflejado en el panel en ≤2 s.
+- **Pestaña Parámetros = lee del CSV:** los valores vienen del CSV (fuente de verdad), se refrescan en vivo con flash, badges HMI (30) / Estim. (23), visor de CSV crudo, banner explicativo. `initParams` expone `applyExternal`.
+- **Optimización/arquitectura:** bucle rAF auto-suspendible (idle = 0 CPU, verificado rAF=0 al no haber cambios; reanuda al inyectar), countdowns throttleados a ~3 Hz (no 60 fps), `selfTest()` en consola (duraciones + inyección), teardown en reset (cancelAnimationFrame).
+- **A11y/legibilidad:** etiqueta "5 fracciones" ya no pisa el sublabel de Tamiz F; ecuación τ_silo agregada a la leyenda y subtítulos.
+- Sin errores de consola. Deriva de la auditoría wf_f4f72958 (findings en scratchpad).
+
 ### 2026-07-11 — Simulador profesional: Sección 1 rediseñada + fixes Sección 2 + sync de páginas desplegadas
 
 **Qué cambió:**
