@@ -327,9 +327,13 @@ const SL1_X = xm(6.63);   // 544
 const CL_X = xm(15.0);    // 1130
 const SL2_X = xm(22.25);  // 1638
 
-// Caída del cambio desde la boca de la tolva del esparcidor al colchón.
-const SPREADER_TOP_Y = 205;   // y de la salida de la tolva
-const DROP_SECONDS = 0.7;     // duración real de la caída (visible a cualquier escala)
+// Descenso del cambio POR DENTRO del esparcidor: entra por el tope del cabezal
+// (donde lo entrega la banda inclinada), baja por la tolva → cuerpo → rodillos →
+// boca hasta caer al colchón. El punto de inyección de cada esparcidor (xm de
+// 6.63 · 15.0 · 22.25) coincide con su rodillo central y su boca de salida, así
+// que el descenso vertical traza una recta limpia por el centro de la máquina.
+const SPREADER_HEAD_TOP_Y = 110;   // y del tope del cabezal (entrada desde la inclinada)
+const SPREADER_FALLBACK_TAU = 40;  // s · τ de residencia por defecto (docs · «por validar»)
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * clamp(t, 0, 1);
@@ -485,7 +489,7 @@ function initLiveClock() {
 // ── HMI en vivo: motor multi-cambio (varios trazadores de colores a la vez) ──
 function initSimulation() {
   let vPrensa = clamp(DEFAULT_SPEED, SPEED_MIN, SPEED_MAX); // m/min, compartida por todos los cambios
-  let timeScale = Number(document.getElementById('timeScaleSelect')?.value ?? 36000) || 1;
+  let timeScale = clamp(Number(document.getElementById('timeScaleInput')?.value) || 300, 1, 100000);
   let modelParams = loadPart1Params();
   let scrubbing = false;
   let changeSeq = 0;
@@ -496,7 +500,7 @@ function initSimulation() {
 
   const speedRange = document.getElementById('speedRange');
   const speedInput = document.getElementById('speedInput');
-  const timeScaleSelect = document.getElementById('timeScaleSelect');
+  const timeScaleInput = document.getElementById('timeScaleInput');
   const moverRange = document.getElementById('moverRange');
   const canvas = document.getElementById('canvasScroll');
   const tracersLayer = document.getElementById('tracers');
@@ -521,6 +525,18 @@ function initSimulation() {
   function labelForM(m) {
     const hit = NAMED_WAYPOINTS.find((wp) => Math.abs(wp.m - m) < 0.05);
     return hit ? hit.label : `Inyectado @ ${m.toFixed(1)} m`;
+  }
+
+  // Si el metro `m` es el punto de inyección de un esparcidor (SL1 6.63 · CL 15 ·
+  // SL2 22.25), devuelve su τ de residencia (s) leído de los params del modelo
+  // (editable en panel / CSV). Con esto el cambio BAJA por dentro del esparcidor
+  // durante ese tiempo antes de caer al colchón. Fuera de un esparcidor → dropM null.
+  const SPREADER_TAU_KEY = { '6.63': 'p1:tEsp1', '15': 'p1:tEsp2', '22.25': 'p1:tEsp3' };
+  function spreaderDropFor(m) {
+    const s = [6.63, 15.0, 22.25].find((v) => Math.abs(v - m) < 0.15);
+    if (s == null) return { dropM: null, dropDur: 0 };
+    const tau = Math.max(0, Number(modelParams?.[SPREADER_TAU_KEY[String(s)]])) || SPREADER_FALLBACK_TAU;
+    return { dropM: s, dropDur: tau };
   }
 
   // Trazador SVG propio por cambio, coloreado, con su número de secuencia.
@@ -553,12 +569,12 @@ function initSimulation() {
   function updateTracerEl(ch) {
     const mx = xm(ch.posM);
     let my = topTop(mx) - 6;
-    // Si el cambio nació en un esparcidor, ENTRA cayendo desde la boca de la tolva
-    // hacia el colchón (no "volando" sobre la banda). Basado en tiempo real → se
-    // ve la caída a cualquier velocidad de simulación.
-    if (ch.dropM != null && ch.dropAge < DROP_SECONDS) {
-      const f = ch.dropAge / DROP_SECONDS;           // 0 en la tolva → 1 ya sobre el colchón
-      my = SPREADER_TOP_Y + (my - SPREADER_TOP_Y) * f;
+    // Si el cambio nació en un esparcidor, BAJA por dentro del cabezal: entra por
+    // el tope (donde lo entrega la banda inclinada) y desciende hasta el colchón
+    // en su τ de residencia. Recién al terminar empieza a avanzar por la banda.
+    if (ch.dropM != null && ch.dropDur > 0 && ch.dropAge < ch.dropDur) {
+      const f = clamp(ch.dropAge / ch.dropDur, 0, 1);   // 0 en el tope → 1 ya sobre el colchón
+      my = SPREADER_HEAD_TOP_Y + (my - SPREADER_HEAD_TOP_Y) * f;
     }
     ch.el?.setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)})`);
   }
@@ -683,6 +699,8 @@ function initSimulation() {
       seq: changeSeq,
       color: CHANGE_COLORS[(changeSeq - 1) % CHANGE_COLORS.length],
       posM: startM,
+      ...spreaderDropFor(startM),   // si nace en un esparcidor: baja por dentro (τ) antes de avanzar
+      dropAge: 0,
       arrivals: [{ label: startLabel, m: startM, wallTime: new Date() }],
       passed: new Set([startLabel]),
     };
@@ -702,14 +720,16 @@ function initSimulation() {
       wallTime: a.wallTime instanceof Date ? a.wallTime : new Date(a.wallTime || Date.now()),
     }));
     const alreadyHasLaunch = inherited.some((a) => a.label === label);
-    // Si nace en un esparcidor (SL1 6.63 · CL 15 · SL2 22.25) cae desde la tolva.
-    const dropM = [6.63, 15.0, 22.25].find((s) => Math.abs(s - m) < 0.15) ?? null;
+    // Al terminar la banda inclinada el cambio ENTRA por el tope del esparcidor y
+    // baja por dentro durante su τ de residencia (SL1 6.63 · CL 15 · SL2 22.25).
+    const { dropM, dropDur } = spreaderDropFor(m);
     const ch = {
       id: `${parent.id}-p2-${Math.round(m * 100)}`,
       seq: parent.seq,
       color: parent.color,
       posM: clamp(m, 0, PROCESS_END_M),
       dropM,
+      dropDur,
       dropAge: 0,
       arrivals: alreadyHasLaunch ? inherited : [...inherited, { label, m, wallTime: new Date() }],
       passed: new Set([label, ...inherited.map((a) => a.label)]),
@@ -809,7 +829,14 @@ function initSimulation() {
       }
     }
     for (const ch of changes.slice()) {
-      if (ch.dropM != null && ch.dropAge < DROP_SECONDS) ch.dropAge += dt;   // caída visual (tiempo real, no ×escala)
+      // Fase 1 — descenso por dentro del esparcidor: consume su τ de residencia con
+      // el reloj de la Sección 2 (min(timeScale,300), igual que la banda) y todavía
+      // NO avanza. Se ve bajar de arriba a abajo antes de caer al colchón.
+      if (ch.dropM != null && ch.dropDur > 0 && ch.dropAge < ch.dropDur) {
+        ch.dropAge += dt * Math.min(timeScale, 300);
+        updateTracerEl(ch);
+        continue;
+      }
       if (scrubbing && ch.id === selectedId) continue; // el movedor controla este directamente
       const prevM = ch.posM;
       ch.posM = Math.min(ch.posM + advanceM, PROCESS_END_M);
@@ -840,9 +867,16 @@ function initSimulation() {
   speedRange?.addEventListener('input', () => setSpeed(speedRange.value));
   speedInput?.addEventListener('input', () => setSpeed(speedInput.value));
   speedInput?.addEventListener('change', syncSpeedUI);
-  timeScaleSelect?.addEventListener('change', () => {
-    timeScale = Math.max(1, Number(timeScaleSelect.value) || 1);
+  // Multiplicador de tiempo escribible: se aplica en vivo mientras se escribe
+  // (clamp interno sin pisar lo tecleado) y se normaliza el valor al salir del campo.
+  const applyTimeScale = () => {
+    timeScale = clamp(Number(timeScaleInput.value) || 1, 1, 100000);
     updateReportCountdowns();
+  };
+  timeScaleInput?.addEventListener('input', applyTimeScale);
+  timeScaleInput?.addEventListener('change', () => {
+    applyTimeScale();
+    timeScaleInput.value = timeScale;
   });
   syncSpeedUI();
 
@@ -853,6 +887,7 @@ function initSimulation() {
     scrubbing = true;
     const sel = changes.find((c) => c.id === selectedId);
     if (!sel) return;
+    if (sel.dropM != null) sel.dropAge = sel.dropDur;   // mover manual → aterriza el descenso
     const prevM = sel.posM;
     sel.posM = clamp(parseFloat(moverRange.value) || 0, 0, PROCESS_END_M);
     const crossed = recordCrossings(sel, prevM);
@@ -981,8 +1016,11 @@ function selfTest() {
     const finite = Object.values(d).every((v) => Number.isFinite(v) && v >= 0);
     const clOk = STAGE_CONFIG['active-encCI'].startAt === 'activeEncCI';
     const slOk = STAGE_CONFIG['active-encCE'].startAt === 'activeEncCE';
-    const msg = `[combined] selfTest: duraciones ${finite ? 'OK' : 'FALLO'} · inyección encolador ${clOk && slOk ? 'OK (nace en la máquina)' : 'FALLO'}`;
-    (finite && clOk && slOk ? console.info : console.error)(msg, d);
+    const espTau = { esp1: Number(p['p1:tEsp1']), esp2: Number(p['p1:tEsp2']), esp3: Number(p['p1:tEsp3']) };
+    const espOk = Object.values(espTau).every((v) => Number.isFinite(v) && v > 0);
+    const ok = finite && clOk && slOk && espOk;
+    const msg = `[combined] selfTest: duraciones ${finite ? 'OK' : 'FALLO'} · inyección encolador ${clOk && slOk ? 'OK (nace en la máquina)' : 'FALLO'} · τ esparcidoras ${espOk ? 'OK' : 'FALLO'}`;
+    (ok ? console.info : console.error)(msg, { ...d, ...espTau });
   } catch (e) { console.error('[combined] selfTest error', e); }
 }
 

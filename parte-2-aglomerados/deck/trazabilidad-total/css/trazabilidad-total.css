@@ -434,7 +434,8 @@ body {
   letter-spacing: .04em;
 }
 .s2-time-scale .ms { font-size: 16px; }
-.s2-time-scale select {
+.s2-time-scale input {
+  width: 64px;
   border: 1px solid #D9C36A;
   border-radius: 6px;
   background: #fff;
@@ -443,6 +444,13 @@ body {
   font-size: 13px;
   font-weight: 800;
   padding: 2px 6px;
+  text-align: right;
+}
+.s2-time-scale__x {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1A1D1B;
+  margin-left: -3px;
 }
 .s2-btn-play {
   display: inline-flex;

@@ -65,12 +65,18 @@ export const P1_PARAMS = [
   { key: 'p1:dosG_F', label: 'Dosing CL F', unit: 'kg/min', default: 302, group: 'Parte 2 · Entrada desde P1' },
   { key: 'p1:dosF_M', label: 'Dosing SL M', unit: 'kg', default: 20, group: 'Parte 2 · Entrada desde P1' },
   { key: 'p1:dosF_F', label: 'Dosing SL F', unit: 'kg/min', default: 108, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:tEncCI', label: 't encolador CI', unit: 's', default: 30, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:tEncCE', label: 't encolador CE', unit: 's', default: 30, group: 'Parte 2 · Entrada desde P1' },
+  { key: 'p1:tEncCI', label: 't encolador CI', unit: 's', default: 40, group: 'Parte 2 · Entrada desde P1' },
+  { key: 'p1:tEncCE', label: 't encolador CE', unit: 's', default: 40, group: 'Parte 2 · Entrada desde P1' },
   { key: 'p1:inclG_L', label: 'Inclinada CL L', unit: 'm', default: 68.5, group: 'Parte 2 · Entrada desde P1' },
   { key: 'p1:inclG_v', label: 'Inclinada CL v', unit: 'm/min', default: 96.5, group: 'Parte 2 · Entrada desde P1' },
   { key: 'p1:inclF_L', label: 'Inclinada SL L', unit: 'm', default: 64.57, group: 'Parte 2 · Entrada desde P1' },
   { key: 'p1:inclF_v', label: 'Inclinada SL v', unit: 'm/min', default: 99.5, group: 'Parte 2 · Entrada desde P1' },
+  // τ de residencia de cada esparcidora (banda interna + volumen + báscula + rodillos):
+  // tiempo desde que el cambio entra por arriba hasta que cae al colchón. Estimado 40 s
+  // (docs de diseño · PARAMETROS.md · «por validar»). Editable aquí o vía CSV del HMI.
+  { key: 'p1:tEsp1', label: 'τ Esparcidor 1 · SL1 (inferior)', unit: 's', default: 40, group: 'Parte 2 · Esparcidoras' },
+  { key: 'p1:tEsp2', label: 'τ Esparcidor 2 · CL (core)', unit: 's', default: 40, group: 'Parte 2 · Esparcidoras' },
+  { key: 'p1:tEsp3', label: 'τ Esparcidor 3 · SL2 (superior)', unit: 's', default: 40, group: 'Parte 2 · Esparcidoras' },
 ];
 
 export function loadParams() {

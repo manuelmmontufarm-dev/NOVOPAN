@@ -73,6 +73,9 @@ export const TAG_MAP = {
   INCL_CL_V_MMIN:      { key: 'p1:inclG_v',    kind: 'hmi' },
   INCL_SL_L_M:         { key: 'p1:inclF_L',    kind: 'hmi' },
   INCL_SL_V_MMIN:      { key: 'p1:inclF_v',    kind: 'hmi' },
+  T_ESP1_S:            { key: 'p1:tEsp1',      kind: 'est' },
+  T_ESP2_S:            { key: 'p1:tEsp2',      kind: 'est' },
+  T_ESP3_S:            { key: 'p1:tEsp3',      kind: 'est' },
 };
 
 /* key de parámetro → kind (para el badge del panel). */

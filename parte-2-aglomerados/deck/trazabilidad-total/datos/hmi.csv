@@ -44,6 +44,8 @@ SILO6_RHO_KGM3: 188;  SILO6_V_M3: 120;  SILO6_L_PCT: 31;  SILO6_FOUT_KGMIN: 108;
 # ── Entrada a Parte 2 (dosing, encolado, bandas inclinadas) ──
 DOSING_CL_M_KG: 25;   DOSING_CL_F_KGMIN: 302;
 DOSING_SL_M_KG: 20;   DOSING_SL_F_KGMIN: 108;
-T_ENC_CI_S: 30;       T_ENC_CE_S: 30;
+T_ENC_CI_S: 40;       T_ENC_CE_S: 40;
 INCL_CL_L_M: 68.5;    INCL_CL_V_MMIN: 96.5;
 INCL_SL_L_M: 64.57;   INCL_SL_V_MMIN: 99.5;
+# ── Esparcidoras (τ residencia: entra por arriba → cae al colchón) ──
+T_ESP1_S: 40;         T_ESP2_S: 40;         T_ESP3_S: 40;
