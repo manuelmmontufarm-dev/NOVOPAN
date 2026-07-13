@@ -90,6 +90,14 @@
 
 ## Historial
 
+### 2026-07-13 (2) — trazabilidad-total: zarandas conectadas + caída en esparcidoras + ruta fina única
+
+Feedback del usuario sobre la Sección 2: (a) zarandas 1 y 3 flotaban sin tuberías; (b) los cambios "volaban" sobre la banda en vez de entrar por arriba de las esparcidoras; (c) la ruta fina mostraba 2 marcadores en las bandas (raro).
+
+- **Zarandas conectadas** (index.html): Tamiz F → Zaranda 1, Tamiz G → Zaranda 3, y columna vertical Zaranda 1↔2↔3, coincidiendo con las rutas de los marcadores. Ya no flotan.
+- **Caída en la esparcidora** (combined-app.js): cada cambio que entra a P2 (SL1 6.63 m · CL 15 m · SL2 22.25 m) NACE en la boca de la tolva (y≈205) y CAE al colchón en 0.7 s (basado en tiempo real → visible a cualquier escala), en vez de aparecer volando sobre la banda. Verificado: y arranca en la tolva y desciende.
+- **Ruta fina = UN marcador** que se SEPARA en la formación: las máquinas finas ahora usan una sola rama `sl` (antes sl1+sl2 = 2 marcadores encimados). Al llegar a la formación se divide en SL1 (capa inferior, 6.63 m) y SL2 (capa superior, 22.25 m). Receta (patios) = 2 marcadores upstream (gruesa CL + fina), no 3. Validado Node: 56/56 nodo×rama.
+
 ### 2026-07-13 — trazabilidad-total: inyección por-nodo (grafo del proceso) + z-order de marcadores
 
 Reporte del usuario (probando en localhost): (a) clic en Silo 2B ponía el cambio en Silo 1/2A; (b) los cambios solo aparecían en Zaranda 2 (las otras zarandas "desconectadas"); (c) los marcadores en la zona de silos se escondían detrás de las imágenes. Todos reales — mi fix anterior solo cubría las 6 máquinas del intake animado; los ~30 nodos del wireframe seguían colapsando a un punto compartido por zona (silos-verdes → Silo 2A, clasificacion → Zaranda 2) o no eran clicables.

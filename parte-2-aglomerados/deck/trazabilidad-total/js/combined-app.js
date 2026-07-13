@@ -122,7 +122,7 @@ const LINEAR_NEXT = {
 };
 function succ(key, branch) {
   if (key === 'zaranda2') return branch === 'cl' ? 'silo5' : 'ws1';       // bifurca CL↔SL
-  if (key === 'activeEncCE') return branch === 'sl2' ? 'sl2Gate' : 'sl1Gate';
+  if (key === 'activeEncCE') return 'sl1Gate';   // ruta fina → formación (se divide en SL1+SL2 al llegar)
   return LINEAR_NEXT[key] ?? null;
 }
 // `via` (polilínea que sigue la tubería dibujada) para las aristas donde una
@@ -153,7 +153,8 @@ const GATE_LAUNCH = {
 
 /* Configuración por punto de inyección (data-pre-stage) → ramas + nodo de arranque.
    b3 = las 3 capas (antes de la bifurcación); bsl = ruta SL; bcl = ruta CL. */
-const B3 = ['cl', 'sl1', 'sl2'], BSL = ['sl1', 'sl2'], BCL = ['cl'], BIO = ['bio'];
+// Una sola ruta fina 'sl' (se divide en SL1+SL2 al llegar a la formación) + ruta gruesa 'cl'.
+const B3 = ['cl', 'sl'], BSL = ['sl'], BCL = ['cl'], BIO = ['bio'];
 const STAGE_CONFIG = {
   patios: { branches: B3, startAt: 'patios' },
   'wf-pm1': { branches: B3, startAt: 'pm1' }, 'wf-ds': { branches: B3, startAt: 'ds' }, silo1: { branches: B3, startAt: 'silo1' },
@@ -325,6 +326,10 @@ const END = xm(91);             // 6450 · margen visual después de sensores
 const SL1_X = xm(6.63);   // 544
 const CL_X = xm(15.0);    // 1130
 const SL2_X = xm(22.25);  // 1638
+
+// Caída del cambio desde la boca de la tolva del esparcidor al colchón.
+const SPREADER_TOP_Y = 205;   // y de la salida de la tolva
+const DROP_SECONDS = 0.7;     // duración real de la caída (visible a cualquier escala)
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * clamp(t, 0, 1);
@@ -547,7 +552,14 @@ function initSimulation() {
 
   function updateTracerEl(ch) {
     const mx = xm(ch.posM);
-    const my = topTop(mx) - 6;
+    let my = topTop(mx) - 6;
+    // Si el cambio nació en un esparcidor, ENTRA cayendo desde la boca de la tolva
+    // hacia el colchón (no "volando" sobre la banda). Basado en tiempo real → se
+    // ve la caída a cualquier velocidad de simulación.
+    if (ch.dropM != null && ch.dropAge < DROP_SECONDS) {
+      const f = ch.dropAge / DROP_SECONDS;           // 0 en la tolva → 1 ya sobre el colchón
+      my = SPREADER_TOP_Y + (my - SPREADER_TOP_Y) * f;
+    }
     ch.el?.setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)})`);
   }
 
@@ -690,11 +702,15 @@ function initSimulation() {
       wallTime: a.wallTime instanceof Date ? a.wallTime : new Date(a.wallTime || Date.now()),
     }));
     const alreadyHasLaunch = inherited.some((a) => a.label === label);
+    // Si nace en un esparcidor (SL1 6.63 · CL 15 · SL2 22.25) cae desde la tolva.
+    const dropM = [6.63, 15.0, 22.25].find((s) => Math.abs(s - m) < 0.15) ?? null;
     const ch = {
       id: `${parent.id}-p2-${Math.round(m * 100)}`,
       seq: parent.seq,
       color: parent.color,
       posM: clamp(m, 0, PROCESS_END_M),
+      dropM,
+      dropAge: 0,
       arrivals: alreadyHasLaunch ? inherited : [...inherited, { label, m, wallTime: new Date() }],
       passed: new Set([label, ...inherited.map((a) => a.label)]),
     };
@@ -706,7 +722,7 @@ function initSimulation() {
     renderReportsList();
   }
 
-  const BRANCH_LABEL = { cl: 'CL/core → Sección 2', sl1: 'SL → Esparcidor 1', sl2: 'SL → Esparcidor 3', bio: 'Polvo → biomasa (no entra a P2)' };
+  const BRANCH_LABEL = { cl: 'Ruta gruesa · CL/core', sl: 'Ruta fina · SL1 + SL2', bio: 'Polvo → biomasa (no entra a P2)' };
 
   function injectPre(stage, label) {
     const cfg = STAGE_CONFIG[stage] ?? STAGE_CONFIG.patios;
@@ -777,7 +793,13 @@ function initSimulation() {
         const idx = preChanges.indexOf(ch);
         if (idx >= 0) preChanges.splice(idx, 1);
         if (lastM.launchM != null) {
-          injectDownstreamFromPre(ch, lastM.launchM, lastM.launchLabel);   // entra a la Sección 2
+          if (ch.branch === 'sl') {
+            // La ruta fina se SEPARA en la formación: capa inferior (SL1) y superior (SL2)
+            injectDownstreamFromPre(ch, 6.63, 'SL1 · capa inferior (esparcidor 1)');
+            injectDownstreamFromPre(ch, 22.25, 'SL2 · capa superior (esparcidor 3)');
+          } else {
+            injectDownstreamFromPre(ch, lastM.launchM, lastM.launchLabel);   // gruesa (CL) → esparcidor 2
+          }
         } else {
           // ruta de polvo/biomasa: no entra a P2, se registra como completada en el quemador
           reports.unshift({ id: ch.id, seq: ch.seq, color: ch.color, arrivals: ch.arrivals });
@@ -787,6 +809,7 @@ function initSimulation() {
       }
     }
     for (const ch of changes.slice()) {
+      if (ch.dropM != null && ch.dropAge < DROP_SECONDS) ch.dropAge += dt;   // caída visual (tiempo real, no ×escala)
       if (scrubbing && ch.id === selectedId) continue; // el movedor controla este directamente
       const prevM = ch.posM;
       ch.posM = Math.min(ch.posM + advanceM, PROCESS_END_M);
