@@ -18,6 +18,7 @@ import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
 import { buildAnnotations, PROCESS_TOTAL_M } from './line-bridge.js';
 import { initParams, loadPart1Params } from './combined-params.js';
 import { initHmiCsv } from './hmi-csv.js';
+import { computeRoute, formatSec, STATUS_LABEL } from './route-model.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const QUITO_TZ = 'America/Guayaquil';
@@ -998,7 +999,7 @@ function initSimulation() {
   // Pestaña Parámetros: ahora LEE del CSV del HMI (fuente de verdad).
   const paramsApi = initParams({
     speedGetter: () => vPrensa,
-    onChange: (params) => { modelParams = params; recomputeActivePre(); renderIntakeTaus(); },
+    onChange: (params) => { modelParams = params; recomputeActivePre(); renderIntakeTaus(); window.__NOVOPAN_ROUTE_MODEL__?.recompute?.(); },
   });
 
   /* Recalcula la línea de tiempo de los cambios upstream ACTIVOS cuando cambian
@@ -1036,6 +1037,7 @@ function initSimulation() {
       recomputeActivePre();
       renderIntakeTaus();
       if (data.vPrensa != null) setSpeed(data.vPrensa);
+      window.__NOVOPAN_ROUTE_MODEL__?.recompute?.();
     },
   });
   // Espeja el pill de estado de la barra en el banner del panel de parámetros.
@@ -1049,6 +1051,12 @@ function initSimulation() {
 
   renderIntakeTaus();   // pinta el τ real de las encoladoras en los chips de entrada
   selfTest();
+
+  // Modelo de ruta acotado (read-only): expone y registra las predicciones a
+  // sensores con las ecuaciones documentadas. No interfiere con la simulación.
+  const recomputeRouteModel = () => routeModelDiagnostic(paramsApi.getParams(), vPrensa);
+  window.__NOVOPAN_ROUTE_MODEL__ = { recompute: recomputeRouteModel, computeRoute, formatSec, STATUS_LABEL, last: null };
+  recomputeRouteModel();
 }
 
 /* Diagnóstico en consola: valida que las ecuaciones y los puntos de inyección
@@ -1067,6 +1075,47 @@ function selfTest() {
     const msg = `[combined] selfTest: duraciones ${finite ? 'OK' : 'FALLO'} · inyección encolador ${clOk && slOk ? 'OK (nace en la máquina)' : 'FALLO'} · τ esparcidoras ${espOk ? 'OK' : 'FALLO'}`;
     (ok ? console.info : console.error)(msg, { ...d, ...espTau });
   } catch (e) { console.error('[combined] selfTest error', e); }
+}
+
+/* ── Modelo de ruta acotado (Silos 5/6 → Sensores 1/2/3) ──────────────
+   Puente read-only entre los parámetros HMI en vivo (claves P1) y el
+   módulo route-model.js, que implementa las ecuaciones documentadas con
+   guardas y estados explícitos. NO altera la simulación visual: sólo
+   calcula, expone en window.__NOVOPAN_ROUTE_MODEL__ y registra en consola
+   las predicciones de registro y de cada sensor. Así la app "usa" las
+   mismas ecuaciones que las pruebas y la documentación. */
+const P1_TO_MODEL = {
+  'p1:s5_rho': 'silo5.rho', 'p1:s5_V': 'silo5.capacity', 'p1:s5_L': 'silo5.level', 'p1:s5_Fmin': 'silo5.flow',
+  'p1:s6_rho': 'silo6.rho', 'p1:s6_V': 'silo6.capacity', 'p1:s6_L': 'silo6.level', 'p1:s6_Fmin': 'silo6.flow',
+  'p1:dosG_M': 'dosingCL.mass', 'p1:dosG_F': 'dosingCL.flow',
+  'p1:dosF_M': 'dosingSL.mass', 'p1:dosF_F': 'dosingSL.flow',
+  'p1:tEncCE': 'mixerCE.tau', 'p1:tEncCI': 'mixerCI.tau',
+  'p1:inclF_L': 'inclSL.length', 'p1:inclF_v': 'inclSL.speed',
+  'p1:inclG_L': 'inclCL.length', 'p1:inclG_v': 'inclCL.speed',
+  'p1:tEsp1': 'spreader1.tau', 'p1:tEsp2': 'spreader2.tau', 'p1:tEsp3': 'spreader3.tau',
+};
+
+/** Traduce los params P1 en vivo a overrides del route-model. */
+function bridgeP1ToModel(p1) {
+  const overrides = {};
+  if (p1) for (const [src, dst] of Object.entries(P1_TO_MODEL)) {
+    if (p1[src] !== undefined && p1[src] !== null && p1[src] !== '') overrides[dst] = p1[src];
+  }
+  return overrides;
+}
+
+function routeModelDiagnostic(p1params, vPrensa) {
+  try {
+    const r = computeRoute(bridgeP1ToModel(p1params), { lineSpeed: vPrensa });
+    const fmt = (q) => formatSec(q).text;
+    console.info(
+      `[route-model] v=${vPrensa} m/min · registro ${fmt(r.registration)} · ` +
+      `S1 ${fmt(r.sensors.sensor1)} · S2 ${fmt(r.sensors.sensor2)} · S3 ${fmt(r.sensors.sensor3)}`,
+      { registro: r.registration, sensores: r.sensors },
+    );
+    if (window.__NOVOPAN_ROUTE_MODEL__) window.__NOVOPAN_ROUTE_MODEL__.last = r;
+    return r;
+  } catch (e) { console.error('[route-model] error', e); return null; }
 }
 
 // scroll suave a una zona (chips 2A–2E), portado del handoff
