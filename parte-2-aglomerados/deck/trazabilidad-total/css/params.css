@@ -512,6 +512,119 @@
   white-space: nowrap;
 }
 
+/* Ecuación de cierre: una pieza única, deliberadamente más ceremonial que
+   las tarjetas de etapa. El contenido matemático conserva scroll horizontal
+   en móvil para no mutilar la ecuación larga. */
+.parameter-section-title--total { margin-top: 42px; }
+.equation-total {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 34px;
+  color: #ECF8F2;
+  background:
+    radial-gradient(circle at 91% 4%, rgba(67, 196, 143, .23), transparent 26%),
+    radial-gradient(circle at 10% 100%, rgba(0, 147, 112, .25), transparent 33%),
+    linear-gradient(135deg, #003A2C 0%, #004E38 52%, #003027 100%);
+  border: 1px solid #087056;
+  border-radius: 18px;
+  box-shadow: 0 18px 38px rgba(0, 58, 44, .22);
+}
+.equation-total::before,
+.equation-total::after { position: absolute; z-index: 0; content: ''; pointer-events: none; }
+.equation-total::before {
+  inset: 0;
+  opacity: .26;
+  background-image: linear-gradient(rgba(211,255,233,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(211,255,233,.12) 1px, transparent 1px);
+  background-size: 27px 27px;
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+.equation-total::after {
+  top: -145px;
+  right: -120px;
+  width: 390px;
+  height: 390px;
+  border: 1px solid rgba(178, 255, 216, .28);
+  border-radius: 50%;
+  box-shadow: 0 0 0 46px rgba(178,255,216,.05), 0 0 0 92px rgba(178,255,216,.035);
+}
+.equation-total__header, .equation-total__body, .equation-total__result { position: relative; z-index: 1; }
+.equation-total__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 25px 30px 20px;
+  border-bottom: 1px solid rgba(213,255,235,.18);
+}
+.equation-total__header span {
+  display: block;
+  margin-bottom: 6px;
+  color: #90DAB8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+.equation-total__header h3 {
+  margin: 0;
+  color: #fff;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+.equation-total__badge {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  color: #BDF4D5;
+  background: rgba(0, 24, 18, .28);
+  border: 1px solid rgba(166,244,203,.35);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-align: center;
+}
+.equation-total__badge strong { display: block; margin-top: 3px; color: #fff; font-size: 11px; letter-spacing: .02em; }
+.equation-total__body { padding: 22px 30px 25px; }
+.equation-total__label { margin: 0 0 9px; color: #A9E3C4; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.equation-total__math {
+  overflow-x: auto;
+  padding: 18px 20px;
+  color: #F8FFFB;
+  background: rgba(0, 23, 17, .35);
+  border: 1px solid rgba(204,255,226,.22);
+  border-radius: 12px;
+  scrollbar-color: rgba(176,245,209,.65) transparent;
+}
+.equation-total__math .katex-display { min-width: max-content; margin: .28em 0; text-align: left; }
+.equation-total__math .katex { font-size: 1.13em; }
+.equation-total__math--substituted { color: #00392B; background: #E9FFF2; border-color: #C3F3D4; }
+.equation-total__math--substituted .katex { font-size: 1.01em; }
+.equation-total__divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 10px; color: #9BDFC0; font-size: 9.5px; font-weight: 800; letter-spacing: .13em; }
+.equation-total__divider::before, .equation-total__divider::after { flex: 1; height: 1px; content: ''; background: rgba(203,255,225,.28); }
+.equation-total__result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 17px 30px;
+  color: #B8E7CC;
+  background: rgba(0, 22, 16, .45);
+  border-top: 1px solid rgba(213,255,235,.16);
+  font-size: 12px;
+}
+.equation-total__result strong {
+  flex: 0 0 auto;
+  min-width: 160px;
+  padding: 12px 18px;
+  color: #003D2E;
+  background: linear-gradient(135deg, #D4FFE5, #89E9B7);
+  border-radius: 9px;
+  box-shadow: 0 7px 18px rgba(0,0,0,.18);
+  text-align: center;
+}
+.equation-total__result strong .katex { font-size: 1.45em; font-weight: 700; }
+
 @media (max-width: 980px) {
   .equation-overview { grid-template-columns: 1fr; }
   .equation-card__math { grid-template-columns: 1fr; }
@@ -525,6 +638,12 @@
   .equation-card { border-radius: 11px; }
   .equation-card__header, .equation-card__math, .equation-card__fields { padding-inline: 14px; }
   .equation-card__row .katex { font-size: 1em; }
+  .equation-total__header, .equation-total__result { align-items: stretch; flex-direction: column; }
+  .equation-total__header, .equation-total__body, .equation-total__result { padding-inline: 17px; }
+  .equation-total__badge { align-self: flex-start; }
+  .equation-total__math { padding: 14px; }
+  .equation-total__math .katex { font-size: .94em; }
+  .equation-total__result strong { align-self: stretch; }
 }
 
 @media (prefers-reduced-motion: reduce) {

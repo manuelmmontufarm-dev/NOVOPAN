@@ -387,6 +387,92 @@ function renderOverview(params, speed) {
   return card;
 }
 
+/* ── Ecuación de cierre ─────────────────────────────────────
+   Esta es la ruta física completa y simultánea desde Silos 5/6 hasta
+   el Sensor 3. Las tres capas viajan en paralelo: el registro sólo puede
+   empezar cuando llega la última. Por eso el núcleo de la ecuación es max().
+   No se suman las tres capas entre sí (sería doble conteo).
+   Cada símbolo se resuelve desde el mismo objeto params que llega del CSV. */
+function finalRouteEquation(params, speed) {
+  const rho5 = n(params, 'p1:s5_rho', 135);
+  const v5 = n(params, 'p1:s5_V', 120);
+  const l5 = n(params, 'p1:s5_L', 44);
+  const f5 = n(params, 'p1:s5_Fmin', 302);
+  const rho6 = n(params, 'p1:s6_rho', 188);
+  const v6 = n(params, 'p1:s6_V', 120);
+  const l6 = n(params, 'p1:s6_L', 31);
+  const f6 = n(params, 'p1:s6_Fmin', 108);
+  const mDosCL = n(params, 'p1:dosG_M', 25);
+  const fDosCL = n(params, 'p1:dosG_F', f5);
+  const mDosSL = n(params, 'p1:dosF_M', 20);
+  const fDosSL = n(params, 'p1:dosF_F', f6);
+  const tCI = n(params, 'p1:tEncCI', 40);
+  const tCE = n(params, 'p1:tEncCE', 40);
+  const lInclCL = n(params, 'p1:inclG_L', 68.5);
+  const vInclCL = n(params, 'p1:inclG_v', 96.5);
+  const lInclSL = n(params, 'p1:inclF_L', 64.57);
+  const vInclSL = n(params, 'p1:inclF_v', 99.5);
+  const mEsp1 = n(params, 'mass:esp1-zone', 12.5);
+  const mEsp2 = n(params, 'mass:esp2-zone', 40);
+  const mEsp3 = n(params, 'mass:esp3-zone', 15);
+  const fSL = n(params, '_global:F_SL', 147.6);
+  const fCL = n(params, '_global:F_CL', 118);
+  const pSL1 = n(params, '_global:pctSL1', 47.1);
+  const pSL2 = n(params, '_global:pctSL2', 52.9);
+  const lSensor3 = 85.55;
+  const vPrensa = n(params, 'v_prensa', speed);
+
+  const silo = (rho, volume, level, flow) => flow > 0 ? rho * volume * level / 100 / flow * 60 : 0;
+  const dosing = (mass, flow) => flow > 0 ? mass / flow * 60 : 0;
+  const incline = (length, beltSpeed) => beltSpeed > 0 ? length / beltSpeed * 60 : 0;
+  const spreader = (mass, flow) => flow > 0 ? mass / flow * 60 : 0;
+  const fine = silo(rho6, v6, l6, f6) + dosing(mDosSL, fDosSL) + tCE + incline(lInclSL, vInclSL);
+  const coarse = silo(rho5, v5, l5, f5) + dosing(mDosCL, fDosCL) + tCI + incline(lInclCL, vInclCL);
+  const sl1 = fine + spreader(mEsp1, fSL * pSL1 / 100);
+  const cl = coarse + spreader(mEsp2, fCL);
+  const sl2 = fine + spreader(mEsp3, fSL * pSL2 / 100);
+  const registration = Math.max(sl1, cl, sl2);
+  const sensorTravel = vPrensa > 0 ? lSensor3 / vPrensa * 60 : 0;
+
+  const rawFine = String.raw`\frac{\rho_6V_6(L_6/100)}{F_6}\,60+\frac{M_{dos,SL}}{F_{dos,SL}}\,60+t_{CE}+\frac{L_{inc,SL}}{v_{inc,SL}}\,60`;
+  const rawCoarse = String.raw`\frac{\rho_5V_5(L_5/100)}{F_5}\,60+\frac{M_{dos,CL}}{F_{dos,CL}}\,60+t_{CI}+\frac{L_{inc,CL}}{v_{inc,CL}}\,60`;
+  return {
+    symbolic: String.raw`\displaystyle t_{tot}^{\mathrm{S5/S6\rightarrow S3}}=\max\!\left(\underbrace{${rawFine}+\frac{M_{ESP1}}{F_{SL}(p_{SL1}/100)}\,60}_{t_{SL1}},\;\underbrace{${rawCoarse}+\frac{M_{ESP2}}{F_{CL}}\,60}_{t_{CL}},\;\underbrace{${rawFine}+\frac{M_{ESP3}}{F_{SL}(p_{SL2}/100)}\,60}_{t_{SL2}}\right)+\frac{L_{S3}}{v_{prensa}}\,60`,
+    substituted: String.raw`\displaystyle t_{tot}=\max\!\left(\begin{aligned}&\frac{${texN(rho6)}\,\mathrm{kg\,m^{-3}}\cdot${texN(v6)}\,\mathrm{m^3}\cdot(${texN(l6)}\,\%/100)}{${texN(f6)}\,\mathrm{kg\,min^{-1}}}\,60+\frac{${texN(mDosSL)}\,\mathrm{kg}}{${texN(fDosSL)}\,\mathrm{kg\,min^{-1}}}\,60+${texN(tCE)}\,\mathrm{s}+\frac{${texN(lInclSL)}\,\mathrm{m}}{${texN(vInclSL)}\,\mathrm{m\,min^{-1}}}\,60+\frac{${texN(mEsp1)}\,\mathrm{kg}}{${texN(fSL)}\,\mathrm{kg\,min^{-1}}\cdot(${texN(pSL1)}\,\%/100)}\,60,\\&\frac{${texN(rho5)}\,\mathrm{kg\,m^{-3}}\cdot${texN(v5)}\,\mathrm{m^3}\cdot(${texN(l5)}\,\%/100)}{${texN(f5)}\,\mathrm{kg\,min^{-1}}}\,60+\frac{${texN(mDosCL)}\,\mathrm{kg}}{${texN(fDosCL)}\,\mathrm{kg\,min^{-1}}}\,60+${texN(tCI)}\,\mathrm{s}+\frac{${texN(lInclCL)}\,\mathrm{m}}{${texN(vInclCL)}\,\mathrm{m\,min^{-1}}}\,60+\frac{${texN(mEsp2)}\,\mathrm{kg}}{${texN(fCL)}\,\mathrm{kg\,min^{-1}}}\,60,\\&\frac{${texN(rho6)}\,\mathrm{kg\,m^{-3}}\cdot${texN(v6)}\,\mathrm{m^3}\cdot(${texN(l6)}\,\%/100)}{${texN(f6)}\,\mathrm{kg\,min^{-1}}}\,60+\frac{${texN(mDosSL)}\,\mathrm{kg}}{${texN(fDosSL)}\,\mathrm{kg\,min^{-1}}}\,60+${texN(tCE)}\,\mathrm{s}+\frac{${texN(lInclSL)}\,\mathrm{m}}{${texN(vInclSL)}\,\mathrm{m\,min^{-1}}}\,60+\frac{${texN(mEsp3)}\,\mathrm{kg}}{${texN(fSL)}\,\mathrm{kg\,min^{-1}}\cdot(${texN(pSL2)}\,\%/100)}\,60\end{aligned}\right)+\frac{${texN(lSensor3)}\,\mathrm{m}}{${texN(vPrensa)}\,\mathrm{m\,min^{-1}}}\,60`,
+    seconds: registration + sensorTravel,
+    winner: cl >= sl1 && cl >= sl2 ? 'CL · core' : (sl1 >= sl2 ? 'SL1 · inferior' : 'SL2 · superior'),
+  };
+}
+
+function renderFinalRouteTotal(params, speed) {
+  const equation = finalRouteEquation(params, speed);
+  const card = document.createElement('section');
+  card.className = 'equation-total';
+  card.dataset.totalEquation = 'route-sensor3';
+  card.innerHTML = `
+    <header class="equation-total__header">
+      <div><span>ECUACIÓN DE CIERRE · RUTA EN PARALELO</span><h3>Tiempo total · Silos 5/6 → Sensor de calidad 3</h3></div>
+      <div class="equation-total__badge">RUTA CRÍTICA <strong data-total-winner></strong></div>
+    </header>
+    <div class="equation-total__body">
+      <div class="equation-total__label">Modelo con variables físicas</div>
+      <div class="equation-total__math equation-total__math--symbolic" data-total-symbolic></div>
+      <div class="equation-total__divider"><span>VALORES ACTUALES DEL CSV</span></div>
+      <div class="equation-total__math equation-total__math--substituted" data-total-substituted></div>
+    </div>
+    <footer class="equation-total__result"><span>t<sub>tot</sub> = registro de la última capa + recorrido hasta Sensor 3</span><strong data-total-result></strong></footer>`;
+  renderFinalRouteTotalValues(card, equation);
+  return card;
+}
+
+function renderFinalRouteTotalValues(card, equation) {
+  renderMath(card.querySelector('[data-total-symbolic]'), equation.symbolic);
+  renderMath(card.querySelector('[data-total-substituted]'), equation.substituted);
+  renderMath(card.querySelector('[data-total-result]'), String.raw`=\ ${texN(equation.seconds, 1)}\ \mathrm{s}`);
+  const winner = card.querySelector('[data-total-winner]');
+  if (winner) winner.textContent = equation.winner;
+}
+
 function renderGlobals(params, speed) {
   const card = document.createElement('section');
   card.className = 'globals-card globals-card--csv';
@@ -506,6 +592,12 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     postTitle.textContent = '08 · Corte y calidad';
     grid.appendChild(postTitle);
     grid.appendChild(postCard);
+
+    const totalTitle = document.createElement('h3');
+    totalTitle.className = 'parameter-section-title parameter-section-title--total';
+    totalTitle.textContent = '09 · Cierre de simulación';
+    grid.appendChild(totalTitle);
+    grid.appendChild(renderFinalRouteTotal(params, v));
     bindInputs();
     built = true;
   }
@@ -529,6 +621,9 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     for (const card of grid.querySelectorAll('[data-node-id]')) {
       const node = findNode(card.dataset.nodeId);
       if (node) renderEquation(card, graphNodeEquation(node, v, params));
+    }
+    for (const card of grid.querySelectorAll('[data-total-equation="route-sensor3"]')) {
+      renderFinalRouteTotalValues(card, finalRouteEquation(params, v));
     }
   }
 
