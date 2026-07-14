@@ -234,6 +234,53 @@ body {
   100% { box-shadow: 0 0 0 9px rgba(255, 222, 0, 0); }
 }
 
+/* ── Switch encender/apagar Sección 1 ── */
+.s2-sec1-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.s2-sec1-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.s2-sec1-toggle__track {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: #B7C0BB;
+  transition: background .18s ease;
+  flex: none;
+}
+.s2-sec1-toggle__thumb {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,.3);
+  transition: transform .18s ease;
+}
+.s2-sec1-toggle input:checked + .s2-sec1-toggle__track { background: #0A7D5A; }
+.s2-sec1-toggle input:checked + .s2-sec1-toggle__track .s2-sec1-toggle__thumb { transform: translateX(16px); }
+.s2-sec1-toggle input:focus-visible + .s2-sec1-toggle__track { outline: 2px solid #004E38; outline-offset: 2px; }
+.s2-sec1-toggle__lbl {
+  font-family: 'Barlow', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: #2A2A2A;
+}
+
+/* Con la Sección 1 apagada, se ocultan sus controles (inyección P1 + zonas de preparación). */
+body.sec1-off .s2-preinject,
+body.sec1-off .s2-toolbar__label--p1,
+body.sec1-off .s2-zone-btn[data-scroll="0"],
+body.sec1-off .s2-zone-btn[data-scroll="2200"] { display: none; }
+
+/* Pin de inyección en el colchón (antes/entre esparcidoras). */
+.s2-cushion-inject text { pointer-events: none; }
+
 /* ── Parte 1 · mismo lenguaje visual pulido de la Sección 2 animada ──
    Solo presentación: posiciones, textos, rutas y lógica intactos. */
 .wf text {

@@ -1428,6 +1428,23 @@ function wireZoneChips() {
   });
 }
 
+/* Switch encender/apagar Sección 1 (preparación). Apagada: oculta el wireframe
+   P1, oculta sus controles (vía body.sec1-off en CSS) y salta el scroll a la
+   Sección 2 (formación) para concentrarse ahí. No toca la simulación. */
+function wireSec1Toggle() {
+  const toggle = document.getElementById('sec1Toggle');
+  const wireframe = document.getElementById('part1Wireframe');
+  if (!toggle) return;
+  const canvas = document.getElementById('canvasScroll');
+  const apply = (on) => {
+    if (wireframe) wireframe.style.display = on ? '' : 'none';
+    document.body.classList.toggle('sec1-off', !on);
+    if (!on && canvas) canvas.scrollLeft = 2320;   // salta a la zona de formación (Sección 2)
+  };
+  toggle.addEventListener('change', () => apply(toggle.checked));
+  apply(toggle.checked);
+}
+
 function init() {
   renderColchon();
   renderRollers();
@@ -1435,6 +1452,7 @@ function init() {
   renderRuler();
   renderAnnotations();
   wireZoneChips();
+  wireSec1Toggle();
   initLiveClock();
   initSimulation();
 }
