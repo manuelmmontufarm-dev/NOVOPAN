@@ -114,8 +114,11 @@
     </label>
     <div class="s2-mover">
       <span class="s2-mover__label"><span class="ms">drag_pan</span> Mover cambio seleccionado</span>
-      <input type="range" class="s2-mover__range" id="moverRange" min="0" max="85.15" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
+      <input type="range" class="s2-mover__range" id="moverRange" min="0" max="85.55" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
     </div>
+    <button type="button" class="s2-pause-btn" id="pauseBtn" title="Pausar la simulación (los cambios se congelan)">
+      <span class="ms">pause</span> Pausa
+    </button>
     <button type="button" class="s2-reports-btn" id="reportsToggle">
       <span class="ms">receipt_long</span> Reportes <span class="s2-reports-btn__count" id="reportsCount">0</span>
     </button>
@@ -801,7 +804,7 @@
         <text x="0" y="325" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#676E69">2.30 m</text>
       </g>
 
-      <g class="s2-machine" data-inject-m="85.15" data-label="Sensores de calidad · fin de proceso" transform="translate(6040.5 0)">
+      <g class="s2-machine" data-inject-m="85.15" data-label="Sensor de calidad 1 (85.15 m)" transform="translate(6040.5 0)">
         <rect x="-95" y="170" width="10" height="262" fill="#4A5560"/><rect x="85" y="170" width="10" height="262" fill="#4A5560"/>
         <rect x="-100" y="170" width="200" height="18" rx="4" fill="url(#steel)" stroke="#6B7886"/>
         <!-- sensor modules -->
@@ -816,8 +819,14 @@
         <!-- lower module -->
         <rect x="-34" y="426" width="68" height="16" rx="4" fill="url(#steel)" stroke="#6B7886"/>
         <rect x="-92" y="112" width="184" height="30" rx="6" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="1.5"/>
-        <text x="0" y="126" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="13" fill="#1A1D1B">SENSORES DE CALIDAD</text>
+        <text x="0" y="126" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="13" fill="#1A1D1B">SENSORES DE CALIDAD 1 · 2 · 3</text>
         <text x="0" y="137" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#676E69">ESPESOR · REVENTADOS · PESO · DENSIDAD</text>
+        <!-- posiciones reales S1 85.15 · S2 85.35 · S3 85.55 m (0.20 m = 14 px) -->
+        <g font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="9" text-anchor="middle">
+          <line x1="0" y1="446" x2="0" y2="458" stroke="#0A7D5A" stroke-width="1.5"/><text x="0" y="470" fill="#0A7D5A">S1</text>
+          <line x1="14" y1="446" x2="14" y2="458" stroke="#9AA39E" stroke-width="1.5" stroke-dasharray="2 2"/><text x="14" y="480" fill="#676E69">S2</text>
+          <line x1="28" y1="446" x2="28" y2="458" stroke="#9AA39E" stroke-width="1.5" stroke-dasharray="2 2"/><text x="28" y="470" fill="#676E69">S3</text>
+        </g>
       </g>
 
       <!-- READINGS PANEL -->

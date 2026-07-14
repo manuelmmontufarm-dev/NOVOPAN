@@ -18,7 +18,7 @@ import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
 import { buildAnnotations, PROCESS_TOTAL_M } from './line-bridge.js';
 import { initParams, loadPart1Params } from './combined-params.js';
 import { initHmiCsv } from './hmi-csv.js';
-import { computeRoute, formatSec, STATUS_LABEL } from './route-model.js';
+import { computeRoute, formatSec, STATUS_LABEL, PARAM_INDEX, MIXER_TAU_SEC } from './route-model.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const QUITO_TZ = 'America/Guayaquil';
@@ -28,8 +28,17 @@ const DEFAULT_SPEED = SPEED_PRESETS.find((p) => p.id === 'observed-jun24')?.mPer
 const SPEED_MIN = 8;
 const SPEED_MAX = 22;
 
-// Fin real medido: 71.6 m hasta fin de prensa + 13.55 m post-prensa.
-const PROCESS_END_M = PROCESS_TOTAL_M;
+// Sensores de calidad 1/2/3: distancia desde el registro (m=0, arranque del
+// colchón). Se leen del route-model (única fuente de verdad) para que la
+// simulación visual y las ecuaciones usen exactamente los mismos metros.
+const SENSOR_DEFS = [
+  { key: 'sensor1', m: PARAM_INDEX['sensor1.distance'].value, label: `Sensor de calidad 1 (${PARAM_INDEX['sensor1.distance'].value} m)` },
+  { key: 'sensor2', m: PARAM_INDEX['sensor2.distance'].value, label: `Sensor de calidad 2 (${PARAM_INDEX['sensor2.distance'].value} m)` },
+  { key: 'sensor3', m: PARAM_INDEX['sensor3.distance'].value, label: `Sensor de calidad 3 (${PARAM_INDEX['sensor3.distance'].value} m) · fin de proceso` },
+];
+// Fin del recorrido simulado: el ÚLTIMO sensor (85.55 m), no el primero —
+// así ningún cambio "desaparece" antes de cruzar los sensores 2 y 3.
+const PROCESS_END_M = Math.max(PROCESS_TOTAL_M, ...SENSOR_DEFS.map((s) => s.m));
 
 // Waypoints con nombre (m absolutos) para registrar en qué equipo y a qué hora
 // real pasó cada cambio. Los equipos "esparcidores" con material que cae (SL1/
@@ -54,8 +63,10 @@ const NAMED_WAYPOINTS = [
   { m: 79.65, label: 'Cuchillos de refila · fin' },
   { m: 80.35, label: 'Sierra transversal · inicio' },
   { m: 82.65, label: 'Sierra transversal · fin' },
-  { m: PROCESS_END_M, label: 'Sensores de calidad · fin de proceso' },
+  ...SENSOR_DEFS.map((s) => ({ m: s.m, label: s.label })),
 ].sort((a, b) => a.m - b.m);
+
+const FINISH_LABEL = SENSOR_DEFS[SENSOR_DEFS.length - 1].label;
 
 function nextWaypoint(posM) {
   return NAMED_WAYPOINTS.find((wp) => wp.m > posM + 1e-6) ?? null;
@@ -243,10 +254,13 @@ function edgeDt(from, to, d) {
     'silo3>bunker': d.reduction,
     'bunker>secadero1': d.bunker, 'secadero1>cribaF': d.secado, 'secadero2>cribaG': d.secado,
     'cribaF>zaranda2': d.clasifBase, 'cribaG>zaranda2': d.clasifBase,
+    // La retención de la encoladora (τ=40 s) vive en la arista de SALIDA del
+    // nodo encolador: así un cambio inyectado EN la encoladora también cumple
+    // sus 40 s dentro de la máquina (el total silo→gate no cambia).
     'zaranda2>silo5': d.toS5, 'silo5>activeSilo5': 1, 'activeSilo5>activeDosingCL': d.clSilo,
-    'activeDosingCL>activeEncCI': d.clDosing + d.clEnc, 'activeEncCI>clGate': d.clIncl,
+    'activeDosingCL>activeEncCI': d.clDosing, 'activeEncCI>clGate': d.clEnc + d.clIncl,
     'zaranda2>ws1': d.toS6, 'ws2>silo6': 1, 'silo6>activeSilo6': 1, 'activeSilo6>activeDosingSL': d.slSilo,
-    'activeDosingSL>activeEncCE': d.slDosing + d.slEnc, 'activeEncCE>sl1Gate': d.slIncl, 'activeEncCE>sl2Gate': d.slIncl,
+    'activeDosingSL>activeEncCE': d.slDosing, 'activeEncCE>sl1Gate': d.slEnc + d.slIncl, 'activeEncCE>sl2Gate': d.slEnc + d.slIncl,
     'w3>r1': d.overToSL, 'w3>r2': d.overToSL,
   };
   return Math.max(1, T[`${from}>${to}`] ?? 2);
@@ -495,11 +509,15 @@ function initSimulation() {
   let timeScale = clamp(Number(document.getElementById('timeScaleInput')?.value) || 1, 1, 100000);
   let modelParams = loadPart1Params();
   let scrubbing = false;
+  let paused = false;      // pausa/reanuda la simulación (no borra nada; el reloj real sigue)
   let changeSeq = 0;
   let selectedId = null;   // cambio que controla el movedor manual (el último inyectado)
   const changes = [];      // cambios activos: { id, seq, color, posM, el, arrivals[], passed:Set }
   const preChanges = [];    // cambios upstream Parte 1: se convierten a cambios downstream al llegar a P2
   const reports = [];      // cambios completados (más reciente primero), máx. 8
+  // Grupo por cambio (seq): capas esperadas, caídas observadas, registro y
+  // PREDICCIONES congeladas al inyectar (registro + sensores 1/2/3).
+  const groups = new Map(); // seq → { seq, origin, wallStart, expected:Set, landed:Map, registeredAt, predictions, tracersLeft }
 
   const speedRange = document.getElementById('speedRange');
   const speedInput = document.getElementById('speedInput');
@@ -535,11 +553,115 @@ function initSimulation() {
   // (editable en panel / CSV). Con esto el cambio BAJA por dentro del esparcidor
   // durante ese tiempo antes de caer al colchón. Fuera de un esparcidor → dropM null.
   const SPREADER_TAU_KEY = { '6.63': 'p1:tEsp1', '15': 'p1:tEsp2', '22.25': 'p1:tEsp3' };
+  const SPREADER_LAYER = { '6.63': 'SL1', '15': 'CL', '22.25': 'SL2' };
   function spreaderDropFor(m) {
     const s = [6.63, 15.0, 22.25].find((v) => Math.abs(v - m) < 0.15);
-    if (s == null) return { dropM: null, dropDur: 0 };
+    if (s == null) return { dropM: null, dropDur: 0, layerName: null };
     const tau = Math.max(0, Number(modelParams?.[SPREADER_TAU_KEY[String(s)]])) || SPREADER_FALLBACK_TAU;
-    return { dropM: s, dropDur: tau };
+    return { dropM: s, dropDur: tau, layerName: SPREADER_LAYER[String(s)] };
+  }
+
+  /* ── Predicciones por cambio (congeladas al inyectar) ──────────────
+     Usa la MISMA línea de tiempo que la simulación (edgeDt/miles + τ de
+     esparcidora + transporte a v_prensa), en SEGUNDOS DE PROCESO desde la
+     inyección, para que lo predicho sea comparable con lo observado.
+     La calidad de los parámetros (estimado / sin calibrar) se toma del
+     route-model, que es quien conoce la fuente de cada dato. */
+  const LAYER_DEPOSIT_M = { SL1: 6.63, CL: 15.0, SL2: 22.25 };
+  const LAYER_TAU_KEY = { SL1: 'p1:tEsp1', CL: 'p1:tEsp2', SL2: 'p1:tEsp3' };
+
+  function tauEsp(layer) {
+    return Math.max(0, Number(modelParams?.[LAYER_TAU_KEY[layer]])) || SPREADER_FALLBACK_TAU;
+  }
+
+  /* Calidad de parámetros según el route-model (fuente + flags). */
+  function modelQuality() {
+    try {
+      const r = computeRoute(bridgeP1ToModel(modelParams), { lineSpeed: vPrensa });
+      const tag = (q) => {
+        const f = formatSec(q);
+        return f.flags?.length ? f.flags.map((x) => STATUS_LABEL[x]).join(' · ') : 'OK';
+      };
+      return {
+        registro: tag(r.registration),
+        sensor1: tag(r.sensors.sensor1),
+        sensor2: tag(r.sensors.sensor2),
+        sensor3: tag(r.sensors.sensor3),
+        source: 'HMI CSV + mediciones jul-2026 (route-model)',
+      };
+    } catch {
+      return { registro: '—', sensor1: '—', sensor2: '—', sensor3: '—', source: 'modelo no disponible' };
+    }
+  }
+
+  /**
+   * layersIn: [{ layer:'SL1'|'CL'|'SL2', tGate:segundos hasta entrar a su
+   * esparcidora }]. Devuelve llegadas por capa, registro (máx) y sensores.
+   * Para inyecciones aguas abajo del registro (sin capas), sólo sensores.
+   */
+  function buildPrediction(layersIn, directM = null) {
+    const v = vPrensa; // m/min al momento de inyectar (congelada en la predicción)
+    const layers = {};
+    let tReg = null;
+    for (const L of layersIn) {
+      const landing = L.tGate + tauEsp(L.layer);
+      layers[L.layer] = landing;
+      if (tReg == null || landing > tReg) tReg = landing;
+    }
+    const sensors = {};
+    for (const s of SENSOR_DEFS) {
+      let worst = null;
+      if (layersIn.length) {
+        for (const L of layersIn) {
+          const t = layers[L.layer] + ((s.m - LAYER_DEPOSIT_M[L.layer]) / v) * 60;
+          if (worst == null || t > worst) worst = t;
+        }
+      } else if (directM != null && directM <= s.m + 1e-6) {
+        worst = ((s.m - directM) / v) * 60;
+      }
+      sensors[s.key] = worst; // null → el cambio nació después de este sensor
+    }
+    return {
+      layers, tReg, sensors,
+      completeBoard: layersIn.length >= 3,
+      vAtInjection: v,
+      quality: modelQuality(),
+    };
+  }
+
+  function createGroup(seq, origin, expectedLayers, predictions) {
+    const g = {
+      seq, origin, wallStart: new Date(),
+      expected: new Set(expectedLayers),
+      landed: new Map(),          // layer → Date de caída al colchón (observado)
+      registeredAt: null,         // Date · max(SL1, CL, SL2) observado
+      predictions,
+      tracersLeft: 0,             // trazadores vivos (pre + downstream) del seq
+      state: 'EN CURSO',
+    };
+    groups.set(seq, g);
+    return g;
+  }
+
+  /* Caída observada de una capa al colchón. El registro del colchón COMPLETO
+     sólo se marca cuando cae la ÚLTIMA capa esperada = max(SL1, CL, SL2). */
+  function recordLanding(ch) {
+    if (ch.landed || !ch.layerName) return false;
+    ch.landed = true;
+    const now = new Date();
+    ch.arrivals.push({ label: `${ch.layerName} · caída al colchón (fin τ esparcidora)`, m: ch.dropM, wallTime: now });
+    const g = groups.get(ch.seq);
+    if (!g) return true;
+    if (!g.landed.has(ch.layerName)) g.landed.set(ch.layerName, now);
+    if (!g.registeredAt && g.expected.size > 0 && [...g.expected].every((L) => g.landed.has(L))) {
+      g.registeredAt = now;
+      const which = [...g.expected].join(' + ');
+      const label = g.expected.size >= 3
+        ? `Registro de colchón COMPLETO (${which}) · máx capas`
+        : `Registro parcial (${which})`;
+      ch.arrivals.push({ label, m: ch.dropM, wallTime: now });
+    }
+    return true;
   }
 
   // Trazador SVG propio por cambio, coloreado, con su número de secuencia.
@@ -590,7 +712,17 @@ function initSimulation() {
   // El reporte de cada cambio existe desde que NACE (se ve "en curso" con solo
   // su primera fila) y se va llenando en vivo con cada equipo que va cruzando;
   // al completarse pasa a "completado" y queda fijo en la lista.
+  const fmtT = (s) => (s == null || !Number.isFinite(s) ? '—' : `T+${fmtCountdown(s)}`);
+
+  /* Fila predicha: valor T+ (segundos de proceso desde la inyección) + etiqueta
+     de calidad del parámetro según el route-model (OK · estimado · sin calibrar). */
+  function predRow(label, seconds, quality) {
+    const q = quality && quality !== 'OK' ? ` <em class="report-card__q">${quality}</em>` : '';
+    return `<li class="report-card__pred"><span>${label}${q}</span><strong>${fmtT(seconds)}</strong></li>`;
+  }
+
   function renderCard(item, isActive) {
+    const g = item.group ?? groups.get(item.seq) ?? null;
     const card = document.createElement('div');
     card.className = isActive ? 'report-card report-card--active' : 'report-card';
     card.style.borderLeftColor = item.color;
@@ -600,14 +732,36 @@ function initSimulation() {
           <span data-countdown-label-for="${item.id}">Próximo: ${nextWp?.label ?? '—'}</span>
           <strong data-countdown-for="${item.id}">--:--</strong>
         </li>` : '';
+    const state = isActive ? (paused ? 'EN PAUSA' : 'EN CURSO') : 'COMPLETADO';
+    const layerBadge = item.layerName ? `<span class="report-card__layer">${item.layerName}</span>`
+      : (item.branchLabel ? `<span class="report-card__layer">${item.branchLabel}</span>` : '');
+    const p = g?.predictions;
+    const predBlock = p ? `
+        <li class="report-card__sub">Predicho · modelo (${p.vAtInjection} m/min · ${p.quality.source})</li>
+        ${p.layers.SL1 != null ? predRow('SL1 · llegada al colchón', p.layers.SL1, p.quality.registro) : ''}
+        ${p.layers.CL != null ? predRow('CL · llegada al colchón', p.layers.CL, p.quality.registro) : ''}
+        ${p.layers.SL2 != null ? predRow('SL2 · llegada al colchón', p.layers.SL2, p.quality.registro) : ''}
+        ${p.tReg != null ? predRow(`Registro ${p.completeBoard ? 'COMPLETO (máx SL1·CL·SL2)' : 'parcial'}`, p.tReg, p.quality.registro) : ''}
+        ${predRow('Sensor 1', p.sensors.sensor1, p.quality.sensor1)}
+        ${predRow('Sensor 2', p.sensors.sensor2, p.quality.sensor2)}
+        ${predRow('Sensor 3', p.sensors.sensor3, p.quality.sensor3)}` : '';
     card.innerHTML = `
       <div class="report-card__hd">
         <i style="background:${item.color}"></i>
         <strong>Cambio ${item.seq}</strong>
-        <span class="report-card__status">${isActive ? 'EN CURSO' : 'COMPLETADO'}</span>
+        ${layerBadge}
+        <span class="report-card__status">${state}</span>
+      </div>
+      <div class="report-card__meta">
+        <span>${item.id}</span>
+        <span>Origen: ${g?.origin ?? item.arrivals[0]?.label ?? '—'}</span>
+        <span>Inicio: ${g ? fmtWallTime(g.wallStart) : (item.arrivals[0] ? fmtWallTime(item.arrivals[0].wallTime) : '—')}</span>
+        ${g?.registeredAt ? `<span>Registro observado: ${fmtWallTime(g.registeredAt)}</span>` : ''}
       </div>
       <ul class="report-card__list">
         ${countdownRow}
+        ${predBlock}
+        <li class="report-card__sub">Observado · simulación (hora Quito)</li>
         ${item.arrivals.map((a) => `<li><span>${a.label}</span><strong>${fmtWallTime(a.wallTime)}</strong></li>`).join('')}
       </ul>
     `;
@@ -620,23 +774,31 @@ function initSimulation() {
       const strong = reportsList.querySelector(`[data-countdown-for="${ch.id}"]`);
       const labelEl = reportsList.querySelector(`[data-countdown-label-for="${ch.id}"]`);
       if (!strong) continue;
+      const inDrop = ch.dropM != null && ch.dropDur > 0 && ch.dropAge < ch.dropDur;
+      const here = inDrop
+        ? `Esparcidor ${ch.layerName ?? ''} (descenso τ)`
+        : ([...NAMED_WAYPOINTS].reverse().find((wp) => wp.m <= ch.posM + 1e-6)?.label ?? 'Inicio del colchón');
       const wp = nextWaypoint(ch.posM);
-      if (!wp) {
-        if (labelEl) labelEl.textContent = 'Próximo';
+      if (!wp && !inDrop) {
+        if (labelEl) labelEl.textContent = `En: ${here}`;
         strong.textContent = '—';
         continue;
       }
-      if (labelEl) labelEl.textContent = `Próximo: ${wp.label}`;
-      const distM = Math.max(0, wp.m - ch.posM);
-      strong.textContent = fmtCountdown((distM / vPrensa) * 60 / Math.min(timeScale, 300));
+      if (labelEl) labelEl.textContent = `En: ${here} · Próximo: ${inDrop ? 'caída al colchón' : wp.label}`;
+      if (paused) { strong.textContent = 'PAUSA'; continue; }
+      const remaining = inDrop
+        ? (ch.dropDur - ch.dropAge)
+        : ((Math.max(0, wp.m - ch.posM) / vPrensa) * 60);
+      strong.textContent = fmtCountdown(remaining / Math.min(timeScale, 300));
     }
     for (const ch of preChanges) {
       const strong = reportsList.querySelector(`[data-countdown-for="${ch.id}"]`);
       const labelEl = reportsList.querySelector(`[data-countdown-label-for="${ch.id}"]`);
       if (!strong) continue;
+      const here = [...ch.miles].reverse().find((m) => m.t <= ch.elapsed + 1e-6)?.label ?? ch.miles[0]?.label ?? '—';
       const next = ch.miles.find((m) => m.t > ch.elapsed + 1e-6);
-      if (labelEl) labelEl.textContent = `Próximo: ${next?.label ?? 'entrada a Parte 2'}`;
-      strong.textContent = fmtCountdown(Math.max(0, (next?.t ?? ch.total) - ch.elapsed) / timeScale);
+      if (labelEl) labelEl.textContent = `En: ${here} · Próximo: ${next?.label ?? 'entrada a Parte 2'}`;
+      strong.textContent = paused ? 'PAUSA' : fmtCountdown(Math.max(0, (next?.t ?? ch.total) - ch.elapsed) / timeScale);
     }
   }
 
@@ -678,13 +840,18 @@ function initSimulation() {
   }
 
   function finishChange(ch) {
-    if (!ch.passed.has('Sensores de calidad · fin de proceso')) {
-      ch.arrivals.push({ label: 'Sensores de calidad · fin de proceso', m: PROCESS_END_M, wallTime: new Date() });
+    if (!ch.passed.has(FINISH_LABEL)) {
+      ch.arrivals.push({ label: FINISH_LABEL, m: PROCESS_END_M, wallTime: new Date() });
     }
     ch.el?.remove();
     const idx = changes.indexOf(ch);
     if (idx >= 0) changes.splice(idx, 1);
-    reports.unshift({ id: ch.id, seq: ch.seq, color: ch.color, arrivals: ch.arrivals });
+    const g = groups.get(ch.seq);
+    if (g) {
+      g.tracersLeft = Math.max(0, g.tracersLeft - 1);
+      if (g.tracersLeft === 0) g.state = 'COMPLETADO';
+    }
+    reports.unshift({ id: ch.id, seq: ch.seq, color: ch.color, layerName: ch.layerName, arrivals: ch.arrivals, group: g ?? null });
     if (reports.length > 8) reports.length = 8;
     if (selectedId === ch.id) selectedId = changes.length ? changes[changes.length - 1].id : null;
     renderReportsList();
@@ -707,6 +874,11 @@ function initSimulation() {
       arrivals: [{ label: startLabel, m: startM, wallTime: new Date() }],
       passed: new Set([startLabel]),
     };
+    // Grupo + predicciones: si nace en una esparcidora es un cambio de ESA capa
+    // (tGate = 0, ya está entrando); si nace más abajo, sólo aplica transporte.
+    const layersIn = ch.layerName ? [{ layer: ch.layerName, tGate: 0 }] : [];
+    const g = createGroup(ch.seq, startLabel, layersIn.map((L) => L.layer), buildPrediction(layersIn, ch.layerName ? null : startM));
+    g.tracersLeft = 1;
     ch.el = createTracerEl(ch);
     updateTracerEl(ch);
     changes.push(ch);
@@ -725,7 +897,9 @@ function initSimulation() {
     const alreadyHasLaunch = inherited.some((a) => a.label === label);
     // Al terminar la banda inclinada el cambio ENTRA por el tope del esparcidor y
     // baja por dentro durante su τ de residencia (SL1 6.63 · CL 15 · SL2 22.25).
-    const { dropM, dropDur } = spreaderDropFor(m);
+    const { dropM, dropDur, layerName } = spreaderDropFor(m);
+    const g = groups.get(parent.seq);
+    if (g) g.tracersLeft += 1;
     const ch = {
       id: `${parent.id}-p2-${Math.round(m * 100)}`,
       seq: parent.seq,
@@ -733,6 +907,7 @@ function initSimulation() {
       posM: clamp(m, 0, PROCESS_END_M),
       dropM,
       dropDur,
+      layerName,
       dropAge: 0,
       arrivals: alreadyHasLaunch ? inherited : [...inherited, { label, m, wallTime: new Date() }],
       passed: new Set([label, ...inherited.map((a) => a.label)]),
@@ -754,6 +929,16 @@ function initSimulation() {
     const seq = changeSeq;
     const color = CHANGE_COLORS[(seq - 1) % CHANGE_COLORS.length];
 
+    // Predicciones del grupo: tiempo upstream por rama (misma línea de tiempo
+    // que la simulación) + τ esparcidora + transporte a v_prensa.
+    const layersIn = [];
+    for (const branch of cfg.branches) {
+      const total = preMilestonesFor(cfg.startAt, branch, modelParams).slice(-1)[0].t;
+      if (branch === 'cl') layersIn.push({ layer: 'CL', tGate: total });
+      if (branch === 'sl') layersIn.push({ layer: 'SL1', tGate: total }, { layer: 'SL2', tGate: total });
+    }
+    const g = createGroup(seq, label, layersIn.map((L) => L.layer), buildPrediction(layersIn));
+
     for (const branch of cfg.branches) {
       const branchLabel = BRANCH_LABEL[branch];
       const miles = preMilestonesFor(cfg.startAt, branch, modelParams);
@@ -774,6 +959,7 @@ function initSimulation() {
       ch.el = createPreTracerEl(ch);
       updatePreTracerEl(ch);
       preChanges.push(ch);
+      g.tracersLeft += 1;
     }
     selectedId = null;
     syncMoverEnabled();
@@ -787,14 +973,17 @@ function initSimulation() {
   let rafId = 0;
   let cdAccum = 0;   // acumulador para throttlear los countdowns a ~3 Hz
   function ensureRunning() {
-    if (running) return;
+    if (running || paused) return;
     running = true;
     last = performance.now();
     cdAccum = 999;
     rafId = requestAnimationFrame(frame);
   }
   function frame(now) {
-    const dt = Math.min(0.25, (now - last) / 1000);
+    // Tiempo REAL transcurrido (sin recorte): si el navegador retrasa un frame
+    // (pestaña oculta, GC, etc.) la simulación avanza lo que de verdad pasó —
+    // no deriva por intervalos de JavaScript demorados.
+    const dt = Math.max(0, (now - last) / 1000);
     last = now;
     const advanceM = (vPrensa / 60) * dt * Math.min(timeScale, 300);
     let crossed = false;
@@ -815,6 +1004,8 @@ function initSimulation() {
         ch.el?.remove();
         const idx = preChanges.indexOf(ch);
         if (idx >= 0) preChanges.splice(idx, 1);
+        const grp = groups.get(ch.seq);
+        if (grp) grp.tracersLeft = Math.max(0, grp.tracersLeft - 1);
         if (lastM.launchM != null) {
           if (ch.branch === 'sl') {
             // La ruta fina se SEPARA en la formación: capa inferior (SL1) y superior (SL2)
@@ -825,7 +1016,8 @@ function initSimulation() {
           }
         } else {
           // ruta de polvo/biomasa: no entra a P2, se registra como completada en el quemador
-          reports.unshift({ id: ch.id, seq: ch.seq, color: ch.color, arrivals: ch.arrivals });
+          if (grp && grp.tracersLeft === 0) grp.state = 'COMPLETADO';
+          reports.unshift({ id: ch.id, seq: ch.seq, color: ch.color, arrivals: ch.arrivals, group: grp ?? null });
           if (reports.length > 8) reports.length = 8;
         }
         crossed = true;
@@ -838,8 +1030,12 @@ function initSimulation() {
       if (ch.dropM != null && ch.dropDur > 0 && ch.dropAge < ch.dropDur) {
         ch.dropAge += dt * Math.min(timeScale, 300);
         updateTracerEl(ch);
+        // Fin del descenso = la capa CAE al colchón (llegada observada). El
+        // registro completo se marca cuando cae la ÚLTIMA capa del grupo.
+        if (ch.dropAge >= ch.dropDur && recordLanding(ch)) crossed = true;
         continue;
       }
+      if (!ch.landed && ch.layerName && recordLanding(ch)) crossed = true; // τ=0 o aterrizado por mover manual
       if (scrubbing && ch.id === selectedId) continue; // el movedor controla este directamente
       const prevM = ch.posM;
       ch.posM = Math.min(ch.posM + advanceM, PROCESS_END_M);
@@ -883,6 +1079,29 @@ function initSimulation() {
   });
   syncSpeedUI();
 
+  // Pausa/Reanudar: congela el avance de TODOS los cambios (pre y downstream)
+  // sin perder nada; al reanudar el reloj parte de "ahora" (no hay salto).
+  const pauseBtn = document.getElementById('pauseBtn');
+  function setPaused(p) {
+    paused = p;
+    if (pauseBtn) {
+      pauseBtn.classList.toggle('is-paused', paused);
+      pauseBtn.innerHTML = paused
+        ? '<span class="ms">play_arrow</span> Reanudar'
+        : '<span class="ms">pause</span> Pausa';
+      pauseBtn.title = paused ? 'Reanudar la simulación' : 'Pausar la simulación (los cambios se congelan)';
+    }
+    if (paused) {
+      if (rafId) cancelAnimationFrame(rafId);
+      running = false;
+    } else {
+      ensureRunning();
+    }
+    renderReportsList();       // refresca los chips EN CURSO ↔ EN PAUSA
+    updateReportCountdowns();
+  }
+  pauseBtn?.addEventListener('click', () => setPaused(!paused));
+
   // Movedor manual: adelanta/retrocede el cambio SELECCIONADO (el último inyectado).
   const endScrub = () => { scrubbing = false; last = performance.now(); };
   moverRange?.addEventListener('pointerdown', () => { scrubbing = true; });
@@ -890,7 +1109,10 @@ function initSimulation() {
     scrubbing = true;
     const sel = changes.find((c) => c.id === selectedId);
     if (!sel) return;
-    if (sel.dropM != null) sel.dropAge = sel.dropDur;   // mover manual → aterriza el descenso
+    if (sel.dropM != null && sel.dropAge < sel.dropDur) {
+      sel.dropAge = sel.dropDur;   // mover manual → aterriza el descenso
+      recordLanding(sel);          // la caída observada queda registrada igual
+    }
     const prevM = sel.posM;
     sel.posM = clamp(parseFloat(moverRange.value) || 0, 0, PROCESS_END_M);
     const crossed = recordCrossings(sel, prevM);
@@ -983,8 +1205,10 @@ function initSimulation() {
     changes.length = 0;
     preChanges.length = 0;
     reports.length = 0;
+    groups.clear();
     changeSeq = 0;
     selectedId = null;
+    if (paused) setPaused(false);
     if (rafId) cancelAnimationFrame(rafId);
     running = false;   // el bucle se reanuda solo al inyectar el próximo cambio
     syncMoverEnabled();
@@ -1071,9 +1295,12 @@ function selfTest() {
     const slOk = STAGE_CONFIG['active-encCE'].startAt === 'activeEncCE';
     const espTau = { esp1: Number(p['p1:tEsp1']), esp2: Number(p['p1:tEsp2']), esp3: Number(p['p1:tEsp3']) };
     const espOk = Object.values(espTau).every((v) => Number.isFinite(v) && v > 0);
-    const ok = finite && clOk && slOk && espOk;
-    const msg = `[combined] selfTest: duraciones ${finite ? 'OK' : 'FALLO'} · inyección encolador ${clOk && slOk ? 'OK (nace en la máquina)' : 'FALLO'} · τ esparcidoras ${espOk ? 'OK' : 'FALLO'}`;
-    (ok ? console.info : console.error)(msg, { ...d, ...espTau });
+    const mixOk = MIXER_TAU_SEC === 40 && Number(p['p1:tEncCE']) === 40 && Number(p['p1:tEncCI']) === 40;
+    const sensorWps = NAMED_WAYPOINTS.filter((w) => w.label.startsWith('Sensor de calidad'));
+    const senOk = sensorWps.length === 3 && sensorWps.every((w, i, a) => i === 0 || w.m > a[i - 1].m);
+    const ok = finite && clOk && slOk && espOk && mixOk && senOk;
+    const msg = `[combined] selfTest: duraciones ${finite ? 'OK' : 'FALLO'} · inyección encolador ${clOk && slOk ? 'OK (nace en la máquina)' : 'FALLO'} · τ esparcidoras ${espOk ? 'OK' : 'FALLO'} · encoladoras 40 s ${mixOk ? 'OK' : 'FALLO'} · sensores 1/2/3 ${senOk ? 'OK' : 'FALLO'}`;
+    (ok ? console.info : console.error)(msg, { ...d, ...espTau, sensores: sensorWps.map((w) => w.m) });
   } catch (e) { console.error('[combined] selfTest error', e); }
 }
 
