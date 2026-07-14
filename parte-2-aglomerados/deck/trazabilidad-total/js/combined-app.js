@@ -16,7 +16,7 @@
 
 import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
 import { buildAnnotations, PROCESS_TOTAL_M } from './line-bridge.js';
-import { initParams, loadPart1Params } from './combined-params.js';
+import { initParams, loadParams, loadPart1Params } from './combined-params.js';
 import { initHmiCsv } from './hmi-csv.js';
 import { computeRoute, formatSec, STATUS_LABEL, PARAM_INDEX, MIXER_TAU_SEC } from './route-model.js';
 
@@ -45,24 +45,29 @@ const PROCESS_END_M = Math.max(PROCESS_TOTAL_M, ...SENSOR_DEFS.map((s) => s.m));
 // CL/SL2) inyectan a los 3/4 de su zona (el material no cae al inicio del
 // cabezal sino más hacia el final de su recorrido). Pre-prensa/Vapor usan el
 // INICIO real de su zona. El resto son eventos puntuales (ya son su "inicio").
+// Posiciones post-prensa y pre-prensa CORREGIDAS con la prueba de papel
+// (cambio CL, 14-jul-2026, v≈15.6 m/min). Ancladas al tramo de prensa (55→71.6 m,
+// que salió exacto: 16.6 m ↔ 63 s). Marcadas como derivadas · POR CONFIRMAR con
+// flexómetro. La pre-prensa se movió a su lugar físico (después del cortador de
+// filos, justo antes de la prensa), no a 29 m como estaba.
 const NAMED_WAYPOINTS = [
   { m: 0.7, label: 'Desmoldante #1' },
   { m: 6.63, label: 'SL1 · capa inferior' },
   { m: 15.0, label: 'CL · core' },
   { m: 22.25, label: 'SL2 · capa superior' },
   { m: 26.68, label: 'Imán / tambor azul' },
-  { m: 29.06, label: 'Pre-prensa' },
   { m: 35.99, label: 'Desmoldante #2' },
   { m: 37.69, label: 'Detector de metales' },
   { m: 39.56, label: 'Cortadores de filo' },
   { m: 44.9, label: 'Nariz · rechazo' },
   { m: 46.86, label: 'Vapor EVOsteam' },
+  { m: 47.0, label: 'Pre-prensa' },              // corregido: va antes de la prensa (prueba papel)
   { m: 55.0, label: 'Prensa continua' },
   { m: 71.6, label: 'Fin prensa' },
-  { m: 78.3, label: 'Cuchillos de refila · inicio' },
-  { m: 79.65, label: 'Cuchillos de refila · fin' },
-  { m: 80.35, label: 'Sierra transversal · inicio' },
-  { m: 82.65, label: 'Sierra transversal · fin' },
+  { m: 81.7, label: 'Cuchillos de refila · inicio' },   // 78.3 → 81.7 (prueba papel, por confirmar)
+  { m: 83.0, label: 'Cuchillos de refila · fin' },       // 79.65 → 83.0
+  { m: 84.1, label: 'Sierra transversal · inicio' },     // 80.35 → 84.1
+  { m: 86.4, label: 'Sierra transversal · fin' },        // 82.65 → 86.4
   ...SENSOR_DEFS.map((s) => ({ m: s.m, label: s.label })),
 ].sort((a, b) => a.m - b.m);
 
@@ -1330,7 +1335,9 @@ function initSimulation() {
    de línea). No afecta la UI. */
 function selfTest() {
   try {
-    const p = loadPart1Params();
+    // Merge de ambos sets: las masas/flujos de esparcidoras (mass:esp*-zone,
+    // _global:F_SL/F_CL) viven en loadParams(); los buffers P1 en loadPart1Params().
+    const p = { ...loadParams(), ...loadPart1Params() };
     const d = buildPreDurations(p);
     const finite = Object.values(d).every((v) => Number.isFinite(v) && v >= 0);
     const clOk = STAGE_CONFIG['active-encCI'].startAt === 'activeEncCI';

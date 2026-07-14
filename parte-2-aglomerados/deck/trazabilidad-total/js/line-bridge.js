@@ -21,16 +21,18 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const BAND_OFFSET = { white: 0, red: 45, press: 55 };
 export const DOWNSTREAM_TOTAL_M = 71.6; // 45 + 10 + 16.6
 
-// Tramo medido después de la prensa (2-jul-2026).
+// Tramo post-prensa CORREGIDO con la prueba de papel (14-jul-2026, v≈15.6):
+// el tramo fin-prensa→refila salió ~3.4 m más largo que lo medido al ojo (2-jul).
+// Anclado a la prensa (55→71.6 m, exacto). POR CONFIRMAR con flexómetro.
 export const POST_PRESS_START_M = 71.6;
 export const POST_PRESS_SEGMENTS = [
-  { id: 'gap-press-refila', type: 'transport', startM: 71.60, endM: 78.30, lengthM: 6.70, label: 'Fin prensa → cuchillos de refila' },
-  { id: 'zone-refila', type: 'zone', startM: 78.30, endM: 79.65, lengthM: 1.35, label: 'Cuchillos de refila' },
-  { id: 'gap-refila-sierra', type: 'transport', startM: 79.65, endM: 80.35, lengthM: 0.70, label: 'Refila → sierra transversal' },
-  { id: 'zone-sierra', type: 'zone', startM: 80.35, endM: 82.65, lengthM: 2.30, label: 'Sierra transversal' },
-  { id: 'gap-sierra-sensores', type: 'transport', startM: 82.65, endM: 85.15, lengthM: 2.50, label: 'Sierra transversal → sensores' },
+  { id: 'gap-press-refila', type: 'transport', startM: 71.60, endM: 81.70, lengthM: 10.10, label: 'Fin prensa → cuchillos de refila' },
+  { id: 'zone-refila', type: 'zone', startM: 81.70, endM: 83.00, lengthM: 1.30, label: 'Cuchillos de refila' },
+  { id: 'gap-refila-sierra', type: 'transport', startM: 83.00, endM: 84.10, lengthM: 1.10, label: 'Refila → sierra transversal' },
+  { id: 'zone-sierra', type: 'zone', startM: 84.10, endM: 86.40, lengthM: 2.30, label: 'Sierra transversal' },
+  { id: 'gap-sierra-sensores', type: 'transport', startM: 86.40, endM: 88.00, lengthM: 1.60, label: 'Sierra transversal → sensores' },
 ];
-export const PROCESS_TOTAL_M = 85.15;
+export const PROCESS_TOTAL_M = 88.4;
 
 // Escala lineal única del downstream (misma que el SVG y la regla).
 export const X0 = 80;        // px del metro 0 (formación del colchón)

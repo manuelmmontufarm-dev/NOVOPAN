@@ -179,10 +179,13 @@ export const ROUTE_PARAMS = [
   /* ── Velocidad de línea (máster downstream) ── */
   { key: 'line.speed', label: 'Velocidad de prensa v_prensa', equipment: 'Prensa continua', layer: LAYER.COMMON, value: 14.5, unit: 'm/min', source: 'hmi', min: 0, max: null, editable: true, description: 'Velocidad de la línea después del registro (colchón → sensores). Máster del tramo común. HMI CSV V_PRENSA_M_MIN.' },
 
-  /* ── Sensores de calidad · distancia desde el registro (m=0, arranque banda blanca) ── */
-  { key: 'sensor1.distance', label: 'Sensor 1 · distancia desde registro', equipment: 'Sensores de calidad', layer: LAYER.COMMON, value: 85.15, unit: 'm', source: 'measured', min: 0, max: null, editable: true, description: 'Estación de sensores de calidad medida a 85.15 m del arranque del colchón (flexómetro jul-2026). Referencia de la tabla de mediciones.' },
-  { key: 'sensor2.distance', label: 'Sensor 2 · distancia desde registro', equipment: 'Sensores de calidad', layer: LAYER.COMMON, value: 85.35, unit: 'm', source: 'not-calibrated', min: 0, max: null, editable: true, description: 'Sensor 2, ~0.20 m después del Sensor 1. Separación NOMINAL sin medir → SIN CALIBRAR hasta confirmar en planta.' },
-  { key: 'sensor3.distance', label: 'Sensor 3 · distancia desde registro', equipment: 'Sensores de calidad', layer: LAYER.COMMON, value: 85.55, unit: 'm', source: 'not-calibrated', min: 0, max: null, editable: true, description: 'Sensor 3, ~0.40 m después del Sensor 1 (~0.20 m tras el Sensor 2). Separación NOMINAL sin medir → SIN CALIBRAR.' },
+  /* ── Sensores de calidad · distancia desde el registro (m=0, arranque banda blanca) ──
+     Distancia EFECTIVA derivada de la prueba de papel (cambio CL, 14-jul-2026, v≈15.6):
+     el tablero llega al Sensor 1 a ~88.0 m. El flexómetro previo (85.15 m) fue al ojo, y
+     el tramo fin-prensa→refila salió ~3.4 m más largo en la prueba → POR CONFIRMAR con flexómetro. */
+  { key: 'sensor1.distance', label: 'Sensor 1 · distancia desde registro', equipment: 'Sensores de calidad', layer: LAYER.COMMON, value: 88.0, unit: 'm', source: 'estimated', min: 0, max: null, editable: true, description: 'Distancia efectiva derivada de la prueba de papel (14-jul-2026): el tablero llega al Sensor 1 a ~88.0 m del arranque del colchón. Reemplaza el 85.15 m medido al ojo. POR CONFIRMAR con flexómetro.' },
+  { key: 'sensor2.distance', label: 'Sensor 2 · distancia desde registro', equipment: 'Sensores de calidad', layer: LAYER.COMMON, value: 88.2, unit: 'm', source: 'not-calibrated', min: 0, max: null, editable: true, description: 'Sensor 2, ~0.20 m después del Sensor 1 (nominal). Separación sin medir → SIN CALIBRAR.' },
+  { key: 'sensor3.distance', label: 'Sensor 3 · distancia desde registro', equipment: 'Sensores de calidad', layer: LAYER.COMMON, value: 88.4, unit: 'm', source: 'not-calibrated', min: 0, max: null, editable: true, description: 'Sensor 3, ~0.40 m después del Sensor 1 (~0.20 m tras el Sensor 2, nominal). SIN CALIBRAR.' },
 ];
 
 /** Índice key → definición, para lecturas O(1). */

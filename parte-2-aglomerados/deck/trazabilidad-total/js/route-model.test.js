@@ -35,24 +35,35 @@ function approx(actual, expected, msg, tol = TOL) {
     `${msg || ''} · esperado ${expected}, obtenido ${actual}`);
 }
 
-/* Valores calculados a mano (v_prensa = 14.5 m/min) para cruzar con el modelo. */
+/* Cálculo a mano (v_prensa = 14.5 m/min) para cruzar con el modelo. Se derivan
+   las magnitudes DESDE los parámetros vivos (PARAM_INDEX) aplicando las ecuaciones
+   longhand — así el test valida las ecuaciones y no se desincroniza si cambian los
+   valores del HMI (silos, esparcidoras M/F, distancias de sensores, etc.). */
+const pv = (k) => PARAM_INDEX[k].value;
+const tauSiloH = (p) => pv(`${p}.rho`) * pv(`${p}.capacity`) * (pv(`${p}.level`) / 100) / pv(`${p}.flow`) * 60;
+const tauDosH = (p) => pv(`${p}.mass`) / pv(`${p}.flow`) * 60;
+const tInclH = (p) => pv(`${p}.length`) / pv(`${p}.speed`) * 60;
+const tSprH = (p) => pv(`${p}.mass`) / pv(`${p}.flow`) * 60;
 const HAND = {
-  tauSilo5: 135 * 120 * 0.44 / 302 * 60,      // 1416.1589 s
-  tauSilo6: 188 * 120 * 0.31 / 108 * 60,      // 3885.3333 s
-  tauDosingCL: 25 / 302 * 60,                 // 4.96689 s
-  tauDosingSL: 20 / 108 * 60,                 // 11.11111 s
-  tInclSL: 64.57 / 99.5 * 60,                 // 38.93668 s
-  tInclCL: 68.5 / 96.5 * 60,                  // 42.59067 s
+  tauSilo5: tauSiloH('silo5'),
+  tauSilo6: tauSiloH('silo6'),
+  tauDosingCL: tauDosH('dosingCL'),
+  tauDosingSL: tauDosH('dosingSL'),
+  tInclSL: tInclH('inclSL'),
+  tInclCL: tInclH('inclCL'),
 };
-HAND.fine = HAND.tauSilo6 + HAND.tauDosingSL + 40 + HAND.tInclSL;     // 3975.3811
-HAND.coarse = HAND.tauSilo5 + HAND.tauDosingCL + 40 + HAND.tInclCL;   // 1503.7165
-HAND.tSL1 = HAND.fine + 40;                                           // 4015.3811
-HAND.tCL = HAND.coarse + 40;                                          // 1543.7165
-HAND.tSL2 = HAND.fine + 40;                                           // 4015.3811
-HAND.tReg = Math.max(HAND.tSL1, HAND.tCL, HAND.tSL2);                 // 4015.3811
-HAND.sensor1 = HAND.tReg + 85.15 / 14.5 * 60;                         // 4367.7260
-HAND.sensor2 = HAND.tReg + 85.35 / 14.5 * 60;                         // 4368.5535
-HAND.sensor3 = HAND.tReg + 85.55 / 14.5 * 60;                         // 4369.3811
+HAND.fine = HAND.tauSilo6 + HAND.tauDosingSL + pv('mixerCE.tau') + HAND.tInclSL;
+HAND.coarse = HAND.tauSilo5 + HAND.tauDosingCL + pv('mixerCI.tau') + HAND.tInclCL;
+HAND.tSL1 = HAND.fine + tSprH('spreader1');
+HAND.tCL = HAND.coarse + tSprH('spreader2');
+HAND.tSL2 = HAND.fine + tSprH('spreader3');
+HAND.tReg = Math.max(HAND.tSL1, HAND.tCL, HAND.tSL2);
+const D1 = pv('sensor1.distance');
+const D2 = pv('sensor2.distance');
+const D3 = pv('sensor3.distance');
+HAND.sensor1 = HAND.tReg + D1 / 14.5 * 60;
+HAND.sensor2 = HAND.tReg + D2 / 14.5 * 60;
+HAND.sensor3 = HAND.tReg + D3 / 14.5 * 60;
 
 /* ── Encoladoras (mixers) = 40 s ── */
 group('Encoladoras = 40 s');
@@ -132,9 +143,9 @@ test('sensor1 = ESTIMADO (hereda de registro), sensor2/3 = SIN CALIBRAR', () => 
 /* ── Distintas velocidades de línea ── */
 group('Velocidades de línea');
 for (const v of [7, 14.5, 16.85, 23]) {
-  test(`v=${v}: sensor1 = registro + 85.15/v×60`, () => {
+  test(`v=${v}: sensor1 = registro + d/v×60`, () => {
     const r = computeRoute({}, { lineSpeed: v });
-    approx(r.sensors.sensor1.value, HAND.tReg + 85.15 / v * 60, `s1@${v}`);
+    approx(r.sensors.sensor1.value, HAND.tReg + D1 / v * 60, `s1@${v}`);
   });
 }
 test('el registro NO depende de v_prensa', () => {
