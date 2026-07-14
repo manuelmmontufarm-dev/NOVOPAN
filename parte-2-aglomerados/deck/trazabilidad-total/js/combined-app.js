@@ -169,7 +169,7 @@ const STAGE_CONFIG = {
   silo5: { branches: BCL, startAt: 'silo5' },
   'active-silo5': { branches: BCL, startAt: 'activeSilo5' }, 'active-dosCL': { branches: BCL, startAt: 'activeDosingCL' }, 'active-encCI': { branches: BCL, startAt: 'activeEncCI' },
   'active-silo6': { branches: BSL, startAt: 'activeSilo6' }, 'active-dosSL': { branches: BSL, startAt: 'activeDosingSL' }, 'active-encCE': { branches: BSL, startAt: 'activeEncCE' },
-  silo4: { branches: BIO, startAt: 'silo4' }, silo8: { branches: BIO, startAt: 'silo8' },
+  silo4: { branches: BIO, startAt: 'silo4' }, silo8: { branches: BIO, startAt: 'silo8' }, quemador: { branches: BIO, startAt: 'quemador' },
 };
 
 const num = (params, key, fallback = 0) => Number(params?.[key] ?? fallback) || 0;
@@ -902,14 +902,44 @@ function initSimulation() {
   moverRange?.addEventListener('pointercancel', endScrub);
   moverRange?.addEventListener('change', endScrub);
 
-  // Clic en un equipo → crea un cambio NUEVO (color propio) desde el inicio de ese proceso.
+  // Todo equipo de P1/P2 tiene una zona de toque ampliada. El SVG solo recibe
+  // clics sobre píxeles pintados por defecto; el hitbox transparente evita que
+  // etiquetas, huecos o pantallas táctiles dejen nodos aparentemente inactivos.
+  const prepareNodeHitbox = (node) => {
+    if (node.querySelector(':scope > .s2-node-hitbox')) return;
+    try {
+      const box = node.getBBox();
+      if (!Number.isFinite(box.width) || !Number.isFinite(box.height)) return;
+      const pad = 14;
+      const hitbox = document.createElementNS(SVG_NS, 'rect');
+      hitbox.classList.add('s2-node-hitbox');
+      hitbox.setAttribute('x', String(box.x - pad));
+      hitbox.setAttribute('y', String(box.y - pad));
+      hitbox.setAttribute('width', String(box.width + pad * 2));
+      hitbox.setAttribute('height', String(box.height + pad * 2));
+      hitbox.setAttribute('rx', '8');
+      node.insertBefore(hitbox, node.firstChild);
+    } catch { /* el SVG puede no estar visible durante un cambio de vista */ }
+  };
+
+  // Clic o teclado en un equipo → crea un cambio NUEVO desde ese proceso.
   document.querySelectorAll('[data-pre-stage]').forEach((node) => {
-    node.addEventListener('click', (e) => {
+    prepareNodeHitbox(node);
+    node.setAttribute('role', 'button');
+    node.setAttribute('tabindex', '0');
+    node.setAttribute('aria-label', node.dataset.label || node.textContent.trim());
+    const trigger = (e) => {
       e.stopPropagation();
       node.classList.remove('is-injected');
       void node.getBoundingClientRect();
       node.classList.add('is-injected');
       injectPre(node.dataset.preStage, node.dataset.label);
+    };
+    node.addEventListener('click', trigger);
+    node.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      trigger(e);
     });
   });
   document.querySelectorAll('[data-pre-trigger]').forEach((button) => {

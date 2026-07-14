@@ -301,7 +301,16 @@ body {
 .wf-flow--rec { stroke: #FFF3E0; }
 @keyframes wfFlow { to { stroke-dashoffset: -16; } }
 
-.wf-node { cursor: crosshair; }
+.wf-node[data-pre-stage],
+.s2-intake__node[data-pre-stage] {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.s2-node-hitbox {
+  fill: #FFFFFF;
+  fill-opacity: 0;
+  pointer-events: all;
+}
 .wf-node:hover .wf-box,
 .wf-node:hover .wf-machine,
 .wf-node:hover .wf-circle,
