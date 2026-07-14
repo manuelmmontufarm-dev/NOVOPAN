@@ -489,7 +489,9 @@ function initLiveClock() {
 // ── HMI en vivo: motor multi-cambio (varios trazadores de colores a la vez) ──
 function initSimulation() {
   let vPrensa = clamp(DEFAULT_SPEED, SPEED_MIN, SPEED_MAX); // m/min, compartida por todos los cambios
-  let timeScale = clamp(Number(document.getElementById('timeScaleInput')?.value) || 300, 1, 100000);
+  // Arranca a tiempo real para que el cambio se vea nacer en el equipo pulsado.
+  // El operador puede acelerar la demostración manualmente cuando lo necesite.
+  let timeScale = clamp(Number(document.getElementById('timeScaleInput')?.value) || 1, 1, 100000);
   let modelParams = loadPart1Params();
   let scrubbing = false;
   let changeSeq = 0;
