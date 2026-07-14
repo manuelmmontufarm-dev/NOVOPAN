@@ -1,92 +1,148 @@
 /* ============================================================
-   NOVOPAN · Línea 1 · Trazabilidad total — datos del HMI vía CSV
+   NOVOPAN · Trazabilidad total · documento CSV del modelo
    ------------------------------------------------------------
-   El sitio es estático (sin backend). Los datos del HMI llegan como
-   un archivo `datos/hmi.csv` en formato `VARIABLE:VALOR;` que se
-   relee SOLO cada POLL_MS (2 s) con fetch no-cache. En planta, un
-   job de SQL Server / WinCC / script sobrescribe ese archivo; aquí
-   es estático pero la tubería HMI→simulador queda 100% probada y
-   lista para el servidor. Fallback: elegir un CSV local (botón).
+   El CSV es la única autoridad editable de parámetros. La UI nunca
+   modifica el modelo directamente: edita una fila del CSV, vuelve a
+   parsear el documento completo y recién entonces actualiza el motor.
 
-   El parser es tolerante (BOM, CRLF, comillas de Excel, comentarios
-   ///#, decimal '.' o ',', separador de miles, unidades pegadas).
-   Reusa la semántica del reader ya probado de trazabilidad-linea.
+   En producción, WinCC/SQL sigue siendo dueño de datos/hmi.csv. Un
+   navegador estático no puede sobrescribir ese archivo del servidor;
+   por eso las ediciones se mantienen en el documento CSV activo, se
+   pueden descargar y, si el usuario conectó un archivo local mediante
+   File System Access, se escriben de forma debounced a ese archivo.
    ============================================================ */
 
 const POLL_MS = 2000;
+const WRITE_DEBOUNCE_MS = 420;
 
-/* tag del HMI → clave de parámetro del modelo (p1:*) o 'v_prensa'.
-   KIND marca el origen para el badge del panel: 'hmi' = medido en vivo,
-   'est' = plug estimado (pendiente de instrumentar). */
+const entry = (keys, kind, unit) => ({ keys: Array.isArray(keys) ? keys : [keys], kind, unit });
+
+/* Tag CSV → claves del modelo. Algunos tags alimentan tanto el modelo
+   combinado P1 como el motor detallado de Sección 2; una sola edición
+   del CSV mantiene ambos alias sincronizados. */
 export const TAG_MAP = {
-  V_PRENSA_M_MIN:      { key: 'v_prensa',      kind: 'hmi' },
-  PILA1_ASERRIN_M_KG:  { key: 'p1:pila1_M',    kind: 'hmi' },
-  PILA1_ASERRIN_F_KGH: { key: 'p1:pila1_F',    kind: 'hmi' },
-  PILA2_CHIP_M_KG:     { key: 'p1:pila2_M',    kind: 'hmi' },
-  PILA2_CHIP_F_KGH:    { key: 'p1:pila2_F',    kind: 'hmi' },
-  T_HOMBAK_S3_S:       { key: 'p1:tr3',        kind: 'est' },
-  SILO1_RHO_KGM3:      { key: 'p1:s1_rho',     kind: 'hmi' },
-  SILO1_V_M3:          { key: 'p1:s1_V',       kind: 'est' },
-  SILO1_L_PCT:         { key: 'p1:s1_L',       kind: 'hmi' },
-  SILO1_FOUT_KGH:      { key: 'p1:s1_F',       kind: 'hmi' },
-  SILO2A_RHO_KGM3:     { key: 'p1:s2_rho',     kind: 'hmi' },
-  SILO2A_V_M3:         { key: 'p1:s2_V',       kind: 'est' },
-  SILO2A_L_PCT:        { key: 'p1:s2_L',       kind: 'hmi' },
-  SILO2A_FOUT_KGH:     { key: 'p1:s2_F',       kind: 'hmi' },
-  SILO3_RHO_KGM3:      { key: 'p1:s3_rho',     kind: 'hmi' },
-  SILO3_V_M3:          { key: 'p1:s3_V',       kind: 'est' },
-  SILO3_L_PCT:         { key: 'p1:s3_L',       kind: 'hmi' },
-  SILO3_FOUT_KGH:      { key: 'p1:s3_F',       kind: 'hmi' },
-  BUNKER_RHO_KGM3:     { key: 'p1:bk_rho',     kind: 'hmi' },
-  BUNKER_V_M3:         { key: 'p1:bk_V',       kind: 'est' },
-  BUNKER_L_PCT:        { key: 'p1:bk_L',       kind: 'hmi' },
-  BUNKER_FHUM_KGH:     { key: 'p1:bk_F',       kind: 'hmi' },
-  T_TRANSP_SECADERO_S: { key: 'p1:trSec',      kind: 'est' },
-  TAU_TAMBOR_S:        { key: 'p1:tauTambor',  kind: 'est' },
-  T_TAMICES_FG_S:      { key: 'p1:tCriba',     kind: 'est' },
-  T_ZARANDAS_S:        { key: 'p1:tZar',       kind: 'est' },
-  T_COLECT_CL_S:       { key: 'p1:tColectCL',  kind: 'est' },
-  T_COLECT_SL_S:       { key: 'p1:tColectSL',  kind: 'est' },
-  T_WS1_S:             { key: 'p1:tWS1',       kind: 'est' },
-  T_WS2_S:             { key: 'p1:tWS2',       kind: 'est' },
-  T_WS3_S:             { key: 'p1:tWS3',       kind: 'est' },
-  T_REF1_S:            { key: 'p1:tRef1',      kind: 'est' },
-  T_REF2_S:            { key: 'p1:tRef2',      kind: 'est' },
-  T_CICLON_S:          { key: 'p1:tCiclon',    kind: 'est' },
-  T_CLAS_SL_S:         { key: 'p1:tClasSL',    kind: 'est' },
-  T_REINGRESO_SL_S:    { key: 'p1:tReingresoSL', kind: 'est' },
-  SILO5_RHO_KGM3:      { key: 'p1:s5_rho',     kind: 'hmi' },
-  SILO5_V_M3:          { key: 'p1:s5_V',       kind: 'est' },
-  SILO5_L_PCT:         { key: 'p1:s5_L',       kind: 'hmi' },
-  SILO5_FOUT_KGMIN:    { key: 'p1:s5_Fmin',    kind: 'hmi' },
-  SILO6_RHO_KGM3:      { key: 'p1:s6_rho',     kind: 'hmi' },
-  SILO6_V_M3:          { key: 'p1:s6_V',       kind: 'est' },
-  SILO6_L_PCT:         { key: 'p1:s6_L',       kind: 'hmi' },
-  SILO6_FOUT_KGMIN:    { key: 'p1:s6_Fmin',    kind: 'hmi' },
-  DOSING_CL_M_KG:      { key: 'p1:dosG_M',     kind: 'hmi' },
-  DOSING_CL_F_KGMIN:   { key: 'p1:dosG_F',     kind: 'hmi' },
-  DOSING_SL_M_KG:      { key: 'p1:dosF_M',     kind: 'hmi' },
-  DOSING_SL_F_KGMIN:   { key: 'p1:dosF_F',     kind: 'hmi' },
-  T_ENC_CI_S:          { key: 'p1:tEncCI',     kind: 'est' },
-  T_ENC_CE_S:          { key: 'p1:tEncCE',     kind: 'est' },
-  INCL_CL_L_M:         { key: 'p1:inclG_L',    kind: 'hmi' },
-  INCL_CL_V_MMIN:      { key: 'p1:inclG_v',    kind: 'hmi' },
-  INCL_SL_L_M:         { key: 'p1:inclF_L',    kind: 'hmi' },
-  INCL_SL_V_MMIN:      { key: 'p1:inclF_v',    kind: 'hmi' },
-  T_ESP1_S:            { key: 'p1:tEsp1',      kind: 'est' },
-  T_ESP2_S:            { key: 'p1:tEsp2',      kind: 'est' },
-  T_ESP3_S:            { key: 'p1:tEsp3',      kind: 'est' },
+  V_PRENSA_M_MIN:      entry('v_prensa', 'hmi', 'm/min'),
+  PESO_MANTA_KGM2:     entry('_global:peso_manta', 'hmi', 'kg/m²'),
+  F_SL_KGMIN:          entry('_global:F_SL', 'hmi', 'kg/min'),
+  F_CL_KGMIN:          entry('_global:F_CL', 'hmi', 'kg/min'),
+  PCT_SL1:             entry('_global:pctSL1', 'hmi', '%'),
+  PCT_SL2:             entry('_global:pctSL2', 'hmi', '%'),
+
+  PILA1_ASERRIN_M_KG:  entry('p1:pila1_M', 'hmi', 'kg'),
+  PILA1_ASERRIN_F_KGH: entry('p1:pila1_F', 'hmi', 'kg/h'),
+  T_DYNESCREEN_S:      entry('p1:tDS', 'est', 's'),
+  T_TRANSP_ASERRIN_S:  entry('p1:tr1', 'est', 's'),
+  PILA2_CHIP_M_KG:     entry('p1:pila2_M', 'hmi', 'kg'),
+  PILA2_CHIP_F_KGH:    entry('p1:pila2_F', 'hmi', 'kg/h'),
+  T_ESPERA_DESVIADOR_S: entry('p1:esperaDesv', 'est', 's'),
+  T_TRANSP_FLAKES_S:   entry('p1:tr2', 'est', 's'),
+  T_HOMBAK_S3_S:       entry('p1:tr3', 'est', 's'),
+
+  SILO1_RHO_KGM3:      entry('p1:s1_rho', 'hmi', 'kg/m³'),
+  SILO1_V_M3:          entry('p1:s1_V', 'est', 'm³'),
+  SILO1_L_PCT:         entry('p1:s1_L', 'hmi', '%'),
+  SILO1_FOUT_KGH:      entry('p1:s1_F', 'hmi', 'kg/h'),
+  SILO2A_RHO_KGM3:     entry('p1:s2_rho', 'hmi', 'kg/m³'),
+  SILO2A_V_M3:         entry('p1:s2_V', 'est', 'm³'),
+  SILO2A_L_PCT:        entry('p1:s2_L', 'hmi', '%'),
+  SILO2A_FOUT_KGH:     entry('p1:s2_F', 'hmi', 'kg/h'),
+  SILO2B_RHO_KGM3:     entry('p1:s2b_rho', 'hmi', 'kg/m³'),
+  SILO2B_V_M3:         entry('p1:s2b_V', 'est', 'm³'),
+  SILO2B_L_PCT:        entry('p1:s2b_L', 'hmi', '%'),
+  SILO2B_FOUT_KGH:     entry('p1:s2b_F', 'hmi', 'kg/h'),
+  SILO3_RHO_KGM3:      entry('p1:s3_rho', 'hmi', 'kg/m³'),
+  SILO3_V_M3:          entry('p1:s3_V', 'est', 'm³'),
+  SILO3_L_PCT:         entry('p1:s3_L', 'hmi', '%'),
+  SILO3_FOUT_KGH:      entry('p1:s3_F', 'hmi', 'kg/h'),
+
+  BUNKER_RHO_KGM3:     entry('p1:bk_rho', 'hmi', 'kg/m³'),
+  BUNKER_V_M3:         entry('p1:bk_V', 'est', 'm³'),
+  BUNKER_L_PCT:        entry('p1:bk_L', 'hmi', '%'),
+  BUNKER_FHUM_KGH:     entry('p1:bk_F', 'hmi', 'kg/h'),
+  T_TRANSP_SECADERO_S: entry('p1:trSec', 'est', 's'),
+  TAU_TAMBOR_S:        entry('p1:tauTambor', 'est', 's'),
+
+  T_TAMICES_FG_S:      entry('p1:tCriba', 'est', 's'),
+  T_ZARANDAS_S:        entry('p1:tZar', 'est', 's'),
+  T_COLECT_CL_S:       entry('p1:tColectCL', 'est', 's'),
+  T_COLECT_SL_S:       entry('p1:tColectSL', 'est', 's'),
+  T_COLECT_PG_S:       entry('p1:tColectOver', 'est', 's'),
+  T_COLECT_POLVO_S:    entry('p1:tPolvo', 'est', 's'),
+  T_WS1_S:             entry('p1:tWS1', 'est', 's'),
+  T_WS2_S:             entry('p1:tWS2', 'est', 's'),
+  T_WS3_S:             entry('p1:tWS3', 'est', 's'),
+  T_IMAN_FE_S:         entry('p1:tFe', 'est', 's'),
+  T_NEUMATICO_SL_S:    entry('p1:tNeum', 'est', 's'),
+  T_REF1_S:            entry('p1:tRef1', 'est', 's'),
+  T_REF2_S:            entry('p1:tRef2', 'est', 's'),
+  T_CICLON_S:          entry('p1:tCiclon', 'est', 's'),
+  T_CLAS_SL_S:         entry('p1:tClasSL', 'est', 's'),
+  T_REINGRESO_SL_S:    entry('p1:tReingresoSL', 'est', 's'),
+
+  SILO5_RHO_KGM3:      entry('p1:s5_rho', 'hmi', 'kg/m³'),
+  SILO5_V_M3:          entry('p1:s5_V', 'est', 'm³'),
+  SILO5_L_PCT:         entry('p1:s5_L', 'hmi', '%'),
+  SILO5_FOUT_KGMIN:    entry('p1:s5_Fmin', 'hmi', 'kg/min'),
+  SILO6_RHO_KGM3:      entry('p1:s6_rho', 'hmi', 'kg/m³'),
+  SILO6_V_M3:          entry('p1:s6_V', 'est', 'm³'),
+  SILO6_L_PCT:         entry('p1:s6_L', 'hmi', '%'),
+  SILO6_FOUT_KGMIN:    entry('p1:s6_Fmin', 'hmi', 'kg/min'),
+  SILO4_RHO_KGM3:      entry('p1:s4_rho', 'hmi', 'kg/m³'),
+  SILO4_V_M3:          entry('p1:s4_V', 'est', 'm³'),
+  SILO4_L_PCT:         entry('p1:s4_L', 'hmi', '%'),
+  SILO4_FOUT_KGMIN:    entry('p1:s4_Fmin', 'hmi', 'kg/min'),
+  SILO8_RHO_KGM3:      entry('p1:s8_rho', 'hmi', 'kg/m³'),
+  SILO8_V_M3:          entry('p1:s8_V', 'est', 'm³'),
+  SILO8_L_PCT:         entry('p1:s8_L', 'hmi', '%'),
+  SILO8_FOUT_KGMIN:    entry('p1:s8_Fmin', 'hmi', 'kg/min'),
+
+  DOSING_CL_M_KG:      entry(['p1:dosG_M', 'mass:dosing-thick'], 'hmi', 'kg'),
+  DOSING_CL_F_KGMIN:   entry(['p1:dosG_F', 'flow:dosing-thick'], 'hmi', 'kg/min'),
+  DOSING_SL_M_KG:      entry(['p1:dosF_M', 'mass:dosing-fine'], 'hmi', 'kg'),
+  DOSING_SL_F_KGMIN:   entry(['p1:dosF_F', 'flow:dosing-fine'], 'hmi', 'kg/min'),
+  T_ENC_CI_S:          entry(['p1:tEncCI', 'ret:enc-thick'], 'est', 's'),
+  T_ENC_CE_S:          entry(['p1:tEncCE', 'ret:enc-fine'], 'est', 's'),
+  T_SPRAYS_CAIDA_S:    entry('ret:sprays-caida', 'est', 's'),
+  INCL_CL_L_M:         entry(['p1:inclG_L', 'len:incl-thick'], 'measured', 'm'),
+  INCL_CL_V_MMIN:      entry(['p1:inclG_v', 'speed:incl-thick'], 'hmi', 'm/min'),
+  INCL_SL_L_M:         entry(['p1:inclF_L', 'len:incl-fine'], 'measured', 'm'),
+  INCL_SL_V_MMIN:      entry(['p1:inclF_v', 'speed:incl-fine'], 'hmi', 'm/min'),
+
+  M_ESP1_KG:           entry('mass:esp1-zone', 'hmi', 'kg'),
+  M_ESP2_KG:           entry('mass:esp2-zone', 'hmi', 'kg'),
+  M_ESP3_KG:           entry('mass:esp3-zone', 'hmi', 'kg'),
+  L_BANDA_BLANCA_M:    entry('len:white', 'measured', 'm'),
+  L_BANDA_ROJA_M:      entry('len:red', 'measured', 'm'),
+  L_PRENSA_M:          entry('len:press', 'measured', 'm'),
+  L_POSTPRENSA_M:      entry('p1:postPress_L', 'measured', 'm'),
 };
 
-/* key de parámetro → kind (para el badge del panel). */
 export const KIND_BY_KEY = (() => {
   const out = {};
-  for (const tag in TAG_MAP) out[TAG_MAP[tag].key] = TAG_MAP[tag].kind;
+  for (const meta of Object.values(TAG_MAP)) {
+    for (const key of meta.keys) out[key] = meta.kind;
+  }
+  return out;
+})();
+
+export const UNIT_BY_KEY = (() => {
+  const out = {};
+  for (const meta of Object.values(TAG_MAP)) {
+    for (const key of meta.keys) out[key] = meta.unit;
+  }
+  return out;
+})();
+
+export const TAG_BY_KEY = (() => {
+  const out = {};
+  for (const [tag, meta] of Object.entries(TAG_MAP)) {
+    for (const key of meta.keys) out[key] = tag;
+  }
   return out;
 })();
 
 function unquote(s) {
-  const t = s.trim();
+  const t = String(s ?? '').trim();
   return t.length >= 2 && t[0] === '"' && t[t.length - 1] === '"' ? t.slice(1, -1).trim() : t;
 }
 
@@ -106,7 +162,7 @@ function toNumber(valRaw, sep) {
   return { val: parseFloat(m[0]) };
 }
 
-/** Parsea el CSV del HMI. → { updates, vPrensa|null, warnings[], count } */
+/** Parsea el CSV completo. Todos los alias reciben el mismo valor. */
 export function parseHmiCsv(text) {
   const updates = {};
   const warnings = [];
@@ -115,7 +171,7 @@ export function parseHmiCsv(text) {
   const clean = String(text ?? '').replace(/^﻿/, '');
   for (const rawLine of clean.split(/\r?\n/)) {
     let line = rawLine;
-    const h = line.indexOf('#');  if (h !== -1) line = line.slice(0, h);
+    const h = line.indexOf('#'); if (h !== -1) line = line.slice(0, h);
     const c = line.indexOf('//'); if (c !== -1) line = line.slice(0, c);
     line = line.trim();
     if (!line) continue;
@@ -123,7 +179,8 @@ export function parseHmiCsv(text) {
     for (const recRaw of records) {
       const rec = recRaw.trim();
       if (!rec) continue;
-      let sep, sepIdx = rec.indexOf(':');
+      let sep;
+      let sepIdx = rec.indexOf(':');
       if (sepIdx !== -1) sep = ':';
       else if ((sepIdx = rec.indexOf('\t')) !== -1) sep = '\t';
       else if ((sepIdx = rec.indexOf(';')) !== -1) sep = ';';
@@ -131,32 +188,45 @@ export function parseHmiCsv(text) {
       else { warnings.push(`registro sin separador: "${rec}"`); continue; }
       const tag = unquote(rec.slice(0, sepIdx)).toUpperCase();
       if (!tag || tag === 'TAG' || tag === 'TAGNAME' || tag === 'VARIABLE') continue;
-      const entry = TAG_MAP[tag];
-      if (!entry) { warnings.push(`tag desconocido: ${tag}`); continue; }
+      const meta = TAG_MAP[tag];
+      if (!meta) { warnings.push(`tag desconocido: ${tag}`); continue; }
       const num = toNumber(rec.slice(sepIdx + 1), sep);
       if (num.empty) continue;
       if (num.nan) { warnings.push(`valor inválido en ${tag}`); continue; }
       if (num.val < 0) { warnings.push(`valor negativo ignorado en ${tag}`); continue; }
-      if (entry.key === 'v_prensa') vPrensa = num.val;
-      else updates[entry.key] = num.val;
+      for (const key of meta.keys) updates[key] = num.val;
+      if (meta.keys.includes('v_prensa')) vPrensa = num.val;
       count += 1;
     }
   }
   return { updates, vPrensa, warnings, count };
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Cambia exactamente un tag y conserva comentarios/orden del documento. */
+export function updateCsvTag(text, tag, value) {
+  const formatted = Number(value).toString();
+  const re = new RegExp(`(^|[;\\n\\r])([ \\t]*${escapeRegExp(tag)}[ \\t]*:[ \\t]*)([^;\\r\\n]*)(;)`, 'im');
+  if (re.test(text)) return text.replace(re, (_, lead, prefix, _old, semi) => `${lead}${prefix}${formatted}${semi}`);
+  return `${String(text ?? '').replace(/\s*$/, '')}\n${tag}: ${formatted};\n`;
+}
+
 function fmtTime(d) {
   return d.toLocaleTimeString('es-EC', { timeZone: 'America/Guayaquil', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-/* Conecta la lectura del CSV al simulador.
-   applyData({updates, vPrensa, rawText}) la provee combined-app. */
 export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
   let lastText = null;
-  let mode = 'off';         // off | server | live-file | manual-file
+  let currentText = '';
+  let mode = 'off'; // off | server | live-file | manual-file | edited
   let fileHandle = null;
   let lastGood = null;
   let failStreak = 0;
+  let lastCount = 0;
+  let writeTimer = 0;
 
   function setStatus(cls, msg, title) {
     if (!statusEl) return;
@@ -165,41 +235,32 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     statusEl.title = title ?? '';
   }
 
-  let lastCount = 0;
-  let lastSource = 'CSV';
-  function applyText(text, sourceLabel) {
-    if (text === lastText) return false;
-    lastText = text;
+  function applyText(text, sourceLabel, force = false) {
+    if (!force && text === lastText) return false;
     const parsed = parseHmiCsv(text);
     if (parsed.count === 0 && parsed.warnings.length > 0) {
-      setStatus('error', '● HMI CSV · error de formato', parsed.warnings.join('\n'));
+      setStatus('error', '● CSV · error de formato', parsed.warnings.join('\n'));
       return false;
     }
+    lastText = text;
+    currentText = text;
     lastGood = new Date();
     failStreak = 0;
     lastCount = parsed.count;
-    lastSource = sourceLabel;
-    // Estado ANTES de aplicar, para que el espejo del panel lea el texto fresco.
     const warn = parsed.warnings.length ? ` · ⚠ ${parsed.warnings.length}` : '';
-    setStatus(mode === 'manual-file' ? 'manual' : 'live',
-      `● HMI ${sourceLabel} · ${fmtTime(lastGood)} · ${parsed.count} tags${warn}`,
+    const edited = mode === 'edited';
+    setStatus(edited || mode === 'manual-file' ? 'manual' : 'live',
+      `● ${sourceLabel} · ${fmtTime(lastGood)} · ${parsed.count} tags${warn}`,
       parsed.warnings.join('\n'));
-    applyData({ ...parsed, rawText: text });
+    applyData({ ...parsed, rawText: text, sourceLabel, edited });
     return true;
-  }
-
-  /* Latido: aunque el CSV no cambie, refresca el sello de tiempo cada poll para
-     que se VEA que se está releyendo cada 2 s (el archivo estático no cambia). */
-  function heartbeat() {
-    if (mode !== 'server' || !lastGood) return;
-    setStatus('live', `● HMI ${lastSource} · ${fmtTime(new Date())} · ${lastCount} tags · en vivo`, '');
   }
 
   function markServerDown() {
     failStreak += 1;
     if (failStreak < 2) return;
-    if (lastGood) setStatus('error', `● HMI CSV · reconectando… (último ${fmtTime(lastGood)})`, 'No se encuentra datos/hmi.csv. Reintento cada 2 s.');
-    else setStatus('idle', '● HMI CSV · sin conexión', 'Coloca datos/hmi.csv junto al sitio o conecta un archivo local.');
+    if (lastGood) setStatus('error', `● CSV · reconectando… (último ${fmtTime(lastGood)})`, 'No se encuentra datos/hmi.csv.');
+    else setStatus('idle', '● CSV · sin conexión', 'Conecta un archivo CSV o verifica datos/hmi.csv.');
   }
 
   async function pollServer() {
@@ -207,9 +268,9 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
       const res = await fetch(`datos/hmi.csv?t=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) { if (mode === 'server') markServerDown(); return false; }
       mode = 'server';
-      const changed = applyText(await res.text(), 'CSV (servidor)');
-      failStreak = 0;
-      if (!changed) heartbeat();   // mismo contenido → refresca sello para mostrar liveness
+      const text = await res.text();
+      const changed = applyText(text, 'HMI CSV');
+      if (!changed && lastGood) setStatus('live', `● HMI CSV · ${fmtTime(lastGood)} · ${lastCount} tags`, 'Contenido sin cambios; última lectura válida.');
       return true;
     } catch {
       if (mode === 'server') markServerDown();
@@ -224,9 +285,9 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
       const file = await fileHandle.getFile();
       if (file.lastModified === lastModified) return;
       lastModified = file.lastModified;
-      applyText(await file.text(), 'CSV (archivo)');
+      applyText(await file.text(), 'CSV local', true);
     } catch {
-      setStatus('error', '● HMI CSV · archivo no accesible', 'Vuelve a conectar el archivo.');
+      setStatus('error', '● CSV local · no accesible', 'Vuelve a conectar el archivo.');
     }
   }
 
@@ -234,35 +295,89 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     if ('showOpenFilePicker' in window) {
       try {
         const [handle] = await window.showOpenFilePicker({
-          types: [{ description: 'CSV del HMI', accept: { 'text/csv': ['.csv'], 'text/plain': ['.txt'] } }],
+          types: [{ description: 'CSV del modelo NOVOPAN', accept: { 'text/csv': ['.csv'], 'text/plain': ['.txt'] } }],
         });
         fileHandle = handle;
         mode = 'live-file';
         lastModified = 0;
         lastText = null;
         await pollFile();
-      } catch { /* usuario canceló */ }
+      } catch { /* cancelado por el usuario */ }
     } else if (fileInput) {
       fileInput.click();
     }
   }
 
-  fileInput?.addEventListener('change', async () => {
-    const f = fileInput.files?.[0];
-    if (!f) return;
-    mode = 'manual-file';
+  async function persistConnectedFile() {
+    if (!fileHandle?.createWritable || !currentText) return;
+    try {
+      const writable = await fileHandle.createWritable();
+      await writable.write(currentText);
+      await writable.close();
+      const file = await fileHandle.getFile();
+      lastModified = file.lastModified;
+      setStatus('manual', `● CSV local guardado · ${fmtTime(new Date())} · ${lastCount} tags`, 'El modelo fue actualizado únicamente a través del CSV conectado.');
+    } catch {
+      setStatus('manual', '● CSV editado en memoria · descarga para guardar', 'El navegador no obtuvo permiso para sobrescribir el archivo local.');
+    }
+  }
+
+  function scheduleFileWrite() {
+    clearTimeout(writeTimer);
+    if (!fileHandle) return;
+    writeTimer = setTimeout(persistConnectedFile, WRITE_DEBOUNCE_MS);
+  }
+
+  function updateKey(key, value) {
+    const tag = TAG_BY_KEY[key];
+    const numeric = Number(value);
+    if (!tag || !Number.isFinite(numeric) || numeric < 0 || !currentText) return false;
+    mode = 'edited';
+    const next = updateCsvTag(currentText, tag, numeric);
+    applyText(next, fileHandle ? 'CSV local editado' : 'CSV editado en memoria', true);
+    scheduleFileWrite();
+    return true;
+  }
+
+  function downloadCsv() {
+    if (!currentText) return false;
+    const blob = new Blob([currentText], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hmi-editado.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    return true;
+  }
+
+  async function reloadServer() {
+    mode = 'off';
+    fileHandle = null;
     lastText = null;
-    applyText(await f.text(), 'CSV (manual)');
+    currentText = '';
+    await pollServer();
+  }
+
+  fileInput?.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    mode = 'manual-file';
+    fileHandle = null;
+    lastText = null;
+    applyText(await file.text(), 'CSV manual', true);
     fileInput.value = '';
   });
   connectBtn?.addEventListener('click', connectFile);
 
   (async () => {
     const ok = await pollServer();
-    if (!ok) setStatus('idle', '● HMI CSV · sin conexión', 'Coloca datos/hmi.csv junto al sitio o conecta un archivo local.');
+    if (!ok) setStatus('idle', '● CSV · sin conexión', 'Conecta un archivo CSV o verifica datos/hmi.csv.');
     setInterval(() => {
       if (mode === 'server' || mode === 'off') pollServer();
       else if (mode === 'live-file') pollFile();
     }, POLL_MS);
   })();
+
+  return { updateKey, downloadCsv, reloadServer, getText: () => currentText, getTagForKey: (key) => TAG_BY_KEY[key] ?? null };
 }

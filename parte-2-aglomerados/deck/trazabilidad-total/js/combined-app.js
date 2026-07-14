@@ -92,13 +92,14 @@ const NODE_POS = {
   bunker: [-1305, 338], secadero1: [-1200, 248], secadero2: [-1200, 428],
   cribaF: [-1112, 248], cribaG: [-1112, 428],
   zaranda1: [-1020, 213], zaranda2: [-1020, 338], zaranda3: [-1020, 463],
-  ws1: [-900, 338], ws2: [-820, 338],
+  colectCL: [-900, 213], colectSL: [-900, 338], colectPG: [-900, 498], colectPolvo: [-900, 618],
+  ws1: [-760, 338], ws2: [-620, 338],
   // lazo oversize / refino
-  partG: [-910, 523], w3: [-840, 523], r1: [-770, 483], r2: [-770, 563], cy: [-714, 523], clasSL: [-650, 523],
+  partG: [-760, 498], w3: [-640, 498], r1: [-520, 458], r2: [-520, 538], cy: [-400, 498], clasSL: [-280, 498],
   // silos finales (wireframe)
-  silo5: [-665, 212], silo6: [-705, 408],
+  silo5: [-440, 212], silo6: [-440, 338],
   // polvo → biomasa
-  silo4: [-920, 600], silo8: [-842, 600], quemador: [-1150, 598],
+  silo4: [-760, 618], silo8: [-620, 618], quemador: [-340, 618],
   // zona animada (intake)
   activeSilo5: [860, 155], activeDosingCL: [860, 305], activeEncCI: [860, 460],
   activeSilo6: [330, 185], activeDosingSL: [330, 330], activeEncCE: [330, 500],
@@ -111,11 +112,12 @@ const NODE_LABEL = {
   hb: 'Hombak', silo3: 'Silo 3 · Hombak',
   bunker: 'Dosing Bunker IMAL', secadero1: 'Secadero 1', secadero2: 'Secadero 2',
   cribaF: 'Tamiz F', cribaG: 'Tamiz G', zaranda1: 'Zaranda 1', zaranda2: 'Zaranda 2', zaranda3: 'Zaranda 3',
+  colectCL: 'Colector CL', colectSL: 'Colector SL', colectPG: 'Colector de Partículas Grandes', colectPolvo: 'Colector de Polvo',
   ws1: 'Windsifter 1', ws2: 'Windsifter 2', partG: 'Part. Grandes', w3: 'Windsifter 3',
   r1: 'Refinador 1', r2: 'Refinador 2', cy: 'Ciclones', clasSL: 'Clasificadores',
   silo5: 'Silo 5 · CL/core', silo6: 'Silo 6 · SL/capas', silo4: 'Silo 4 · Polvo', silo8: 'Silo 8 · TVM', quemador: 'Quemador · biomasa',
-  activeSilo5: 'Silo 5 · gruesa animado', activeDosingCL: 'Dosing gruesa', activeEncCI: 'Encolador CI',
-  activeSilo6: 'Silo 6 · fina animado', activeDosingSL: 'Dosing fina', activeEncCE: 'Encolador CE',
+  activeSilo5: 'Silo 5 · gruesa animado', activeDosingCL: 'Dosing gruesa', activeEncCI: 'Encoladora CI',
+  activeSilo6: 'Silo 6 · fina animado', activeDosingSL: 'Dosing fina', activeEncCE: 'Encoladora CE',
   clGate: 'Entrada CL a Esparcidor 2', sl1Gate: 'Entrada SL a Esparcidor 1', sl2Gate: 'Entrada SL a Esparcidor 3',
 };
 // Sucesor por defecto de cada nodo (la bifurcación CL/SL se resuelve en succ()).
@@ -126,6 +128,7 @@ const LINEAR_NEXT = {
   hb: 'silo3', silo3: 'bunker',
   bunker: 'secadero1', secadero1: 'cribaF', cribaF: 'zaranda2',
   secadero2: 'cribaG', cribaG: 'zaranda2', zaranda1: 'zaranda2', zaranda3: 'zaranda2',
+  colectCL: 'silo5', colectSL: 'ws1', colectPG: 'partG', colectPolvo: 'silo4',
   ws1: 'ws2', ws2: 'silo6', silo6: 'activeSilo6', activeSilo6: 'activeDosingSL', activeDosingSL: 'activeEncCE',
   silo5: 'activeSilo5', activeSilo5: 'activeDosingCL', activeDosingCL: 'activeEncCI', activeEncCI: 'clGate',
   partG: 'w3', w3: 'r1', r1: 'cy', r2: 'cy', cy: 'clasSL', clasSL: 'ws1',
@@ -133,7 +136,7 @@ const LINEAR_NEXT = {
   clGate: null, sl1Gate: null, sl2Gate: null,
 };
 function succ(key, branch) {
-  if (key === 'zaranda2') return branch === 'cl' ? 'silo5' : 'ws1';       // bifurca CL↔SL
+  if (key === 'zaranda2') return branch === 'cl' ? 'colectCL' : 'colectSL'; // bifurca mediante colectores
   if (key === 'activeEncCE') return 'sl1Gate';   // ruta fina → formación (se divide en SL1+SL2 al llegar)
   return LINEAR_NEXT[key] ?? null;
 }
@@ -176,6 +179,8 @@ const STAGE_CONFIG = {
   bunker: { branches: B3, startAt: 'bunker' }, secadero1: { branches: B3, startAt: 'secadero1' }, secadero2: { branches: B3, startAt: 'secadero2' },
   cribaF: { branches: B3, startAt: 'cribaF' }, cribaG: { branches: B3, startAt: 'cribaG' },
   zaranda1: { branches: B3, startAt: 'zaranda1' }, zaranda2: { branches: B3, startAt: 'zaranda2' }, zaranda3: { branches: B3, startAt: 'zaranda3' },
+  'colector-cl': { branches: BCL, startAt: 'colectCL' }, 'colector-sl': { branches: BSL, startAt: 'colectSL' },
+  'colector-pg': { branches: BSL, startAt: 'colectPG' }, 'colector-polvo': { branches: BIO, startAt: 'colectPolvo' },
   ws1: { branches: BSL, startAt: 'ws1' }, ws2: { branches: BSL, startAt: 'ws2' }, silo6: { branches: BSL, startAt: 'silo6' },
   partG: { branches: BSL, startAt: 'partG' }, w3: { branches: BSL, startAt: 'w3' }, r1: { branches: BSL, startAt: 'r1' }, r2: { branches: BSL, startAt: 'r2' }, cy: { branches: BSL, startAt: 'cy' }, clasSL: { branches: BSL, startAt: 'clasSL' },
   silo5: { branches: BCL, startAt: 'silo5' },
@@ -217,22 +222,34 @@ const tBelt = (params, lKey, vKey) => {
 };
 
 function buildPreDurations(params) {
+  const aserrinPila = tauPila(params, 'p1:pila1_M', 'p1:pila1_F');
+  const aserrinTransfer = fixed(params, 'p1:tDS') + fixed(params, 'p1:tr1');
+  const chipsPila = tauPila(params, 'p1:pila2_M', 'p1:pila2_F');
+  const flakesTransfer = fixed(params, 'p1:esperaDesv') + fixed(params, 'p1:tr2');
+  const hombakTransfer = fixed(params, 'p1:tr3');
+  const silo1 = tauSiloH(params, 's1');
+  const silo2a = tauSiloH(params, 's2');
+  const silo2b = tauSiloH(params, 's2b');
+  const silo3 = tauSiloH(params, 's3');
   const reduction = Math.max(
-    tauPila(params, 'p1:pila1_M', 'p1:pila1_F') + tauSiloH(params, 's1'),
-    tauPila(params, 'p1:pila2_M', 'p1:pila2_F') + tauSiloH(params, 's2'),
-    fixed(params, 'p1:tr3') + tauSiloH(params, 's3'),
+    aserrinPila + aserrinTransfer + silo1,
+    chipsPila + flakesTransfer + Math.max(silo2a, silo2b),
+    hombakTransfer + silo3,
   );
   const bunker = tauSiloH(params, 'bk') + fixed(params, 'p1:trSec');
   const secado = fixed(params, 'p1:tauTambor');
-  const clasifBase = fixed(params, 'p1:tCriba') + fixed(params, 'p1:tZar');
   return {
-    reduction,
+    reduction, aserrinPila, aserrinTransfer, chipsPila, flakesTransfer, hombakTransfer,
+    silo1, silo2a, silo2b, silo3,
     bunker,
     secado,
-    clasifBase,
-    toS5: fixed(params, 'p1:tColectCL'),
-    toS6: fixed(params, 'p1:tColectSL') + fixed(params, 'p1:tWS1') + fixed(params, 'p1:tWS2'),
-    overToSL: fixed(params, 'p1:tWS3') + Math.max(fixed(params, 'p1:tRef1'), fixed(params, 'p1:tRef2')) + fixed(params, 'p1:tCiclon') + fixed(params, 'p1:tClasSL') + fixed(params, 'p1:tReingresoSL'),
+    tamices: fixed(params, 'p1:tCriba'), zarandas: fixed(params, 'p1:tZar'),
+    collectCL: fixed(params, 'p1:tColectCL'), collectSL: fixed(params, 'p1:tColectSL'),
+    collectPG: fixed(params, 'p1:tColectOver'), collectPolvo: fixed(params, 'p1:tPolvo'),
+    ws1: fixed(params, 'p1:tWS1'), ws2: fixed(params, 'p1:tWS2'), ws3: fixed(params, 'p1:tWS3'),
+    imanFe: fixed(params, 'p1:tFe'), neumaticoSL: fixed(params, 'p1:tNeum'),
+    ref1: fixed(params, 'p1:tRef1'), ref2: fixed(params, 'p1:tRef2'), ciclon: fixed(params, 'p1:tCiclon'),
+    clasReingreso: fixed(params, 'p1:tClasSL') + fixed(params, 'p1:tReingresoSL'),
     clSilo: tauSiloM(params, 's5'),
     clDosing: tauMF(params, 'p1:dosG_M', 'p1:dosG_F'),
     clEnc: fixed(params, 'p1:tEncCI'),
@@ -241,6 +258,7 @@ function buildPreDurations(params) {
     slDosing: tauMF(params, 'p1:dosF_M', 'p1:dosF_F'),
     slEnc: fixed(params, 'p1:tEncCE'),
     slIncl: tBelt(params, 'p1:inclF_L', 'p1:inclF_v'),
+    polvoSilo4: tauSiloM(params, 's4'), polvoSilo8: tauSiloM(params, 's8'),
   };
 }
 
@@ -249,19 +267,26 @@ function buildPreDurations(params) {
 function edgeDt(from, to, d) {
   const T = {
     'patios>bunker': d.reduction,
-    'ds>silo1': d.reduction, 'silo1>bunker': d.reduction,
-    'flex>silo2a': 1, 'silo2a>bunker': d.reduction, 'silo2b>bunker': d.reduction,
-    'silo3>bunker': d.reduction,
+    'pm1>ds': d.aserrinPila, 'ds>silo1': d.aserrinTransfer, 'silo1>bunker': d.silo1,
+    'pm2>flex': d.chipsPila, 'flex>silo2a': d.flakesTransfer,
+    'silo2a>bunker': d.silo2a, 'silo2b>bunker': d.silo2b,
+    'hb>silo3': d.hombakTransfer, 'silo3>bunker': d.silo3,
     'bunker>secadero1': d.bunker, 'secadero1>cribaF': d.secado, 'secadero2>cribaG': d.secado,
-    'cribaF>zaranda2': d.clasifBase, 'cribaG>zaranda2': d.clasifBase,
+    'cribaF>zaranda2': d.tamices, 'cribaG>zaranda2': d.tamices,
     // La retención de la encoladora (τ=40 s) vive en la arista de SALIDA del
     // nodo encolador: así un cambio inyectado EN la encoladora también cumple
     // sus 40 s dentro de la máquina (el total silo→gate no cambia).
-    'zaranda2>silo5': d.toS5, 'silo5>activeSilo5': 1, 'activeSilo5>activeDosingCL': d.clSilo,
+    'zaranda1>zaranda2': d.zarandas, 'zaranda3>zaranda2': d.zarandas,
+    'zaranda2>colectCL': d.zarandas, 'colectCL>silo5': d.collectCL,
+    'silo5>activeSilo5': 1, 'activeSilo5>activeDosingCL': d.clSilo,
     'activeDosingCL>activeEncCI': d.clDosing, 'activeEncCI>clGate': d.clEnc + d.clIncl,
-    'zaranda2>ws1': d.toS6, 'ws2>silo6': 1, 'silo6>activeSilo6': 1, 'activeSilo6>activeDosingSL': d.slSilo,
+    'zaranda2>colectSL': d.zarandas, 'colectSL>ws1': d.collectSL, 'ws1>ws2': d.ws1, 'ws2>silo6': d.ws2 + d.neumaticoSL,
+    'colectPG>partG': d.collectPG, 'partG>w3': d.imanFe, 'colectPolvo>silo4': d.collectPolvo,
+    'silo6>activeSilo6': 1, 'activeSilo6>activeDosingSL': d.slSilo,
     'activeDosingSL>activeEncCE': d.slDosing, 'activeEncCE>sl1Gate': d.slEnc + d.slIncl, 'activeEncCE>sl2Gate': d.slEnc + d.slIncl,
-    'w3>r1': d.overToSL, 'w3>r2': d.overToSL,
+    'w3>r1': d.ws3, 'w3>r2': d.ws3, 'r1>cy': d.ref1, 'r2>cy': d.ref2,
+    'cy>clasSL': d.ciclon, 'clasSL>ws1': d.clasReingreso,
+    'silo4>silo8': d.polvoSilo4, 'silo8>quemador': d.polvoSilo8,
   };
   return Math.max(1, T[`${from}>${to}`] ?? 2);
 }
@@ -348,7 +373,7 @@ const SL2_X = xm(22.25);  // 1638
 // 6.63 · 15.0 · 22.25) coincide con su rodillo central y su boca de salida, así
 // que el descenso vertical traza una recta limpia por el centro de la máquina.
 const SPREADER_HEAD_TOP_Y = 110;   // y del tope del cabezal (entrada desde la inclinada)
-const SPREADER_FALLBACK_TAU = 40;  // s · τ de residencia por defecto (docs · «por validar»)
+const SPREADER_FALLBACK_TAU = 0;   // sin plug fijo: el CSV debe aportar M y F
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * clamp(t, 0, 1);
@@ -508,6 +533,7 @@ function initSimulation() {
   // El operador puede acelerar la demostración manualmente cuando lo necesite.
   let timeScale = clamp(Number(document.getElementById('timeScaleInput')?.value) || 1, 1, 100000);
   let modelParams = loadPart1Params();
+  let hmiCsvApi = null;
   let scrubbing = false;
   let paused = false;      // pausa/reanuda la simulación (no borra nada; el reloj real sigue)
   let changeSeq = 0;
@@ -552,12 +578,19 @@ function initSimulation() {
   // SL2 22.25), devuelve su τ de residencia (s) leído de los params del modelo
   // (editable en panel / CSV). Con esto el cambio BAJA por dentro del esparcidor
   // durante ese tiempo antes de caer al colchón. Fuera de un esparcidor → dropM null.
-  const SPREADER_TAU_KEY = { '6.63': 'p1:tEsp1', '15': 'p1:tEsp2', '22.25': 'p1:tEsp3' };
+  const SPREADER_CONFIG = {
+    '6.63': { massKey: 'mass:esp1-zone', flow: (p) => num(p, '_global:F_SL') * num(p, '_global:pctSL1') / 100 },
+    '15': { massKey: 'mass:esp2-zone', flow: (p) => num(p, '_global:F_CL') },
+    '22.25': { massKey: 'mass:esp3-zone', flow: (p) => num(p, '_global:F_SL') * num(p, '_global:pctSL2') / 100 },
+  };
   const SPREADER_LAYER = { '6.63': 'SL1', '15': 'CL', '22.25': 'SL2' };
   function spreaderDropFor(m) {
     const s = [6.63, 15.0, 22.25].find((v) => Math.abs(v - m) < 0.15);
     if (s == null) return { dropM: null, dropDur: 0, layerName: null };
-    const tau = Math.max(0, Number(modelParams?.[SPREADER_TAU_KEY[String(s)]])) || SPREADER_FALLBACK_TAU;
+    const cfg = SPREADER_CONFIG[String(s)];
+    const mass = Math.max(0, num(modelParams, cfg.massKey));
+    const flow = Math.max(0, cfg.flow(modelParams));
+    const tau = mass > 0 && flow > 0 ? mass / flow * 60 : SPREADER_FALLBACK_TAU;
     return { dropM: s, dropDur: tau, layerName: SPREADER_LAYER[String(s)] };
   }
 
@@ -568,10 +601,13 @@ function initSimulation() {
      La calidad de los parámetros (estimado / sin calibrar) se toma del
      route-model, que es quien conoce la fuente de cada dato. */
   const LAYER_DEPOSIT_M = { SL1: 6.63, CL: 15.0, SL2: 22.25 };
-  const LAYER_TAU_KEY = { SL1: 'p1:tEsp1', CL: 'p1:tEsp2', SL2: 'p1:tEsp3' };
-
   function tauEsp(layer) {
-    return Math.max(0, Number(modelParams?.[LAYER_TAU_KEY[layer]])) || SPREADER_FALLBACK_TAU;
+    const key = Object.entries(SPREADER_CONFIG).find(([, cfg]) => cfg.massKey === `mass:${layer === 'SL1' ? 'esp1' : layer === 'CL' ? 'esp2' : 'esp3'}-zone`)?.[0];
+    const cfg = key ? SPREADER_CONFIG[key] : null;
+    if (!cfg) return SPREADER_FALLBACK_TAU;
+    const mass = Math.max(0, num(modelParams, cfg.massKey));
+    const flow = Math.max(0, cfg.flow(modelParams));
+    return mass > 0 && flow > 0 ? mass / flow * 60 : SPREADER_FALLBACK_TAU;
   }
 
   /* Calidad de parámetros según el route-model (fuente + flags). */
@@ -1063,9 +1099,12 @@ function initSimulation() {
   }
 
   // Velocidad de prensa (único parámetro operador visible en la barra).
-  speedRange?.addEventListener('input', () => setSpeed(speedRange.value));
-  speedInput?.addEventListener('input', () => setSpeed(speedInput.value));
-  speedInput?.addEventListener('change', syncSpeedUI);
+  const requestSpeedChange = (value) => {
+    const normalized = clamp(parseFloat(value) || DEFAULT_SPEED, SPEED_MIN, SPEED_MAX);
+    if (!hmiCsvApi?.updateKey('v_prensa', normalized)) syncSpeedUI();
+  };
+  speedRange?.addEventListener('input', () => requestSpeedChange(speedRange.value));
+  speedInput?.addEventListener('change', () => requestSpeedChange(speedInput.value));
   // Multiplicador de tiempo escribible: se aplica en vivo mientras se escribe
   // (clamp interno sin pisar lo tecleado) y se normaliza el valor al salir del campo.
   const applyTimeScale = () => {
@@ -1224,6 +1263,9 @@ function initSimulation() {
   const paramsApi = initParams({
     speedGetter: () => vPrensa,
     onChange: (params) => { modelParams = params; recomputeActivePre(); renderIntakeTaus(); window.__NOVOPAN_ROUTE_MODEL__?.recompute?.(); },
+    onCsvEdit: (key, value) => hmiCsvApi?.updateKey(key, value) ?? false,
+    onCsvReset: () => hmiCsvApi?.reloadServer(),
+    onCsvDownload: () => hmiCsvApi?.downloadCsv() ?? false,
   });
 
   /* Recalcula la línea de tiempo de los cambios upstream ACTIVOS cuando cambian
@@ -1251,7 +1293,7 @@ function initSimulation() {
   // ── HMI en vivo vía CSV local (releído cada 2 s; estático ahora, listo para el servidor) ──
   const hmiStatusEl = document.getElementById('hmiStatus');
   const hmiStatus2 = document.getElementById('hmiStatus2');
-  initHmiCsv({
+  hmiCsvApi = initHmiCsv({
     statusEl: hmiStatusEl,
     connectBtn: document.getElementById('hmiConnectBtn'),
     fileInput: document.getElementById('hmiFileInput'),
@@ -1293,8 +1335,12 @@ function selfTest() {
     const finite = Object.values(d).every((v) => Number.isFinite(v) && v >= 0);
     const clOk = STAGE_CONFIG['active-encCI'].startAt === 'activeEncCI';
     const slOk = STAGE_CONFIG['active-encCE'].startAt === 'activeEncCE';
-    const espTau = { esp1: Number(p['p1:tEsp1']), esp2: Number(p['p1:tEsp2']), esp3: Number(p['p1:tEsp3']) };
-    const espOk = Object.values(espTau).every((v) => Number.isFinite(v) && v > 0);
+    const espTau = {
+      esp1: num(p, 'mass:esp1-zone') / Math.max(.001, num(p, '_global:F_SL') * num(p, '_global:pctSL1') / 100) * 60,
+      esp2: num(p, 'mass:esp2-zone') / Math.max(.001, num(p, '_global:F_CL')) * 60,
+      esp3: num(p, 'mass:esp3-zone') / Math.max(.001, num(p, '_global:F_SL') * num(p, '_global:pctSL2') / 100) * 60,
+    };
+    const espOk = Object.values(espTau).every((v) => Number.isFinite(v) && v > 0 && v < 300);
     const mixOk = MIXER_TAU_SEC === 40 && Number(p['p1:tEncCE']) === 40 && Number(p['p1:tEncCI']) === 40;
     const sensorWps = NAMED_WAYPOINTS.filter((w) => w.label.startsWith('Sensor de calidad'));
     const senOk = sensorWps.length === 3 && sensorWps.every((w, i, a) => i === 0 || w.m > a[i - 1].m);
@@ -1319,7 +1365,6 @@ const P1_TO_MODEL = {
   'p1:tEncCE': 'mixerCE.tau', 'p1:tEncCI': 'mixerCI.tau',
   'p1:inclF_L': 'inclSL.length', 'p1:inclF_v': 'inclSL.speed',
   'p1:inclG_L': 'inclCL.length', 'p1:inclG_v': 'inclCL.speed',
-  'p1:tEsp1': 'spreader1.tau', 'p1:tEsp2': 'spreader2.tau', 'p1:tEsp3': 'spreader3.tau',
 };
 
 /** Traduce los params P1 en vivo a overrides del route-model. */
@@ -1327,6 +1372,14 @@ function bridgeP1ToModel(p1) {
   const overrides = {};
   if (p1) for (const [src, dst] of Object.entries(P1_TO_MODEL)) {
     if (p1[src] !== undefined && p1[src] !== null && p1[src] !== '') overrides[dst] = p1[src];
+  }
+  if (p1) {
+    overrides['spreader1.mass'] = p1['mass:esp1-zone'];
+    overrides['spreader1.flow'] = num(p1, '_global:F_SL') * num(p1, '_global:pctSL1') / 100;
+    overrides['spreader2.mass'] = p1['mass:esp2-zone'];
+    overrides['spreader2.flow'] = p1['_global:F_CL'];
+    overrides['spreader3.mass'] = p1['mass:esp3-zone'];
+    overrides['spreader3.flow'] = num(p1, '_global:F_SL') * num(p1, '_global:pctSL2') / 100;
   }
   return overrides;
 }

@@ -275,11 +275,19 @@ body {
   marker-end: url(#wfArrowRec);
   animation: wfDashRec 1.2s linear infinite;
 }
+.wf-edge-cl {
+  stroke: #0A7D5A;
+  marker-end: url(#wfArrowCL);
+}
+.wf-edge-sl {
+  stroke: #1565C0;
+  marker-end: url(#wfArrowSL);
+}
 .wf-edge-bio {
-  stroke: #8A97A6;
+  stroke: #7B6752;
   stroke-width: 1.8;
   stroke-dasharray: 5 4;
-  marker-end: none;
+  marker-end: url(#wfArrowBio);
   animation: wfDashBio 1.4s linear infinite;
 }
 @keyframes wfDashRec { to { stroke-dashoffset: -12; } }
@@ -316,12 +324,13 @@ body {
 .wf-node:hover .wf-circle,
 .wf-node:hover .wf-silo,
 .wf-node:hover .wf-drum,
-.wf-node:hover .wf-screen {
+.wf-node:hover .wf-screen,
+.wf-node:hover .wf-collector-shape {
   stroke-width: 3;
   stroke: #004E38;
 }
 /* profundidad sutil, como las máquinas de la Sección 2 */
-.wf-box, .wf-machine, .wf-circle, .wf-silo, .wf-drum, .wf-screen {
+.wf-box, .wf-machine, .wf-circle, .wf-silo, .wf-drum, .wf-screen, .wf-collector-shape {
   filter: drop-shadow(0 1.5px 1.4px rgba(16, 40, 32, .28));
 }
 .wf-box {
@@ -357,6 +366,18 @@ body {
   stroke-width: 1.8;
   animation: wfShake .55s linear infinite;
 }
+.wf-collector-shape {
+  fill: #F4F7F5;
+  stroke: #60736B;
+  stroke-width: 1.8;
+}
+.wf-collector--cl .wf-collector-shape { fill: #E5F4ED; stroke: #0A7D5A; }
+.wf-collector--sl .wf-collector-shape { fill: #E8F1FB; stroke: #1565C0; }
+.wf-collector--rec .wf-collector-shape { fill: #FFF2DF; stroke: #D47A00; }
+.wf-collector--bio .wf-collector-shape { fill: #F1ECE6; stroke: #7B6752; }
+.wf-collector .wf-icon { font-size: 10px; }
+.wf-collector .wf-nlabel { font-size: 9.5px; }
+.wf-collector .wf-nsub { font-size: 8px; }
 .wf-side {
   fill: #FFF6EC;
   stroke: #B55512;

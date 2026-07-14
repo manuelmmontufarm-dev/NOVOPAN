@@ -1,9 +1,14 @@
 /* ============================================================
-   NOVOPAN · Línea 1 · Sección 2 — pestaña Parámetros
+   NOVOPAN · Parámetros y ecuaciones · Patios → Sensores
    ------------------------------------------------------------
-   Reusa el MISMO schema, ecuaciones y localStorage que el
-   simulador clásico (STORAGE_KEY compartido). No modifica el
-   clásico; solo re-renderiza el panel dentro de esta vista.
+   Cada tarjeta presenta:
+     1. ecuación simbólica con unidades,
+     2. la misma ecuación con valores del CSV,
+     3. resultado final en segundos.
+
+   Los inputs NO escriben al modelo. Solicitan una edición del CSV;
+   el parser vuelve a leer el documento y solo entonces actualiza UI
+   y simulador. Así existe una sola fuente editable de verdad.
    ============================================================ */
 
 import {
@@ -12,349 +17,393 @@ import {
 import {
   tauForNode, transportForNode, flowFor,
 } from '../../trazabilidad/js/core/trace-engine.js';
-import { KIND_BY_KEY } from './hmi-csv.js';
-
-const STORAGE_KEY = 'novopan-trazabilidad-params-v9';
-const P1_STORAGE_KEY = 'novopan-trazabilidad-total-p1-v1';
+import { KIND_BY_KEY, TAG_BY_KEY } from './hmi-csv.js';
 
 export const P1_PARAMS = [
-  { key: 'p1:pila1_M', label: 'M pila aserrín', unit: 'kg', default: 5000, group: 'Parte 1 · Reducción' },
-  { key: 'p1:pila1_F', label: 'F aserrín', unit: 'kg/h', default: 7000, group: 'Parte 1 · Reducción' },
-  { key: 'p1:pila2_M', label: 'M pila chip', unit: 'kg', default: 10000, group: 'Parte 1 · Reducción' },
-  { key: 'p1:pila2_F', label: 'F chip', unit: 'kg/h', default: 20000, group: 'Parte 1 · Reducción' },
-  { key: 'p1:tr3', label: 't Hombak→S3', unit: 's', default: 60, group: 'Parte 1 · Reducción' },
-  { key: 'p1:s1_rho', label: 'Silo 1 ρ', unit: 'kg/m³', default: 271, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:s1_V', label: 'Silo 1 V', unit: 'm³', default: 150, group: 'Parte 1 · Silos verdes', unknown: true },
-  { key: 'p1:s1_L', label: 'Silo 1 nivel', unit: '%', default: 50, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:s1_F', label: 'Silo 1 F out', unit: 'kg/h', default: 7000, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:s2_rho', label: 'Silo 2A ρ', unit: 'kg/m³', default: 230, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:s2_V', label: 'Silo 2A V', unit: 'm³', default: 200, group: 'Parte 1 · Silos verdes', unknown: true },
-  { key: 'p1:s2_L', label: 'Silo 2A nivel', unit: '%', default: 25.4, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:s2_F', label: 'Silo 2A F out', unit: 'kg/h', default: 13990, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:s3_rho', label: 'Silo 3 ρ', unit: 'kg/m³', default: 211, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:s3_V', label: 'Silo 3 V', unit: 'm³', default: 250, group: 'Parte 1 · Silos verdes', unknown: true },
-  { key: 'p1:s3_L', label: 'Silo 3 nivel', unit: '%', default: 30, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:s3_F', label: 'Silo 3 F out', unit: 'kg/h', default: 8700, group: 'Parte 1 · Silos verdes' },
-  { key: 'p1:bk_rho', label: 'Bunker ρ', unit: 'kg/m³', default: 290, group: 'Parte 1 · Mezcla/secado' },
-  { key: 'p1:bk_V', label: 'Bunker V', unit: 'm³', default: 40, group: 'Parte 1 · Mezcla/secado' },
-  { key: 'p1:bk_L', label: 'Bunker nivel', unit: '%', default: 55, group: 'Parte 1 · Mezcla/secado' },
-  { key: 'p1:bk_F', label: 'Bunker F húmedo', unit: 'kg/h', default: 27005, group: 'Parte 1 · Mezcla/secado' },
-  { key: 'p1:trSec', label: 't transp. secadero', unit: 's', default: 30, group: 'Parte 1 · Mezcla/secado' },
-  { key: 'p1:tauTambor', label: 'τ tambor secadero', unit: 's', default: 900, group: 'Parte 1 · Mezcla/secado' },
-  { key: 'p1:tCriba', label: 't tamices F/G', unit: 's', default: 8, group: 'Parte 1 · Clasificación' },
-  { key: 'p1:tZar', label: 't 3 zarandas', unit: 's', default: 15, group: 'Parte 1 · Clasificación' },
-  { key: 'p1:tColectCL', label: 't colector CL', unit: 's', default: 12, group: 'Parte 1 · Clasificación' },
-  { key: 'p1:tColectSL', label: 't colector SL', unit: 's', default: 12, group: 'Parte 1 · Clasificación' },
-  { key: 'p1:tWS1', label: 't Windsifter 1', unit: 's', default: 10, group: 'Parte 1 · Clasificación' },
-  { key: 'p1:tWS2', label: 't Windsifter 2', unit: 's', default: 10, group: 'Parte 1 · Clasificación' },
-  { key: 'p1:tWS3', label: 't Windsifter 3', unit: 's', default: 10, group: 'Parte 1 · Clasificación' },
-  { key: 'p1:tRef1', label: 't Refinador 1', unit: 's', default: 25, group: 'Parte 1 · Oversize/refino' },
-  { key: 'p1:tRef2', label: 't Refinador 2', unit: 's', default: 25, group: 'Parte 1 · Oversize/refino' },
-  { key: 'p1:tCiclon', label: 't ciclones', unit: 's', default: 8, group: 'Parte 1 · Oversize/refino' },
-  { key: 'p1:tClasSL', label: 't clasificadores', unit: 's', default: 12, group: 'Parte 1 · Oversize/refino' },
-  { key: 'p1:tReingresoSL', label: 't reingreso SL', unit: 's', default: 10, group: 'Parte 1 · Oversize/refino' },
-  { key: 'p1:s5_rho', label: 'Silo 5 ρ', unit: 'kg/m³', default: 135, group: 'Parte 1 · Silos finales' },
-  { key: 'p1:s5_V', label: 'Silo 5 V', unit: 'm³', default: 120, group: 'Parte 1 · Silos finales', unknown: true },
-  { key: 'p1:s5_L', label: 'Silo 5 nivel', unit: '%', default: 44, group: 'Parte 1 · Silos finales' },
-  { key: 'p1:s5_Fmin', label: 'Silo 5 F out', unit: 'kg/min', default: 302, group: 'Parte 1 · Silos finales' },
-  { key: 'p1:s6_rho', label: 'Silo 6 ρ', unit: 'kg/m³', default: 188, group: 'Parte 1 · Silos finales' },
-  { key: 'p1:s6_V', label: 'Silo 6 V', unit: 'm³', default: 120, group: 'Parte 1 · Silos finales', unknown: true },
-  { key: 'p1:s6_L', label: 'Silo 6 nivel', unit: '%', default: 31, group: 'Parte 1 · Silos finales' },
-  { key: 'p1:s6_Fmin', label: 'Silo 6 F out', unit: 'kg/min', default: 108, group: 'Parte 1 · Silos finales' },
-  { key: 'p1:dosG_M', label: 'Dosing CL M', unit: 'kg', default: 25, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:dosG_F', label: 'Dosing CL F', unit: 'kg/min', default: 302, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:dosF_M', label: 'Dosing SL M', unit: 'kg', default: 20, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:dosF_F', label: 'Dosing SL F', unit: 'kg/min', default: 108, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:tEncCI', label: 't encolador CI', unit: 's', default: 40, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:tEncCE', label: 't encolador CE', unit: 's', default: 40, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:inclG_L', label: 'Inclinada CL L', unit: 'm', default: 68.5, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:inclG_v', label: 'Inclinada CL v', unit: 'm/min', default: 96.5, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:inclF_L', label: 'Inclinada SL L', unit: 'm', default: 64.57, group: 'Parte 2 · Entrada desde P1' },
-  { key: 'p1:inclF_v', label: 'Inclinada SL v', unit: 'm/min', default: 99.5, group: 'Parte 2 · Entrada desde P1' },
-  // τ de residencia de cada esparcidora (banda interna + volumen + báscula + rodillos):
-  // tiempo desde que el cambio entra por arriba hasta que cae al colchón. Estimado 40 s
-  // (docs de diseño · PARAMETROS.md · «por validar»). Editable aquí o vía CSV del HMI.
-  { key: 'p1:tEsp1', label: 'τ Esparcidor 1 · SL1 (inferior)', unit: 's', default: 40, group: 'Parte 2 · Esparcidoras' },
-  { key: 'p1:tEsp2', label: 'τ Esparcidor 2 · CL (core)', unit: 's', default: 40, group: 'Parte 2 · Esparcidoras' },
-  { key: 'p1:tEsp3', label: 'τ Esparcidor 3 · SL2 (superior)', unit: 's', default: 40, group: 'Parte 2 · Esparcidoras' },
+  { key: 'p1:pila1_M', label: 'Masa · pila de aserrín', unit: 'kg', default: 5000 },
+  { key: 'p1:pila1_F', label: 'Flujo · pila de aserrín', unit: 'kg/h', default: 7000 },
+  { key: 'p1:tDS', label: 'Retención · Clasificador Dynescreen', unit: 's', default: 20 },
+  { key: 'p1:tr1', label: 'Transporte · aserrín a Silo 1', unit: 's', default: 40 },
+  { key: 'p1:pila2_M', label: 'Masa · pila de chips', unit: 'kg', default: 10000 },
+  { key: 'p1:pila2_F', label: 'Flujo · pila de chips', unit: 'kg/h', default: 20000 },
+  { key: 'p1:esperaDesv', label: 'Espera · desviador de Flakes', unit: 's', default: 90 },
+  { key: 'p1:tr2', label: 'Transporte · Flakes a Silos 2A/2B', unit: 's', default: 45 },
+  { key: 'p1:tr3', label: 'Transporte Hombak → Silo 3', unit: 's', default: 60 },
+
+  { key: 'p1:s1_rho', label: 'Densidad · Silo 1', unit: 'kg/m³', default: 271 },
+  { key: 'p1:s1_V', label: 'Volumen · Silo 1', unit: 'm³', default: 150, unknown: true },
+  { key: 'p1:s1_L', label: 'Nivel · Silo 1', unit: '%', default: 50 },
+  { key: 'p1:s1_F', label: 'Flujo de salida · Silo 1', unit: 'kg/h', default: 7000 },
+  { key: 'p1:s2_rho', label: 'Densidad · Silo 2A', unit: 'kg/m³', default: 230 },
+  { key: 'p1:s2_V', label: 'Volumen · Silo 2A', unit: 'm³', default: 200, unknown: true },
+  { key: 'p1:s2_L', label: 'Nivel · Silo 2A', unit: '%', default: 25.4 },
+  { key: 'p1:s2_F', label: 'Flujo de salida · Silo 2A', unit: 'kg/h', default: 13990 },
+  { key: 'p1:s2b_rho', label: 'Densidad · Silo 2B', unit: 'kg/m³', default: 232 },
+  { key: 'p1:s2b_V', label: 'Volumen · Silo 2B', unit: 'm³', default: 200, unknown: true },
+  { key: 'p1:s2b_L', label: 'Nivel · Silo 2B', unit: '%', default: 41.5 },
+  { key: 'p1:s2b_F', label: 'Flujo de salida · Silo 2B', unit: 'kg/h', default: 13990 },
+  { key: 'p1:s3_rho', label: 'Densidad · Silo 3', unit: 'kg/m³', default: 211 },
+  { key: 'p1:s3_V', label: 'Volumen · Silo 3', unit: 'm³', default: 250, unknown: true },
+  { key: 'p1:s3_L', label: 'Nivel · Silo 3', unit: '%', default: 30 },
+  { key: 'p1:s3_F', label: 'Flujo de salida · Silo 3', unit: 'kg/h', default: 8700 },
+
+  { key: 'p1:bk_rho', label: 'Densidad · Dosing Bunker', unit: 'kg/m³', default: 290 },
+  { key: 'p1:bk_V', label: 'Volumen · Dosing Bunker', unit: 'm³', default: 40 },
+  { key: 'p1:bk_L', label: 'Nivel · Dosing Bunker', unit: '%', default: 55 },
+  { key: 'p1:bk_F', label: 'Flujo húmedo · Dosing Bunker', unit: 'kg/h', default: 27005 },
+  { key: 'p1:trSec', label: 'Transporte hacia secadero', unit: 's', default: 30 },
+  { key: 'p1:tauTambor', label: 'Retención · tambor secadero', unit: 's', default: 900 },
+
+  { key: 'p1:tCriba', label: 'Retención · tamices F/G', unit: 's', default: 8 },
+  { key: 'p1:tZar', label: 'Retención · tres zarandas', unit: 's', default: 15 },
+  { key: 'p1:tColectCL', label: 'Retención · Colector CL', unit: 's', default: 12 },
+  { key: 'p1:tColectSL', label: 'Retención · Colector SL', unit: 's', default: 12 },
+  { key: 'p1:tColectOver', label: 'Retención · Colector Partículas Grandes', unit: 's', default: 10 },
+  { key: 'p1:tPolvo', label: 'Retención · Colector de Polvo', unit: 's', default: 8 },
+  { key: 'p1:tWS1', label: 'Retención · Windsifter 1', unit: 's', default: 10 },
+  { key: 'p1:tWS2', label: 'Retención · Windsifter 2', unit: 's', default: 10 },
+  { key: 'p1:tWS3', label: 'Retención · Windsifter 3', unit: 's', default: 10 },
+  { key: 'p1:tFe', label: 'Retención · imán Fe', unit: 's', default: 4 },
+  { key: 'p1:tNeum', label: 'Transporte neumático · línea SL', unit: 's', default: 8 },
+  { key: 'p1:tRef1', label: 'Retención · Refinador 1', unit: 's', default: 25 },
+  { key: 'p1:tRef2', label: 'Retención · Refinador 2', unit: 's', default: 25 },
+  { key: 'p1:tCiclon', label: 'Retención · ciclones', unit: 's', default: 8 },
+  { key: 'p1:tClasSL', label: 'Retención · clasificadores', unit: 's', default: 12 },
+  { key: 'p1:tReingresoSL', label: 'Transporte · reingreso SL', unit: 's', default: 10 },
+
+  { key: 'p1:s5_rho', label: 'Densidad · Silo 5', unit: 'kg/m³', default: 135 },
+  { key: 'p1:s5_V', label: 'Volumen · Silo 5', unit: 'm³', default: 120, unknown: true },
+  { key: 'p1:s5_L', label: 'Nivel · Silo 5', unit: '%', default: 44 },
+  { key: 'p1:s5_Fmin', label: 'Flujo de salida · Silo 5', unit: 'kg/min', default: 302 },
+  { key: 'p1:s6_rho', label: 'Densidad · Silo 6', unit: 'kg/m³', default: 188 },
+  { key: 'p1:s6_V', label: 'Volumen · Silo 6', unit: 'm³', default: 120, unknown: true },
+  { key: 'p1:s6_L', label: 'Nivel · Silo 6', unit: '%', default: 31 },
+  { key: 'p1:s6_Fmin', label: 'Flujo de salida · Silo 6', unit: 'kg/min', default: 108 },
+  { key: 'p1:s4_rho', label: 'Densidad · Silo 4', unit: 'kg/m³', default: 238 },
+  { key: 'p1:s4_V', label: 'Volumen · Silo 4', unit: 'm³', default: 60, unknown: true },
+  { key: 'p1:s4_L', label: 'Nivel · Silo 4', unit: '%', default: 30 },
+  { key: 'p1:s4_Fmin', label: 'Flujo de salida · Silo 4', unit: 'kg/min', default: 60.2 },
+  { key: 'p1:s8_rho', label: 'Densidad · Silo 8', unit: 'kg/m³', default: 238 },
+  { key: 'p1:s8_V', label: 'Volumen · Silo 8', unit: 'm³', default: 40, unknown: true },
+  { key: 'p1:s8_L', label: 'Nivel · Silo 8', unit: '%', default: 30 },
+  { key: 'p1:s8_Fmin', label: 'Flujo de salida · Silo 8', unit: 'kg/min', default: 60.2 },
+
+  // Alias usados por el motor upstream. El CSV sincroniza estos valores con
+  // el modelo detallado de Sección 2; no se renderizan como tarjetas duplicadas.
+  { key: 'p1:dosG_M', label: 'Masa · dosificación CL', unit: 'kg', default: 25, hidden: true },
+  { key: 'p1:dosG_F', label: 'Flujo · dosificación CL', unit: 'kg/min', default: 302, hidden: true },
+  { key: 'p1:dosF_M', label: 'Masa · dosificación SL', unit: 'kg', default: 20, hidden: true },
+  { key: 'p1:dosF_F', label: 'Flujo · dosificación SL', unit: 'kg/min', default: 108, hidden: true },
+  { key: 'p1:tEncCI', label: 'Retención · Encoladora CI', unit: 's', default: 40, hidden: true },
+  { key: 'p1:tEncCE', label: 'Retención · Encoladora CE', unit: 's', default: 40, hidden: true },
+  { key: 'p1:inclG_L', label: 'Longitud · banda inclinada CL', unit: 'm', default: 68.5, hidden: true },
+  { key: 'p1:inclG_v', label: 'Velocidad · banda inclinada CL', unit: 'm/min', default: 96.5, hidden: true },
+  { key: 'p1:inclF_L', label: 'Longitud · banda inclinada SL', unit: 'm', default: 64.57, hidden: true },
+  { key: 'p1:inclF_v', label: 'Velocidad · banda inclinada SL', unit: 'm/min', default: 99.5, hidden: true },
+  { key: 'p1:postPress_L', label: 'Longitud · fin prensa → sensores', unit: 'm', default: 13.55 },
 ];
 
-export function loadParams() {
-  const defaults = defaultParams();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaults;
-    const saved = JSON.parse(raw);
-    if (!saved || typeof saved !== 'object') return defaults;
-    return { ...defaults, ...saved };
-  } catch {
-    return defaults;
-  }
-}
+const PARAM_BY_KEY = Object.fromEntries(P1_PARAMS.map((p) => [p.key, p]));
 
 export function defaultPart1Params() {
   return Object.fromEntries(P1_PARAMS.map((p) => [p.key, p.default]));
 }
 
 export function loadPart1Params() {
-  const defaults = defaultPart1Params();
-  try {
-    const raw = localStorage.getItem(P1_STORAGE_KEY);
-    if (!raw) return defaults;
-    const saved = JSON.parse(raw);
-    if (!saved || typeof saved !== 'object') return defaults;
-    return { ...defaults, ...saved };
-  } catch {
-    return defaults;
-  }
+  return defaultPart1Params();
 }
 
-function savePart1Params(params) {
-  try {
-    const out = {};
-    for (const p of P1_PARAMS) out[p.key] = params[p.key];
-    localStorage.setItem(P1_STORAGE_KEY, JSON.stringify(out));
-    return true;
-  } catch {
-    return false;
-  }
+export function loadParams() {
+  return defaultParams();
 }
 
-export function saveParamsToStorage(params) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(params));
-    return true;
-  } catch {
-    return false;
-  }
-}
+const P1_STEPS = [
+  { id: 'pila-aserrin', group: '01 · Patios y reducción', label: 'Pila de aserrín', type: 'ratio-hour', keys: ['p1:pila1_M', 'p1:pila1_F'] },
+  { id: 'molino-chips', group: '01 · Patios y reducción', label: 'Molino Chips', type: 'instant', note: 'Transformación; sin acumulación modelada.' },
+  { id: 'dynescreen', group: '01 · Patios y reducción', label: 'Clasificador Dynescreen', type: 'fixed', keys: ['p1:tDS'] },
+  { id: 'transp-aserrin', group: '01 · Patios y reducción', label: 'Transporte de aserrín → Silo 1', type: 'fixed', keys: ['p1:tr1'] },
+  { id: 'pila-chips', group: '01 · Patios y reducción', label: 'Pila de chips · Piso Móvil 2', type: 'ratio-hour', keys: ['p1:pila2_M', 'p1:pila2_F'] },
+  { id: 'molinos-flakes', group: '01 · Patios y reducción', label: 'Molinos Flakes 1 y 2', type: 'instant', note: 'Transformación; espera del desviador y transporte se modelan por separado.' },
+  { id: 'desviador-flakes', group: '01 · Patios y reducción', label: 'Espera del desviador Flakes 1/2', type: 'fixed', keys: ['p1:esperaDesv'] },
+  { id: 'transp-flakes', group: '01 · Patios y reducción', label: 'Transporte de Flakes → Silos 2A/2B', type: 'fixed', keys: ['p1:tr2'] },
+  { id: 'hombak', group: '01 · Patios y reducción', label: 'Hombak U100 + U112', type: 'instant', note: 'Transformación; el transporte a Silo 3 se modela aparte.' },
+  { id: 'hombak-s3', group: '01 · Patios y reducción', label: 'Transporte Hombak → Silo 3', type: 'fixed', keys: ['p1:tr3'] },
+
+  { id: 'silo1', group: '02 · Silos verdes', label: 'Silo 1 · Aserrín', type: 'silo-hour', keys: ['p1:s1_rho', 'p1:s1_V', 'p1:s1_L', 'p1:s1_F'] },
+  { id: 'silo2a', group: '02 · Silos verdes', label: 'Silo 2A · Flakes', type: 'silo-hour', keys: ['p1:s2_rho', 'p1:s2_V', 'p1:s2_L', 'p1:s2_F'] },
+  { id: 'silo2b', group: '02 · Silos verdes', label: 'Silo 2B · Flakes', type: 'silo-hour', keys: ['p1:s2b_rho', 'p1:s2b_V', 'p1:s2b_L', 'p1:s2b_F'] },
+  { id: 'silo3', group: '02 · Silos verdes', label: 'Silo 3 · Hombak', type: 'silo-hour', keys: ['p1:s3_rho', 'p1:s3_V', 'p1:s3_L', 'p1:s3_F'] },
+
+  { id: 'bunker', group: '03 · Dosificación y secado', label: 'Dosing Bunker · IMAL', type: 'silo-hour', keys: ['p1:bk_rho', 'p1:bk_V', 'p1:bk_L', 'p1:bk_F'] },
+  { id: 'transp-secadero', group: '03 · Dosificación y secado', label: 'Transporte hacia secadero', type: 'fixed', keys: ['p1:trSec'] },
+  { id: 'tambor-secadero', group: '03 · Dosificación y secado', label: 'Tambor secadero 1/2', type: 'fixed', keys: ['p1:tauTambor'] },
+
+  { id: 'tamices', group: '04 · Clasificación', label: 'Tamices F/G', type: 'fixed', keys: ['p1:tCriba'] },
+  { id: 'zarandas', group: '04 · Clasificación', label: 'Zarandas 1/2/3', type: 'fixed', keys: ['p1:tZar'] },
+  { id: 'colector-cl', group: '04 · Clasificación', label: 'Colector CL', type: 'fixed', keys: ['p1:tColectCL'] },
+  { id: 'colector-sl', group: '04 · Clasificación', label: 'Colector SL', type: 'fixed', keys: ['p1:tColectSL'] },
+  { id: 'colector-pg', group: '04 · Clasificación', label: 'Colector de Partículas Grandes', type: 'fixed', keys: ['p1:tColectOver'] },
+  { id: 'colector-polvo', group: '04 · Clasificación', label: 'Colector de Polvo', type: 'fixed', keys: ['p1:tPolvo'] },
+  { id: 'windsifter1', group: '04 · Clasificación', label: 'Windsifter 1', type: 'fixed', keys: ['p1:tWS1'] },
+  { id: 'windsifter2', group: '04 · Clasificación', label: 'Windsifter 2', type: 'fixed', keys: ['p1:tWS2'] },
+
+  { id: 'windsifter3', group: '05 · Reproceso de partículas grandes', label: 'Windsifter 3', type: 'fixed', keys: ['p1:tWS3'] },
+  { id: 'iman-fe', group: '05 · Reproceso de partículas grandes', label: 'Imán Fe', type: 'fixed', keys: ['p1:tFe'] },
+  { id: 'transporte-neumatico', group: '05 · Reproceso de partículas grandes', label: 'Transporte neumático · línea SL', type: 'fixed', keys: ['p1:tNeum'] },
+  { id: 'refinador1', group: '05 · Reproceso de partículas grandes', label: 'Refinador 1', type: 'fixed', keys: ['p1:tRef1'] },
+  { id: 'refinador2', group: '05 · Reproceso de partículas grandes', label: 'Refinador 2', type: 'fixed', keys: ['p1:tRef2'] },
+  { id: 'ciclones', group: '05 · Reproceso de partículas grandes', label: 'Ciclones', type: 'fixed', keys: ['p1:tCiclon'] },
+  { id: 'clasificadores', group: '05 · Reproceso de partículas grandes', label: 'Clasificadores', type: 'fixed', keys: ['p1:tClasSL'] },
+  { id: 'reingreso-sl', group: '05 · Reproceso de partículas grandes', label: 'Reingreso a línea SL', type: 'fixed', keys: ['p1:tReingresoSL'] },
+
+  { id: 'silo5', group: '06 · Silos finales', label: 'Silo 5 · CL/core', type: 'silo-minute', keys: ['p1:s5_rho', 'p1:s5_V', 'p1:s5_L', 'p1:s5_Fmin'] },
+  { id: 'silo6', group: '06 · Silos finales', label: 'Silo 6 · SL/capas', type: 'silo-minute', keys: ['p1:s6_rho', 'p1:s6_V', 'p1:s6_L', 'p1:s6_Fmin'] },
+  { id: 'silo4', group: '06 · Silos finales', label: 'Silo 4 · Polvo', type: 'silo-minute', keys: ['p1:s4_rho', 'p1:s4_V', 'p1:s4_L', 'p1:s4_Fmin'] },
+  { id: 'silo8', group: '06 · Silos finales', label: 'Silo 8 · TVM', type: 'silo-minute', keys: ['p1:s8_rho', 'p1:s8_V', 'p1:s8_L', 'p1:s8_Fmin'] },
+  { id: 'quemador', group: '06 · Silos finales', label: 'Quemador · salida de biomasa', type: 'instant', note: 'Salida lateral; no continúa hacia los sensores de calidad.' },
+];
 
 const BADGE = {
-  'hmi-live':   { cls: 'hmi', short: 'HMI' },
-  recipe:       { cls: 'recipe', short: 'Receta' },
-  mechanical:   { cls: 'mech', short: 'Mecánico' },
-  manual:       { cls: 'manual', short: 'Manual' },
-  measured:     { cls: 'ok', short: 'Medido' },
-  derived:      { cls: 'derived', short: 'Derivado' },
-  estimated:    { cls: 'est', short: 'Estim.' },
+  'hmi-live': { cls: 'hmi', short: 'HMI' }, hmi: { cls: 'hmi', short: 'HMI' },
+  recipe: { cls: 'recipe', short: 'Receta' }, mechanical: { cls: 'mech', short: 'Mecánico' },
+  manual: { cls: 'manual', short: 'Manual' }, measured: { cls: 'ok', short: 'Medido' },
+  derived: { cls: 'derived', short: 'Calculado' }, estimated: { cls: 'est', short: 'Estimado' },
+  est: { cls: 'est', short: 'Estimado' },
 };
+
 function badgeHtml(kind) {
-  const b = BADGE[kind] ?? BADGE.estimated;
-  return `<span class="badge badge--${b.cls}">${b.short}</span>`;
+  const badge = BADGE[kind] ?? BADGE.estimated;
+  return `<span class="badge badge--${badge.cls}">${badge.short}</span>`;
 }
 
-function renderGlobalsCard(params) {
-  const card = document.createElement('div');
-  card.className = 'globals-card';
-  card.innerHTML = `
-    <header class="globals-card__hd">
-      <h4>Parámetros globales</h4>
-      <p class="globals-card__sub">Lo que entra "en vivo" del HMI Metso/Dieffenbacher + setpoints de receta. Todo lo demás se deriva.</p>
-    </header>
-    <div class="globals-card__group">
-      <h5>${badgeHtml('hmi-live')} HMI en vivo</h5>
-      <div class="globals-card__grid" data-group="hmi-live"></div>
-    </div>
-    <div class="globals-card__group">
-      <h5>${badgeHtml('recipe')} Receta activa</h5>
-      <div class="globals-card__grid" data-group="recipe"></div>
-    </div>
-    <details class="globals-card__legend">
-      <summary>Leyenda de origen y ecuaciones</summary>
-      <ul class="legend">
-        <li>${badgeHtml('hmi-live')} sale en vivo del HMI</li>
-        <li>${badgeHtml('recipe')} setpoint de receta (operador)</li>
-        <li>${badgeHtml('mechanical')} constante mecánica (ficha técnica)</li>
-        <li>${badgeHtml('manual')} buffer manual que tú sumas</li>
-        <li>${badgeHtml('measured')} medido en planta</li>
-        <li>${badgeHtml('derived')} derivado de otra medición</li>
-        <li>${badgeHtml('estimated')} estimación pendiente de medir</li>
-      </ul>
-      <p class="legend__eq"><strong>Ecuaciones del motor:</strong></p>
-      <ul class="legend__eqs">
-        <li><code>τ_silo = ρ·V·L% / F × 60</code> (silos)</li>
-        <li><code>τ_bin = M_bin / F × 60</code> (dosing)</li>
-        <li><code>τ_enc = t fijo (s)</code> (encolador)</li>
-        <li><code>τ_esp = M_hopper / F_capa × 60</code> (esparcidores)</li>
-        <li><code>t_banda_inclinada = L / (v_prensa × factor) × 60</code></li>
-        <li><code>t_banda_común = L / v_prensa × 60</code></li>
-        <li><code>t_total_etapa = (cálculo) + buffer_manual</code></li>
-        <li><strong>Merge:</strong> banda blanca arranca cuando termina el esparcidor <strong>más lento</strong>.</li>
-      </ul>
-    </details>
-  `;
-  const groupGrid = (g) => card.querySelector(`[data-group="${g}"]`);
-  for (const p of GLOBAL_PARAMS) {
-    const grid = groupGrid(p.kind === 'hmi-live' ? 'hmi-live' : 'recipe');
-    if (!grid) continue;
-    const field = document.createElement('label');
-    field.className = 'global-field';
-    field.innerHTML = `
-      <span class="global-field__lbl">${p.label}</span>
-      <span class="global-field__input">
-        <input type="number" step="${p.step ?? 0.1}" min="0" data-key="${p.key}" value="${params[p.key]}" />
-        <span class="global-field__unit">${p.unit}</span>
-      </span>
-      <span class="global-field__desc">${p.desc ?? ''}</span>
-    `;
-    grid.appendChild(field);
-  }
-  return card;
-}
+const n = (params, key, fallback = 0) => {
+  const value = Number(params?.[key] ?? fallback);
+  return Number.isFinite(value) ? value : 0;
+};
+const f = (value, digits = 2) => Number(value).toLocaleString('es-EC', { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+const texN = (value, digits = 2) => f(value, digits).replace(',', '{,}');
 
-function groupSchemaByStage(schema) {
-  const map = new Map();
-  for (const p of schema) {
-    if (!map.has(p.nodeId)) map.set(p.nodeId, { nodeId: p.nodeId, group: p.group, params: [] });
-    map.get(p.nodeId).params.push(p);
-  }
-  return [...map.values()];
-}
-
-function equationForNode(node, v, params) {
-  const tau = tauForNode(node, params);
-  const tr = transportForNode(node, v, params);
-  const buf = Math.max(0, params[`buffer:${node.id}`] ?? 0);
-  const total = tau + tr + buf;
-
-  if (node.model === 'bin' || node.model === 'cstr' || node.model === 'hopper') {
-    const F = flowFor(node, params);
-    const M = Number(params[`mass:${node.id}`] ?? 0);
-    const flowLbl = ({ F_SL: 'F_SL', F_CL: 'F_CL', F_SL1: 'F_SL × %SL1', F_SL2: 'F_SL × %SL2' })[node.flowSource] ?? 'F';
+function p1StepEquation(step, params) {
+  const values = step.keys?.map((key) => n(params, key, PARAM_BY_KEY[key]?.default)) ?? [];
+  if (step.type === 'ratio-hour') {
+    const [mass, flow] = values;
+    const seconds = mass > 0 && flow > 0 ? (mass / flow) * 3600 : 0;
     return {
-      eq: `<code>τ = M / (${flowLbl}) × 60</code>`,
-      detail: `M = ${M.toFixed(1)} kg ÷ ${F.toFixed(1)} kg/min × 60 = <strong>${tau.toFixed(1)} s</strong>`,
-      tau, tr, buf, total,
+      symbolic: String.raw`\tau=\frac{M\,[\mathrm{kg}]}{F\,[\mathrm{kg\,h^{-1}}]}\cdot 3600\,\mathrm{s\,h^{-1}}`,
+      substituted: String.raw`\tau=\frac{${texN(mass)}\,\mathrm{kg}}{${texN(flow)}\,\mathrm{kg\,h^{-1}}}\cdot 3600\,\mathrm{s\,h^{-1}}`,
+      seconds,
     };
   }
-  if (node.model === 'fixed') {
-    const t = Number(params[`ret:${node.id}`] ?? node.retentionSec ?? 0);
+  if (step.type === 'silo-hour' || step.type === 'silo-minute') {
+    const [rho, volume, level, flow] = values;
+    const factor = step.type === 'silo-hour' ? 3600 : 60;
+    const flowUnit = step.type === 'silo-hour' ? 'kg\\,h^{-1}' : 'kg\\,min^{-1}';
+    const timeUnit = step.type === 'silo-hour' ? 's\\,h^{-1}' : 's\\,min^{-1}';
+    const seconds = rho > 0 && volume > 0 && level > 0 && flow > 0 ? ((rho * volume * level / 100) / flow) * factor : 0;
     return {
-      eq: `<code>τ = t fijo</code>`,
-      detail: `t = <strong>${t.toFixed(1)} s</strong> (parámetro único, no depende de v_prensa ni flujo)`,
-      tau, tr, buf, total,
+      symbolic: String.raw`\tau=\frac{\rho\,[\mathrm{kg\,m^{-3}}]\;V\,[\mathrm{m^3}]\;\left(L\,[\%]/100\right)}{F\,[\mathrm{${flowUnit}}]}\cdot ${factor}\,\mathrm{${timeUnit}}`,
+      substituted: String.raw`\tau=\frac{${texN(rho)}\,\mathrm{kg\,m^{-3}}\cdot ${texN(volume)}\,\mathrm{m^3}\cdot(${texN(level)}\,\%/100)}{${texN(flow)}\,\mathrm{${flowUnit}}}\cdot ${factor}\,\mathrm{${timeUnit}}`,
+      seconds,
     };
   }
-  const L = Number(params[`len:${node.id}`] ?? node.lengthM ?? 0);
-  const vBelt = Number(params[`speed:${node.id}`] ?? node.beltSpeedMperMin ?? 0);
-  if (vBelt > 0) {
+  if (step.type === 'fixed') {
+    const seconds = Math.max(0, values[0] ?? 0);
     return {
-      eq: `<code>t = L / v_banda × 60</code>`,
-      detail: `L = ${L.toFixed(2)} m ÷ ${vBelt.toFixed(1)} m/min × 60 = <strong>${tr.toFixed(1)} s</strong> (velocidad fija HMI)`,
-      tau, tr, buf, total,
+      symbolic: String.raw`\tau=t\,[\mathrm{s}]`,
+      substituted: String.raw`\tau=${texN(seconds)}\,\mathrm{s}`,
+      seconds,
     };
   }
   return {
-    eq: `<code>t = L / v_prensa × 60</code>`,
-    detail: `L = ${L.toFixed(2)} m ÷ v_prensa = ${v.toFixed(2)} m/min × 60 = <strong>${tr.toFixed(1)} s</strong>`,
-    tau, tr, buf, total,
+    symbolic: String.raw`t_{\mathrm{transformacion}}\approx 0\,\mathrm{s}`,
+    substituted: String.raw`t_{\mathrm{modelado}}=0\,\mathrm{s}`,
+    seconds: 0,
   };
 }
 
-function paramFieldHtml(p, params) {
-  return `
-    <label class="stage-field">
-      <span class="stage-field__lbl">${p.label} ${badgeHtml(p.kindBadge)}</span>
-      <span class="stage-field__input">
-        <input type="number" step="0.1" min="0" data-key="${p.key}" value="${params[p.key]}" />
-        <span class="stage-field__unit">${p.unit}</span>
-      </span>
-    </label>
-  `;
+function graphNodeEquation(node, speed, params) {
+  const tau = tauForNode(node, params);
+  const transport = transportForNode(node, speed, params);
+  const seconds = tau + transport;
+  if (node.model === 'bin' || node.model === 'hopper' || node.model === 'cstr') {
+    const mass = n(params, `mass:${node.id}`, node.holdupKg);
+    const flow = flowFor(node, params);
+    const hasNodeFlow = n(params, `flow:${node.id}`) > 0;
+    const flowName = hasNodeFlow
+      ? 'F_{descarga}'
+      : (({ F_SL: 'F_{SL}', F_CL: 'F_{CL}', F_SL1: 'F_{SL}\,p_{SL1}/100', F_SL2: 'F_{SL}\,p_{SL2}/100' })[node.flowSource] ?? 'F');
+    return {
+      symbolic: String.raw`\tau=\frac{M\,[\mathrm{kg}]}{(${flowName})\,[\mathrm{kg\,min^{-1}}]}\cdot60\,\mathrm{s\,min^{-1}}`,
+      substituted: String.raw`\tau=\frac{${texN(mass)}\,\mathrm{kg}}{${texN(flow)}\,\mathrm{kg\,min^{-1}}}\cdot60\,\mathrm{s\,min^{-1}}`,
+      seconds,
+    };
+  }
+  if (node.model === 'fixed') {
+    const fixed = n(params, `ret:${node.id}`, node.retentionSec);
+    return {
+      symbolic: String.raw`\tau=t\,[\mathrm{s}]`,
+      substituted: String.raw`\tau=${texN(fixed)}\,\mathrm{s}`,
+      seconds,
+    };
+  }
+  const length = n(params, `len:${node.id}`, node.lengthM);
+  const beltSpeed = n(params, `speed:${node.id}`, node.beltSpeedMperMin) || speed;
+  const speedSymbol = node.beltSpeedMperMin ? 'v_{banda}' : 'v_{prensa}';
+  return {
+    symbolic: String.raw`t=\frac{L\,[\mathrm{m}]}{${speedSymbol}\,[\mathrm{m\,min^{-1}}]}\cdot60\,\mathrm{s\,min^{-1}}`,
+    substituted: String.raw`t=\frac{${texN(length)}\,\mathrm{m}}{${texN(beltSpeed)}\,\mathrm{m\,min^{-1}}}\cdot60\,\mathrm{s\,min^{-1}}`,
+    seconds,
+  };
 }
 
-function renderStageCard(stage, v, params) {
-  const node = findNode(stage.nodeId);
-  if (!node) return null;
-  const eq = equationForNode(node, v, params);
-  const stageMeta = STAGE_SEQUENCE.find((s) => s.id === stage.nodeId);
-  const label = stageMeta?.label ?? node.label;
-  const src = node?.source;
-  const srcBadge = src?.kind ?? 'estimated';
+function renderMath(element, tex, displayMode = true) {
+  if (!element) return;
+  if (window.katex?.render) {
+    window.katex.render(tex, element, { displayMode, throwOnError: false, strict: 'ignore', trust: false, output: 'htmlAndMathml' });
+  } else {
+    element.textContent = tex;
+  }
+}
 
-  const card = document.createElement('div');
-  card.className = 'stage-card';
-  card.dataset.nodeId = stage.nodeId;
+function renderEquation(card, equation) {
+  renderMath(card.querySelector('[data-equation-symbolic]'), equation.symbolic);
+  renderMath(card.querySelector('[data-equation-substituted]'), equation.substituted);
+  renderMath(card.querySelector('[data-equation-result]'), String.raw`=\ ${texN(equation.seconds, 1)}\ \mathrm{s}`);
+}
 
-  const mainParams = stage.params.filter((p) => p.type !== 'buffer');
-  const bufferParam = stage.params.find((p) => p.type === 'buffer');
+function fieldHtml({ key, label, unit, unknown = false, kind }) {
+  const tag = TAG_BY_KEY[key];
+  const disabled = !tag;
+  return `
+    <label class="equation-field">
+      <span class="equation-field__label">${label} ${badgeHtml(kind ?? KIND_BY_KEY[key])}</span>
+      <span class="equation-field__control">
+        <input type="number" step="any" min="0" data-key="${key}" data-csv-tag="${tag ?? ''}"
+          ${unknown ? 'data-unknown="1"' : ''} ${disabled ? 'disabled' : ''}>
+        <span>${unit}</span>
+      </span>
+      ${tag ? `<code>${tag}</code>` : '<small>Valor derivado</small>'}
+    </label>`;
+}
 
+function cardShell({ label, subtitle, kind, stepId, nodeId, fields = [], note = '' }) {
+  const card = document.createElement('article');
+  card.className = 'equation-card';
+  if (stepId) card.dataset.stepId = stepId;
+  if (nodeId) card.dataset.nodeId = nodeId;
   card.innerHTML = `
-    <header class="stage-card__hd">
-      <span class="stage-card__name">${label}</span>
-      ${badgeHtml(srcBadge)}
+    <header class="equation-card__header">
+      <div><span class="equation-card__eyebrow">${subtitle}</span><h4>${label}</h4></div>
+      ${badgeHtml(kind)}
     </header>
-    <div class="stage-card__eq">
-      <span class="stage-card__eq-label">Ecuación</span>
-      ${eq.eq}
-      <div class="stage-card__eq-detail">${eq.detail}</div>
+    <div class="equation-card__math">
+      <div class="equation-card__row equation-card__row--symbolic" data-equation-symbolic></div>
+      <div class="equation-card__arrow" aria-hidden="true">↓</div>
+      <div class="equation-card__row equation-card__row--substituted" data-equation-substituted></div>
+      <div class="equation-card__result" data-equation-result></div>
     </div>
-    ${src ? `<div class="stage-card__source stage-card__source--${BADGE[srcBadge]?.cls ?? 'est'}">
-      <strong>Justificación${src.date ? ` · ${src.date}` : ''}:</strong>
-      ${src.desc}
-      ${src.detail ? `<span class="stage-card__source-detail">${src.detail}</span>` : ''}
-    </div>` : ''}
-    <div class="stage-card__params">
-      ${mainParams.map((p) => paramFieldHtml(p, params)).join('')}
-    </div>
-    ${bufferParam ? `
-      <details class="stage-card__buffer">
-        <summary>${badgeHtml('manual')} Buffer manual: <strong data-buffer-value>+${(params[bufferParam.key] ?? 0).toFixed(1)} s</strong></summary>
-        <div class="stage-card__buffer-body">
-          <p class="stage-card__buffer-help">Segundos adicionales que tú sumas a esta etapa (margen de seguridad, sin tocar la física calculada).</p>
-          ${paramFieldHtml(bufferParam, params)}
-        </div>
-      </details>
-    ` : ''}
-    <div class="stage-card__totals">
-      <span class="stage-card__total-line"><span>τ</span><strong>${eq.tau.toFixed(1)} s</strong></span>
-      <span class="stage-card__total-line"><span>transporte</span><strong>${eq.tr.toFixed(1)} s</strong></span>
-      <span class="stage-card__total-line"><span>buffer</span><strong>${eq.buf.toFixed(1)} s</strong></span>
-      <span class="stage-card__total-line stage-card__total-line--sum"><span>Total etapa</span><strong>${eq.total.toFixed(1)} s</strong></span>
-    </div>
-  `;
+    ${note ? `<p class="equation-card__note">${note}</p>` : ''}
+    <div class="equation-card__fields">${fields.join('')}</div>`;
   return card;
 }
 
-function p1BadgeHtml(key) {
-  const kind = KIND_BY_KEY[key];
-  if (kind === 'hmi') return '<span class="badge badge--hmi">HMI</span>';
-  if (kind === 'est') return '<span class="badge badge--est">Estim.</span>';
-  return '';
+function kindForKeys(keys) {
+  const kinds = (keys ?? []).map((key) => KIND_BY_KEY[key]);
+  if (kinds.includes('est')) return 'estimated';
+  if (kinds.includes('measured')) return 'measured';
+  return kinds.length ? 'hmi-live' : 'derived';
 }
 
-function renderPart1Cards(params) {
-  const frag = document.createDocumentFragment();
-  const groups = [...new Set(P1_PARAMS.map((p) => p.group))];
-  for (const group of groups) {
-    const rows = P1_PARAMS.filter((p) => p.group === group);
-    const card = document.createElement('section');
-    card.className = 'p1-param-card';
-    card.innerHTML = `
-      <header class="p1-param-card__hd">
-        <h4>${group}</h4>
-        <p>${group.includes('Silos') ? 'Volúmenes m³ en rojo = no confirmados · τ_silo = ρ·V·L%/F×60' : 'τ=M/F×60 · τ_silo=ρ·V·L%/F×60 · t=L/v×60'}</p>
-      </header>
-      <div class="p1-param-grid">
-        ${rows.map((p) => `
-          <label class="p1-param-field">
-            <span>${p.label} ${p1BadgeHtml(p.key)}</span>
-            <span class="p1-param-field__input">
-              <input type="number" step="any" min="0" data-key="${p.key}" data-unknown="${p.unknown ? '1' : '0'}" value="${params[p.key] ?? p.default}">
-              <span class="p1-param-field__unit">${p.unit}</span>
-            </span>
-          </label>
-        `).join('')}
-      </div>
-    `;
-    frag.appendChild(card);
+function renderP1Step(step, params) {
+  const fields = (step.keys ?? []).map((key) => {
+    const p = PARAM_BY_KEY[key];
+    return fieldHtml({ ...p, key, kind: KIND_BY_KEY[key] });
+  });
+  const card = cardShell({
+    label: step.label,
+    subtitle: step.group,
+    kind: kindForKeys(step.keys),
+    stepId: step.id,
+    fields,
+    note: step.note,
+  });
+  renderEquation(card, p1StepEquation(step, params));
+  return card;
+}
+
+function nodeFieldDefs(node, stageParams) {
+  const defs = stageParams.filter((p) => p.type !== 'buffer').map((p) => ({ key: p.key, label: p.label, unit: p.unit, kind: p.kindBadge }));
+  const add = (key, label, unit, kind = 'hmi-live') => {
+    if (!defs.some((p) => p.key === key)) defs.push({ key, label, unit, kind });
+  };
+  const nodeFlowKey = `flow:${node.id}`;
+  if (TAG_BY_KEY[nodeFlowKey]) add(nodeFlowKey, 'Flujo de descarga', 'kg/min');
+  else if (node.flowSource === 'F_SL') add('_global:F_SL', 'Flujo total SL', 'kg/min');
+  else if (node.flowSource === 'F_CL') add('_global:F_CL', 'Flujo CL', 'kg/min');
+  else if (node.flowSource === 'F_SL1') {
+    add('_global:F_SL', 'Flujo total SL', 'kg/min');
+    add('_global:pctSL1', 'Proporción SL1', '%', 'recipe');
   }
-  return frag;
+  else if (node.flowSource === 'F_SL2') {
+    add('_global:F_SL', 'Flujo total SL', 'kg/min');
+    add('_global:pctSL2', 'Proporción SL2', '%', 'recipe');
+  }
+  if ((node.lengthM ?? 0) > 0 && !node.beltSpeedMperMin) add('v_prensa', 'Velocidad de prensa', 'm/min');
+  return defs;
 }
 
-export function initParams({ speedGetter, onChange }) {
+function renderGraphStage(stage, speed, params) {
+  const node = findNode(stage.nodeId);
+  if (!node) return null;
+  const label = STAGE_SEQUENCE.find((s) => s.id === stage.nodeId)?.label ?? node.label;
+  const fields = nodeFieldDefs(node, stage.params).map((p) => fieldHtml(p));
+  const sourceKind = node.source?.kind ?? 'estimated';
+  const sourceNote = ['estimated', 'manual'].includes(sourceKind)
+    ? 'Tiempo estimado pendiente de validar en planta.'
+    : 'Valores actuales leídos del CSV activo; las unidades y el resultado se recalculan automáticamente.';
+  const card = cardShell({
+    label,
+    subtitle: stage.group,
+    kind: sourceKind,
+    nodeId: node.id,
+    fields,
+    note: sourceNote,
+  });
+  renderEquation(card, graphNodeEquation(node, speed, params));
+  return card;
+}
+
+function renderOverview(params, speed) {
+  const card = document.createElement('section');
+  card.className = 'equation-overview';
+  card.innerHTML = `
+    <div>
+      <span class="equation-overview__eyebrow">MODELO DE TIEMPO · PATIOS → SENSORES</span>
+      <h4>Una ecuación verificable para cada etapa</h4>
+      <p>Cada valor visible proviene del CSV activo. Las ecuaciones usan <strong>×3600</strong> para kg/h y <strong>×60</strong> para kg/min o m/min.</p>
+    </div>
+    <div class="equation-overview__math" data-equation-total></div>`;
+  renderMath(card.querySelector('[data-equation-total]'), String.raw`t_{total}=\sum\tau_{almacenamiento}+\sum t_{proceso}+\max(t_{SL1},t_{CL},t_{SL2})+\sum\frac{L_i}{v_{prensa}}\,60`);
+  return card;
+}
+
+function renderGlobals(params, speed) {
+  const card = document.createElement('section');
+  card.className = 'globals-card globals-card--csv';
+  const defs = [
+    { key: 'v_prensa', label: 'Velocidad de prensa', unit: 'm/min', kind: 'hmi-live' },
+    ...GLOBAL_PARAMS.map((p) => ({ key: p.key, label: p.label, unit: p.unit, kind: p.kind })),
+  ];
+  card.innerHTML = `
+    <header class="globals-card__hd"><h4>Variables maestras del CSV</h4>
+      <p class="globals-card__sub">Al editar un campo se modifica el documento CSV activo y el simulador lo vuelve a leer.</p></header>
+    <div class="equation-card__fields">${defs.map((p) => fieldHtml(p)).join('')}</div>`;
+  return card;
+}
+
+export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsvDownload }) {
   const speed = speedGetter ?? (() => 14.5);
-  let params = { ...loadParams(), ...loadPart1Params() };
+  let params = { ...defaultParams(), ...defaultPart1Params(), v_prensa: speed() };
   let built = false;
 
   const grid = document.getElementById('paramsGridTab');
@@ -367,72 +416,120 @@ export function initParams({ speedGetter, onChange }) {
   const panelParams = document.getElementById('panelParams');
   let feedbackTimer = 0;
 
-  function showFeedback(msg) {
+  function showFeedback(message) {
     if (!feedbackEl) return;
-    feedbackEl.textContent = msg;
+    feedbackEl.textContent = message;
     feedbackEl.classList.add('is-visible');
     clearTimeout(feedbackTimer);
-    feedbackTimer = setTimeout(() => feedbackEl.classList.remove('is-visible'), 2200);
+    feedbackTimer = setTimeout(() => feedbackEl.classList.remove('is-visible'), 2600);
   }
 
-  function refreshEquationsLight() {
-    const v = speed();
-    grid.querySelectorAll('.stage-card').forEach((card) => {
-      const node = findNode(card.dataset.nodeId);
-      if (!node) return;
-      const eq = equationForNode(node, v, params);
-      const eqDetail = card.querySelector('.stage-card__eq-detail');
-      if (eqDetail) eqDetail.innerHTML = eq.detail;
-      const totals = card.querySelectorAll('.stage-card__total-line strong');
-      if (totals.length >= 4) {
-        totals[0].textContent = `${eq.tau.toFixed(1)} s`;
-        totals[1].textContent = `${eq.tr.toFixed(1)} s`;
-        totals[2].textContent = `${eq.buf.toFixed(1)} s`;
-        totals[3].textContent = `${eq.total.toFixed(1)} s`;
-      }
-      const bufVal = card.querySelector('[data-buffer-value]');
-      if (bufVal) bufVal.textContent = `+${eq.buf.toFixed(1)} s`;
+  function bindInputs() {
+    grid.querySelectorAll('input[data-key]').forEach((input) => {
+      const key = input.dataset.key;
+      input.value = params[key] ?? '';
+      const commitToCsv = () => {
+        if (input.value.trim() === '') return;
+        const value = Number(input.value);
+        if (!Number.isFinite(value) || value < 0) {
+          input.value = params[key] ?? '';
+          showFeedback('Valor inválido; el CSV no cambió.');
+          return;
+        }
+        const ok = onCsvEdit?.(key, value);
+        if (!ok) input.value = params[key] ?? '';
+        showFeedback(ok ? `CSV actualizado · ${input.dataset.csvTag}` : 'Este valor no tiene un tag CSV editable.');
+      };
+      input.addEventListener('input', commitToCsv);
+      input.addEventListener('change', () => {
+        if (input.value.trim() === '') input.value = params[key] ?? '';
+      });
     });
-  }
-
-  function syncFromUI() {
-    let changed = false;
-    grid.querySelectorAll('input[data-key]').forEach((inp) => {
-      const key = inp.dataset.key;
-      const parsed = parseFloat(inp.value);
-      const next = Number.isNaN(parsed) ? 0 : parsed;
-      if (params[key] !== next) changed = true;
-      params[key] = next;
-    });
-    return changed;
   }
 
   function build() {
     const v = speed();
     grid.innerHTML = '';
-    grid.appendChild(renderPart1Cards(params));
-    grid.appendChild(renderGlobalsCard(params));
-    const stages = groupSchemaByStage(getParameterSchema());
-    let currentGroup = null;
-    for (const stage of stages) {
-      if (stage.group !== currentGroup) {
-        const h = document.createElement('h4');
-        h.className = 'param-group__title';
-        h.textContent = stage.group;
-        grid.appendChild(h);
-        currentGroup = stage.group;
+    grid.appendChild(renderOverview(params, v));
+    grid.appendChild(renderGlobals(params, v));
+
+    let currentGroup = '';
+    for (const step of P1_STEPS) {
+      if (step.group !== currentGroup) {
+        const title = document.createElement('h3');
+        title.className = 'parameter-section-title';
+        title.textContent = step.group;
+        grid.appendChild(title);
+        currentGroup = step.group;
       }
-      const card = renderStageCard(stage, v, params);
+      grid.appendChild(renderP1Step(step, params));
+    }
+
+    const schema = getParameterSchema();
+    const stages = new Map();
+    for (const p of schema) {
+      if (!stages.has(p.nodeId)) stages.set(p.nodeId, { nodeId: p.nodeId, group: p.group, params: [] });
+      stages.get(p.nodeId).params.push(p);
+    }
+    currentGroup = '';
+    for (const stage of stages.values()) {
+      const group = `07 · Sección 2 · ${stage.group}`;
+      if (group !== currentGroup) {
+        const title = document.createElement('h3');
+        title.className = 'parameter-section-title';
+        title.textContent = group;
+        grid.appendChild(title);
+        currentGroup = group;
+      }
+      const card = renderGraphStage(stage, v, params);
       if (card) grid.appendChild(card);
     }
-    grid.querySelectorAll('input[data-key]').forEach((inp) => {
-      inp.addEventListener('input', () => {
-        syncFromUI();
-        refreshEquationsLight();
-        onChange?.(params);
-      });
+
+    const postStep = { id: 'postprensa', group: '08 · Corte y calidad', label: 'Fin de prensa → Sensores de calidad', type: 'postpress', keys: ['p1:postPress_L'] };
+    const postCard = cardShell({
+      label: postStep.label,
+      subtitle: postStep.group,
+      kind: 'measured',
+      stepId: postStep.id,
+      fields: [fieldHtml(PARAM_BY_KEY['p1:postPress_L']), fieldHtml({ key: 'v_prensa', label: 'Velocidad de prensa', unit: 'm/min', kind: 'hmi-live' })],
+      note: '13,55 m medidos desde la salida activa de prensa (71,60 m) hasta los sensores (85,15 m).',
     });
+    const length = n(params, 'p1:postPress_L', 13.55);
+    const postSpeed = n(params, 'v_prensa', v);
+    renderEquation(postCard, {
+      symbolic: String.raw`t=\frac{L_{post}\,[\mathrm{m}]}{v_{prensa}\,[\mathrm{m\,min^{-1}}]}\cdot60\,\mathrm{s\,min^{-1}}`,
+      substituted: String.raw`t=\frac{${texN(length)}\,\mathrm{m}}{${texN(postSpeed)}\,\mathrm{m\,min^{-1}}}\cdot60\,\mathrm{s\,min^{-1}}`,
+      seconds: postSpeed > 0 ? length / postSpeed * 60 : 0,
+    });
+    const postTitle = document.createElement('h3');
+    postTitle.className = 'parameter-section-title';
+    postTitle.textContent = '08 · Corte y calidad';
+    grid.appendChild(postTitle);
+    grid.appendChild(postCard);
+    bindInputs();
     built = true;
+  }
+
+  function refreshEquations() {
+    if (!built) return;
+    const v = n(params, 'v_prensa', speed());
+    for (const card of grid.querySelectorAll('[data-step-id]')) {
+      if (card.dataset.stepId === 'postprensa') {
+        const length = n(params, 'p1:postPress_L', 13.55);
+        renderEquation(card, {
+          symbolic: String.raw`t=\frac{L_{post}\,[\mathrm{m}]}{v_{prensa}\,[\mathrm{m\,min^{-1}}]}\cdot60\,\mathrm{s\,min^{-1}}`,
+          substituted: String.raw`t=\frac{${texN(length)}\,\mathrm{m}}{${texN(v)}\,\mathrm{m\,min^{-1}}}\cdot60\,\mathrm{s\,min^{-1}}`,
+          seconds: v > 0 ? length / v * 60 : 0,
+        });
+      } else {
+        const step = P1_STEPS.find((item) => item.id === card.dataset.stepId);
+        if (step) renderEquation(card, p1StepEquation(step, params));
+      }
+    }
+    for (const card of grid.querySelectorAll('[data-node-id]')) {
+      const node = findNode(card.dataset.nodeId);
+      if (node) renderEquation(card, graphNodeEquation(node, v, params));
+    }
   }
 
   function setView(view) {
@@ -444,59 +541,39 @@ export function initParams({ speedGetter, onChange }) {
     lineaControls.classList.toggle('is-hidden', isParams);
     tabLinea.classList.toggle('is-active', !isParams);
     tabParams.classList.toggle('is-active', isParams);
+    tabLinea.setAttribute('aria-selected', String(!isParams));
+    tabParams.setAttribute('aria-selected', String(isParams));
   }
 
   tabLinea?.addEventListener('click', () => setView('linea'));
   tabParams?.addEventListener('click', () => setView('params'));
-
-  document.getElementById('saveParamsBtn')?.addEventListener('click', () => {
-    syncFromUI();
-    const ok = saveParamsToStorage(params) && savePart1Params(params);
-    showFeedback(ok ? 'Guardado ✓' : 'Error al guardar');
+  document.getElementById('resetParamsBtn')?.addEventListener('click', async () => {
+    await onCsvReset?.();
+    showFeedback('CSV del servidor recargado.');
   });
-  document.getElementById('loadParamsBtn')?.addEventListener('click', () => {
-    params = { ...loadParams(), ...loadPart1Params() };
-    build();
-    onChange?.(params);
-    showFeedback('Cargado ✓');
-  });
-  document.getElementById('resetParamsBtn')?.addEventListener('click', () => {
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-    try { localStorage.removeItem(P1_STORAGE_KEY); } catch {}
-    params = { ...defaultParams(), ...defaultPart1Params() };
-    build();
-    onChange?.(params);
-    showFeedback('Defaults restaurados (se re-leerá el CSV en ≤2 s)');
+  document.getElementById('downloadCsvBtn')?.addEventListener('click', () => {
+    showFeedback(onCsvDownload?.() ? 'CSV descargado.' : 'Aún no hay un CSV activo.');
   });
 
-  /* Aplica los valores del CSV del HMI: pisa los params, actualiza los inputs
-     visibles en vivo (con un flash) y refresca el visor de CSV crudo. El CSV es
-     la fuente de verdad de los campos HMI → esto es lo que hace "el tab lee del CSV". */
   function applyExternal({ updates, rawText, count } = {}) {
     let changed = false;
-    for (const [key, val] of Object.entries(updates ?? {})) {
-      if (params[key] !== val) { params[key] = val; changed = true; }
+    for (const [key, value] of Object.entries(updates ?? {})) {
+      if (params[key] !== value) changed = true;
+      params[key] = value;
       if (built) {
-        const inp = grid.querySelector(`input[data-key="${CSS.escape(key)}"]`);
-        if (inp && document.activeElement !== inp) {
-          inp.value = val;
-          inp.classList.remove('is-hmi-flash');
-          void inp.offsetWidth;      // reinicia la animación de flash
-          inp.classList.add('is-hmi-flash');
-        }
+        grid.querySelectorAll(`input[data-key="${CSS.escape(key)}"]`).forEach((input) => {
+          if (document.activeElement !== input) input.value = value;
+        });
       }
     }
-    // Visor de CSV crudo (siempre, aunque el tab no esté construido)
     const raw = document.getElementById('csvRaw');
     if (raw && rawText != null) raw.textContent = rawText;
     const tagCount = document.getElementById('csvTagCount');
     if (tagCount && count != null) tagCount.textContent = String(count);
+    refreshEquations();
     if (changed) onChange?.(params);
     return changed;
   }
 
-  return {
-    getParams: () => params,
-    applyExternal,
-  };
+  return { getParams: () => params, applyExternal, rebuild: build };
 }

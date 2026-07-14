@@ -168,10 +168,13 @@ export const ROUTE_PARAMS = [
   { key: 'inclCL.length', label: 'Banda inclinada gruesa · L', equipment: 'Inclinada azul (gruesa)', layer: LAYER.COARSE, value: 68.5, unit: 'm', source: 'measured', min: 0, max: null, editable: true, description: 'Longitud medida 25-jun-2026. HMI CSV INCL_CL_L_M.' },
   { key: 'inclCL.speed', label: 'Banda inclinada gruesa · v', equipment: 'Inclinada azul (gruesa)', layer: LAYER.COARSE, value: 96.5, unit: 'm/min', source: 'measured', min: 0, max: null, editable: true, description: 'Velocidad FIJA HMI. HMI CSV INCL_CL_V_MMIN.' },
 
-  /* ── Esparcidoras · τ ESTIMADO 40 s (por validar) ── */
-  { key: 'spreader1.tau', label: 'Esparcidor 1 (SL1) · τ', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 40, unit: 's', source: 'estimated', min: 0, max: null, editable: true, description: 'Residencia esparcidora capa inferior SL1: entra por arriba → cae al colchón. Estimado 40 s «por validar» (docs de diseño · PARAMETROS.md). HMI CSV T_ESP1_S.' },
-  { key: 'spreader2.tau', label: 'Esparcidor 2 (CL) · τ', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 40, unit: 's', source: 'estimated', min: 0, max: null, editable: true, description: 'Residencia esparcidora core CL. Estimado 40 s «por validar». HMI CSV T_ESP2_S.' },
-  { key: 'spreader3.tau', label: 'Esparcidor 3 (SL2) · τ', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 40, unit: 's', source: 'estimated', min: 0, max: null, editable: true, description: 'Residencia esparcidora capa superior SL2. Estimado 40 s «por validar». HMI CSV T_ESP3_S.' },
+  /* ── Esparcidores · τ = M_hopper / F_capa × 60 ── */
+  { key: 'spreader1.mass', label: 'Esparcidor 1 (SL1) · masa M', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 12.5, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV M_ESP1_KG.' },
+  { key: 'spreader1.flow', label: 'Esparcidor 1 (SL1) · flujo F', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 69.76, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'F_SL × PCT_SL1/100.' },
+  { key: 'spreader2.mass', label: 'Esparcidor 2 (CL) · masa M', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 40, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV M_ESP2_KG.' },
+  { key: 'spreader2.flow', label: 'Esparcidor 2 (CL) · flujo F', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 118, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV F_CL_KGMIN.' },
+  { key: 'spreader3.mass', label: 'Esparcidor 3 (SL2) · masa M', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 15, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV M_ESP3_KG.' },
+  { key: 'spreader3.flow', label: 'Esparcidor 3 (SL2) · flujo F', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 77.84, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'F_SL × PCT_SL2/100.' },
 
   /* ── Velocidad de línea (máster downstream) ── */
   { key: 'line.speed', label: 'Velocidad de prensa v_prensa', equipment: 'Prensa continua', layer: LAYER.COMMON, value: 14.5, unit: 'm/min', source: 'hmi', min: 0, max: null, editable: true, description: 'Velocidad de la línea después del registro (colchón → sensores). Máster del tramo común. HMI CSV V_PRENSA_M_MIN.' },
@@ -357,9 +360,13 @@ export function tInclined(params, prefix) {
   return okQ(tSec, 's', { flags: worstFlags([L, v]) });
 }
 
-/** τ_spreader = valor fijo/estimado del parámetro (ESTIMADO 40 s). */
+/** τ_esparcidor = M_hopper / F_capa × 60. */
 export function tauSpreader(params, prefix) {
-  return readParam(params, `${prefix}.tau`);
+  const M = readParam(params, `${prefix}.mass`);
+  const F = readParam(params, `${prefix}.flow`, { allowZero: false });
+  const blockers = [M, F].filter((q) => isBlocking(q.status) || q.value == null);
+  if (blockers.length) return makeQ({ value: null, unit: 's', status: STATUS.UNAVAILABLE, reason: `τ_${prefix} no disponible` });
+  return okQ((M.value / F.value) * 60, 's', { flags: worstFlags([M, F]) });
 }
 
 /** t_sensor = t_registration + distancia / v_línea × 60. */

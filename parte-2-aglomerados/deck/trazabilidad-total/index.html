@@ -11,8 +11,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" />
-<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260711a" />
-<link rel="stylesheet" href="css/params.css?v=20260701" />
+<link rel="stylesheet" href="vendor/katex/katex.min.css?v=0.17.0" />
+<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260714a" />
+<link rel="stylesheet" href="css/params.css?v=20260714a" />
+<script defer src="vendor/katex/katex.min.js?v=0.17.0"></script>
 </head>
 <body>
 
@@ -122,7 +124,7 @@
     <button type="button" class="s2-reports-btn" id="reportsToggle">
       <span class="ms">receipt_long</span> Reportes <span class="s2-reports-btn__count" id="reportsCount">0</span>
     </button>
-    <button type="button" class="s2-reset-changes-btn" id="resetChangesBtn" title="Borrar todos los cambios y reportes (demo)">
+    <button type="button" class="s2-reset-changes-btn" id="resetChangesBtn" title="Borrar todos los cambios y reportes (demo)" aria-label="Reiniciar cambios y reportes">
       <span class="ms">restart_alt</span>
     </button>
     </div>
@@ -132,7 +134,7 @@
   <div class="s2-reports-panel is-hidden" id="reportsPanel">
     <div class="s2-reports-panel__hd">
       <h4><span class="ms">receipt_long</span> Reportes de cambios</h4>
-      <button type="button" id="reportsClose" class="s2-reports-panel__close"><span class="ms">close</span></button>
+      <button type="button" id="reportsClose" class="s2-reports-panel__close" aria-label="Cerrar reportes"><span class="ms">close</span></button>
     </div>
     <p class="s2-reports-panel__hint">Hora real de Quito (Ecuador) en que cada cambio pasó por cada equipo. Nace "en curso" al inyectarlo y se completa al llegar al final.</p>
     <div class="s2-reports-panel__list" id="reportsList">
@@ -167,6 +169,15 @@
         <marker id="wfArrowRec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="#D47A00"/>
         </marker>
+        <marker id="wfArrowCL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#0A7D5A"/>
+        </marker>
+        <marker id="wfArrowSL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1565C0"/>
+        </marker>
+        <marker id="wfArrowBio" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#7B6752"/>
+        </marker>
       </defs>
 
       <!-- ══════════ PARTE 1 · WIREFRAME ORIGINAL ══════════ -->
@@ -176,15 +187,15 @@
         <line x1="620" y1="0" x2="620" y2="614" class="wf-bandline"/>
         <line x1="790" y1="0" x2="790" y2="614" class="wf-bandline"/>
         <line x1="1005" y1="0" x2="1005" y2="614" class="wf-bandline"/>
-        <line x1="1515" y1="0" x2="1515" y2="614" class="wf-bandline"/>
         <line x1="1620" y1="0" x2="1620" y2="614" class="wf-bandline"/>
+        <line x1="1970" y1="0" x2="1970" y2="614" class="wf-bandline"/>
         <text x="92" y="22" class="wf-band">PATIOS</text>
         <text x="402" y="22" class="wf-band">REDUCCIÓN · 3 VÍAS</text>
         <text x="705" y="22" class="wf-band">SILOS VERDES</text>
         <text x="898" y="22" class="wf-band">DOSIF. · SECADO</text>
-        <text x="1260" y="22" class="wf-band">CLASIFICACIÓN REAL</text>
-        <text x="1568" y="80" class="wf-band">SILOS 5/6</text>
-        <text x="1855" y="80" class="wf-band">PASA A SECCIÓN 2 ANIMADA →</text>
+        <text x="1310" y="22" class="wf-band">CLASIFICACIÓN · 4 RUTAS</text>
+        <text x="1780" y="22" class="wf-band">SILOS FINALES · REINGRESO</text>
+        <text x="1995" y="80" class="wf-band">→ SECCIÓN 2</text>
         <line x1="0" y1="42" x2="2100" y2="42" stroke="#111" stroke-width="1.5"/>
 
         <text x="205" y="96" class="wf-lane">VÍA ASERRÍN</text>
@@ -217,22 +228,27 @@
         <polyline class="wf-edge" points="1065,410 1086,410 1086,445 1110,445"/>
         <polyline class="wf-edge" points="1140,207 1140,306"/>
         <polyline class="wf-edge" points="1140,433 1140,334"/>
-        <polyline class="wf-edge" points="1170,320 1210,320 1210,194 1475,194"/>
-        <polyline class="wf-edge" points="1170,320 1244,320"/>
-        <polyline class="wf-edge" points="1276,320 1324,320"/>
-        <polyline class="wf-edge" points="1356,320 1435,390"/>
-        <polyline class="wf-edge wf-edge-rec" points="1170,320 1208,320 1208,505 1234,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1266,505 1304,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1338,500 1374,473"/>
-        <polyline class="wf-edge wf-edge-rec" points="1338,510 1374,537"/>
-        <polyline class="wf-edge wf-edge-rec" points="1406,473 1432,501"/>
-        <polyline class="wf-edge wf-edge-rec" points="1406,537 1432,509"/>
-        <polyline class="wf-edge wf-edge-rec" points="1462,505 1494,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1526,505 1560,505 1560,296 1260,296 1260,300"/>
-        <polyline class="wf-edge wf-edge-bio" points="1170,320 1190,320 1190,582 1218,582"/>
-        <polyline class="wf-edge wf-edge-bio" points="1262,582 1296,582"/>
-        <polyline class="wf-edge wf-edge-bio" points="1318,596 1318,612 1032,612 1032,596"/>
-        <polyline class="wf-edge wf-edge-bio" points="136,622 988,622 988,596"/>
+        <!-- salida de las zarandas: cuatro colectores físicos antes de cada ruta -->
+        <polyline class="wf-edge wf-edge-cl" points="1170,320 1200,320 1200,195 1228,195"/>
+        <polyline class="wf-edge wf-edge-cl" points="1292,195 1702,194"/>
+        <polyline class="wf-edge wf-edge-sl" points="1170,320 1228,320"/>
+        <polyline class="wf-edge wf-edge-sl" points="1292,320 1382,320"/>
+        <polyline class="wf-edge wf-edge-sl" points="1418,320 1522,320"/>
+        <polyline class="wf-edge wf-edge-sl" points="1558,320 1702,320"/>
+        <polyline class="wf-edge wf-edge-rec" points="1170,320 1200,320 1200,480 1228,480"/>
+        <polyline class="wf-edge wf-edge-rec" points="1292,480 1382,480"/>
+        <polyline class="wf-edge wf-edge-rec" points="1418,480 1502,480"/>
+        <polyline class="wf-edge wf-edge-rec" points="1538,475 1624,448"/>
+        <polyline class="wf-edge wf-edge-rec" points="1538,485 1624,512"/>
+        <polyline class="wf-edge wf-edge-rec" points="1658,448 1742,476"/>
+        <polyline class="wf-edge wf-edge-rec" points="1658,512 1742,484"/>
+        <polyline class="wf-edge wf-edge-rec" points="1778,480 1862,480"/>
+        <polyline class="wf-edge wf-edge-rec" points="1898,480 1940,480 1940,292 1400,292 1400,302"/>
+        <polyline class="wf-edge wf-edge-bio" points="1170,320 1190,320 1190,600 1228,600"/>
+        <polyline class="wf-edge wf-edge-bio" points="1292,600 1382,600"/>
+        <polyline class="wf-edge wf-edge-bio" points="1418,600 1522,600"/>
+        <polyline class="wf-edge wf-edge-bio" points="1558,600 1776,600"/>
+        <polyline class="wf-edge wf-edge-bio" points="136,622 1776,622 1776,600"/>
 
         <!-- conectores visuales hacia Sección 2 animada -->
         <text x="1720" y="200" class="wf-elabel" style="fill:#0A7D5A;font-weight:700">CL/core → Silo 5 animado · transportador aéreo</text>
@@ -358,79 +374,103 @@
           <text y="34" class="wf-nlabel">Zaranda 3</text>
           <text y="48" class="wf-nsub">clapetas 1–7</text>
         </g>
-        <text x="1188" y="168" class="wf-elabel wf-rec-text">regla HMI: POS 7 / 100% = todo al Silo CL</text>
-        <text x="1196" y="286" class="wf-elabel">5 fracciones: CL · SL-Macro · SL-Micro · Part. Grandes · Polvo</text>
-        <g class="wf-node" data-pre-stage="partG" transform="translate(1250 505)">
+        <text x="1188" y="156" class="wf-elabel wf-rec-text">Regla HMI: POS 7 / 100% = todo a CL</text>
+        <text x="1188" y="280" class="wf-elabel">CL · SL · Partículas grandes · Polvo</text>
+
+        <!-- Colectores: reciben cada fracción separada por las zarandas -->
+        <g class="wf-node wf-collector wf-collector--cl" data-pre-stage="colector-cl" data-label="Colector CL" transform="translate(1260 195)">
+          <path d="M-32,-16 H32 V2 L12,20 H-12 L-32,2 Z" class="wf-collector-shape"/>
+          <text y="3" class="wf-icon">CL</text>
+          <text y="38" class="wf-nlabel">Colector CL</text>
+          <text y="51" class="wf-nsub">→ Silo 5</text>
+        </g>
+        <g class="wf-node wf-collector wf-collector--sl" data-pre-stage="colector-sl" data-label="Colector SL" transform="translate(1260 320)">
+          <path d="M-32,-16 H32 V2 L12,20 H-12 L-32,2 Z" class="wf-collector-shape"/>
+          <text y="3" class="wf-icon">SL</text>
+          <text y="38" class="wf-nlabel">Colector SL</text>
+          <text y="51" class="wf-nsub">→ Windsifter 1</text>
+        </g>
+        <g class="wf-node wf-collector wf-collector--rec" data-pre-stage="colector-pg" data-label="Colector de partículas grandes" transform="translate(1260 480)">
+          <path d="M-32,-16 H32 V2 L12,20 H-12 L-32,2 Z" class="wf-collector-shape"/>
+          <text y="3" class="wf-icon">PG</text>
+          <text y="38" class="wf-nlabel">Colector P. Grandes</text>
+          <text y="51" class="wf-nsub">→ reproceso</text>
+        </g>
+        <g class="wf-node wf-collector wf-collector--bio" data-pre-stage="colector-polvo" data-label="Colector de polvo" transform="translate(1260 600)">
+          <path d="M-32,-16 H32 V2 L12,20 H-12 L-32,2 Z" class="wf-collector-shape"/>
+          <text y="3" class="wf-icon">P</text>
+          <text y="38" class="wf-nlabel">Colector Polvo</text>
+        </g>
+
+        <g class="wf-node" data-pre-stage="partG" transform="translate(1400 480)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">PG</text>
           <text y="34" class="wf-nlabel">Part. Grandes</text>
           <text y="48" class="wf-nsub">oversize</text>
         </g>
-        <g class="wf-node" data-pre-stage="ws1" transform="translate(1260 320)">
+        <g class="wf-node" data-pre-stage="ws1" transform="translate(1400 320)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">W1</text>
           <text y="34" class="wf-nlabel">Windsifter 1</text>
           <text y="48" class="wf-nsub">línea SL</text>
         </g>
-        <g class="wf-node" data-pre-stage="ws2" transform="translate(1340 320)">
+        <g class="wf-node" data-pre-stage="ws2" transform="translate(1540 320)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">W2</text>
           <text y="34" class="wf-nlabel">Windsifter 2</text>
           <text y="48" class="wf-nsub">línea SL</text>
         </g>
-        <g class="wf-node" data-pre-stage="w3" transform="translate(1320 505)">
+        <g class="wf-node" data-pre-stage="w3" transform="translate(1520 480)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">W3</text>
           <text y="34" class="wf-nlabel">Windsifter 3</text>
           <text y="48" class="wf-nsub">arena/piedras</text>
         </g>
-        <g class="wf-node" data-pre-stage="r1" transform="translate(1390 465)">
+        <g class="wf-node" data-pre-stage="r1" transform="translate(1640 440)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">R1</text>
           <text y="34" class="wf-nlabel">Refinador 1</text>
-          <text y="48" class="wf-nsub">6.8 T/h</text>
         </g>
-        <g class="wf-node" data-pre-stage="r2" transform="translate(1390 545)">
+        <g class="wf-node" data-pre-stage="r2" transform="translate(1640 520)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">R2</text>
           <text y="34" class="wf-nlabel">Refinador 2</text>
-          <text y="48" class="wf-nsub">8.0 T/h</text>
         </g>
-        <g class="wf-node" data-pre-stage="cy" transform="translate(1446 505)">
+        <g class="wf-node" data-pre-stage="cy" transform="translate(1760 480)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">CY</text>
           <text y="34" class="wf-nlabel">Ciclones</text>
         </g>
-        <g class="wf-node" data-pre-stage="clasSL" transform="translate(1510 505)">
+        <g class="wf-node" data-pre-stage="clasSL" transform="translate(1880 480)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">CL</text>
           <text y="34" class="wf-nlabel">Clasificadores</text>
         </g>
-        <g class="wf-node" data-pre-stage="silo5" data-label="Silo 5 · CL/core" transform="translate(1495 194)">
+        <g class="wf-node" data-pre-stage="silo5" data-label="Silo 5 · CL/core" transform="translate(1720 194)">
           <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
           <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
           <text y="42" class="wf-nlabel">Silo 5 · CL/core</text>
           <text y="56" class="wf-nsub">ρ 128–135 · L 44%</text>
           <text y="70" class="wf-unk">V m³ ?</text>
         </g>
-        <g class="wf-node" data-pre-stage="silo6" data-label="Silo 6 · SL/capas" transform="translate(1455 390)">
+        <g class="wf-node" data-pre-stage="silo6" data-label="Silo 6 · SL/capas" transform="translate(1720 320)">
           <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
           <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
           <text y="42" class="wf-nlabel">Silo 6 · SL/capas</text>
           <text y="56" class="wf-nsub">ρ 161–188 · L 31%</text>
           <text y="70" class="wf-unk">V m³ ?</text>
         </g>
-        <g class="wf-node" data-pre-stage="silo4" transform="translate(1240 582)">
+        <g class="wf-node" data-pre-stage="silo4" transform="translate(1400 600)">
           <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
           <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
           <text y="42" class="wf-nlabel">Silo 4 · Polvo</text>
         </g>
-        <g class="wf-node" data-pre-stage="silo8" transform="translate(1318 582)">
+        <g class="wf-node" data-pre-stage="silo8" transform="translate(1540 600)">
           <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
           <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
           <text y="42" class="wf-nlabel">Silo 8 · TVM</text>
         </g>
-        <g class="wf-node" data-pre-stage="quemador" data-label="Quemador · biomasa" transform="translate(1010 580)">
+        <g class="wf-node" data-pre-stage="quemador" data-label="Quemador · biomasa" transform="translate(1820 600)">
           <rect x="-44" y="-16" width="88" height="32" class="wf-side"/>
           <text y="34" class="wf-nlabel">Quemador</text>
           <text y="48" class="wf-nsub">corteza+polvo</text>
@@ -438,11 +478,11 @@
       </g>
       <!-- Transportadores aéreos P1 → silos animados (mismo camino que siguen los trazadores) -->
       <g id="aerialBridges" fill="none">
-        <path d="M -685 408 H -630 Q -618 408 -618 396 V 42 Q -618 30 -606 30 H 318 Q 330 30 330 42 V 100" stroke="#1565C0" stroke-width="4" stroke-linecap="round"/>
-        <path d="M -685 408 H -630 Q -618 408 -618 396 V 42 Q -618 30 -606 30 H 318 Q 330 30 330 42 V 100" class="wf-flow"/>
+        <path d="M -420 338 H -405 Q -393 338 -393 326 V 42 Q -393 30 -381 30 H 318 Q 330 30 330 42 V 100" stroke="#1565C0" stroke-width="4" stroke-linecap="round"/>
+        <path d="M -420 338 H -405 Q -393 338 -393 326 V 42 Q -393 30 -381 30 H 318 Q 330 30 330 42 V 100" class="wf-flow"/>
         <polygon points="323,98 337,98 330,110" fill="#1565C0"/>
-        <path d="M -645 212 H -594 Q -582 212 -582 200 V 26 Q -582 14 -570 14 H 848 Q 860 14 860 26 V 66" stroke="#0A7D5A" stroke-width="4" stroke-linecap="round"/>
-        <path d="M -645 212 H -594 Q -582 212 -582 200 V 26 Q -582 14 -570 14 H 848 Q 860 14 860 26 V 66" class="wf-flow"/>
+        <path d="M -420 212 H -369 Q -357 212 -357 200 V 26 Q -357 14 -345 14 H 848 Q 860 14 860 26 V 66" stroke="#0A7D5A" stroke-width="4" stroke-linecap="round"/>
+        <path d="M -420 212 H -369 Q -357 212 -357 200 V 26 Q -357 14 -345 14 H 848 Q 860 14 860 26 V 66" class="wf-flow"/>
         <polygon points="853,64 867,64 860,76" fill="#0A7D5A"/>
       </g>
 
@@ -475,10 +515,10 @@
           <text x="-82" y="2" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">DOSING FINA</text>
           <text x="-82" y="17" text-anchor="end" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">τ = M/F_descarga ×60 · HMI</text>
         </g>
-        <g class="s2-intake__node" data-pre-stage="active-encCE" data-label="Encolador CE" transform="translate(330 500)">
+        <g class="s2-intake__node" data-pre-stage="active-encCE" data-label="Encoladora CE" transform="translate(330 500)">
           <rect x="-70" y="-34" width="140" height="68" rx="28" fill="#B7C4D2" stroke="#758697" stroke-width="2"/>
           <g stroke="#758697" stroke-width="3" opacity=".75"><line x1="-42" y1="-24" x2="-30" y2="24"/><line x1="-12" y1="-24" x2="0" y2="24"/><line x1="18" y1="-24" x2="30" y2="24"/></g>
-          <text x="-82" y="-4" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADOR CE</text>
+          <text x="-82" y="-4" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADORA CE</text>
           <text x="-82" y="11" text-anchor="end" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">capas externas</text>
         </g>
 
@@ -499,10 +539,10 @@
           <text x="72" y="-4" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">DOSING GRUESA</text>
           <text x="72" y="11" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">τ = M/F_descarga ×60 · HMI</text>
         </g>
-        <g class="s2-intake__node" data-pre-stage="active-encCI" data-label="Encolador CI" transform="translate(860 460)">
+        <g class="s2-intake__node" data-pre-stage="active-encCI" data-label="Encoladora CI" transform="translate(860 460)">
           <rect x="-70" y="-34" width="140" height="68" rx="28" fill="#B7C4D2" stroke="#758697" stroke-width="2"/>
           <g stroke="#758697" stroke-width="3" opacity=".75"><line x1="-42" y1="-24" x2="-30" y2="24"/><line x1="-12" y1="-24" x2="0" y2="24"/><line x1="18" y1="-24" x2="30" y2="24"/></g>
-          <text x="72" y="-4" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADOR CI</text>
+          <text x="72" y="-4" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADORA CI</text>
           <text x="72" y="11" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">core</text>
         </g>
 
@@ -890,23 +930,23 @@
   <!-- ══ PANEL PARÁMETROS ══ -->
   <div class="s2-params is-hidden" id="panelParams">
     <div class="s2-params__section">
-      <h3>Parámetros de planta · leídos del CSV del HMI</h3>
+      <h3>Parámetros y ecuaciones · Patios → Sensores</h3>
       <div class="s2-csv-banner" id="csvBanner">
         <span class="ms">sync</span>
-        <span>Estos valores <strong>se leen del CSV del HMI</strong> (<code>datos/hmi.csv</code>), releído cada 2&nbsp;s.
-        En planta, un job sobrescribe ese archivo; aquí es estático pero la tubería HMI→simulador está probada y lista para el servidor.</span>
+        <span>El <strong>CSV activo es la única fuente editable</strong>. Cada cambio modifica el documento CSV, lo vuelve a parsear y recién entonces actualiza ecuaciones y simulación. Un archivo local conectado puede guardarse; el CSV servido se descarga para persistirlo.</span>
         <span class="s2-hmi-status is-idle" id="hmiStatus2">● —</span>
       </div>
       <div class="s2-params__actions">
         <button type="button" class="btn btn--secondary" id="hmiConnectBtn2"><span class="ms">upload_file</span> Conectar CSV local</button>
-        <button type="button" class="btn btn--secondary" id="resetParamsBtn"><span class="ms">restart_alt</span> Defaults (sin CSV)</button>
+        <button type="button" class="btn btn--secondary" id="downloadCsvBtn"><span class="ms">download</span> Descargar CSV editado</button>
+        <button type="button" class="btn btn--secondary" id="resetParamsBtn"><span class="ms">restart_alt</span> Recargar CSV del servidor</button>
         <span class="param-save-feedback" id="saveFeedback" aria-live="polite"></span>
       </div>
       <details class="s2-csv-view" id="csvViewWrap">
         <summary><span class="ms">description</span> Ver CSV crudo del HMI (<span id="csvTagCount">0</span> tags)</summary>
         <pre class="s2-csv-raw" id="csvRaw">— aún no leído —</pre>
       </details>
-      <p class="s2-params__hint">Ecuaciones del modelo: τ = M/F×60 · τ_silo = ρ·V·L%/F×60 · t = L/v×60. Los campos con badge <strong>HMI</strong> vienen en vivo del CSV; <strong>Estim.</strong> = plug pendiente de instrumentar.</p>
+      <p class="s2-params__hint">Todas las ecuaciones muestran unidades. Los caudales en kg/h usan ×3600 s/h; kg/min y m/min usan ×60 s/min. <strong>Estimado</strong> identifica tiempos pendientes de validar en planta.</p>
       <div id="paramsGridTab"></div>
     </div>
   </div>
@@ -985,6 +1025,6 @@
   });
 })();
 </script>
-<script type="module" src="js/combined-app.js?v=20260713c"></script>
+<script type="module" src="js/combined-app.js?v=20260714a"></script>
 </body>
 </html>

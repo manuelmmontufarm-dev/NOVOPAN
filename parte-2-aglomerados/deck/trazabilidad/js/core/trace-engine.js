@@ -41,6 +41,8 @@ function beltSpeed(node, params, pressSpeed) {
 /** Lee el flujo (kg/min) que el nodo demanda según su flowSource y la receta. */
 function flowFor(node, params) {
   if (!node || !node.flowSource) return 0;
+  const nodeFlow = Number(params[`flow:${node.id}`]) || 0;
+  if (nodeFlow > 0) return nodeFlow;
   const FSL = Number(params['_global:F_SL']) || 0;
   const FCL = Number(params['_global:F_CL']) || 0;
   const pSL1 = (Number(params['_global:pctSL1']) || 0) / 100;
