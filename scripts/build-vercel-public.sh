@@ -38,6 +38,13 @@ mkdir -p "$PUBLIC/trazabilidad-total"
 cp -R "$DECK/trazabilidad-total/." "$PUBLIC/trazabilidad-total/"
 find "$PUBLIC/trazabilidad-total" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
 
+# Simulador operativo — solo Sección 2. Reutiliza exactamente el motor,
+# las mediciones y los datos HMI del simulador total, con la vista compacta
+# apilada para la pantalla de planta.
+mkdir -p "$PUBLIC/simulador-seccion-2"
+cp -R "$DECK/trazabilidad-total/." "$PUBLIC/simulador-seccion-2/"
+find "$PUBLIC/simulador-seccion-2" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
+
 # Design system tokens — CSS imports ../../_ds/... from trazabilidad/css/
 mkdir -p "$PUBLIC/_ds"
 cp -R "$DECK/_ds/." "$PUBLIC/_ds/"
@@ -80,6 +87,7 @@ for html_path, base in [
     (public / "trazabilidad-linea" / "index.html", "/trazabilidad-linea/"),
     (public / "trazabilidad-preparacion" / "index.html", "/trazabilidad-preparacion/"),
     (public / "trazabilidad-total" / "index.html", "/trazabilidad-total/"),
+    (public / "simulador-seccion-2" / "index.html", "/simulador-seccion-2/"),
 ]:
     inject_base(html_path, base)
 PY
@@ -90,5 +98,6 @@ echo "  /trazabilidad        → parte-2-aglomerados/deck/trazabilidad + _ds tok
 echo "  /trazabilidad-linea  → parte-2-aglomerados/deck/trazabilidad-linea (Sección 2)"
 echo "  /trazabilidad-preparacion → parte-1-preparacion-madera/html-app/trazabilidad-preparacion"
 echo "  /trazabilidad-total → Parte 1 + Sección 2 conectadas"
+echo "  /simulador-seccion-2 → Sección 2 operativa (motor del simulador total)"
 echo "  /patios              → parte-1-preparacion-madera (guía estática)"
 echo "  /patios-interactivo  → parte-1-preparacion-madera/html-app (React/Babel)"

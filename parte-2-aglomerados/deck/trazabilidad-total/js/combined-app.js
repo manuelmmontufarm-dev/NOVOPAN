@@ -1175,6 +1175,7 @@ function initSimulation() {
   // clics sobre píxeles pintados por defecto; el hitbox transparente evita que
   // etiquetas, huecos o pantallas táctiles dejen nodos aparentemente inactivos.
   const prepareNodeHitbox = (node) => {
+    if (node.closest('.s2-stack-hits')) return;
     if (node.querySelector(':scope > .s2-node-hitbox')) return;
     try {
       const box = node.getBBox();
