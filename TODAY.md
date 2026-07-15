@@ -90,6 +90,12 @@
 
 ## Historial
 
+### 2026-07-15 — Simulador operativo Sección 2 en una pantalla
+
+- Nueva ruta pública: `/simulador-seccion-2`.
+- Reutiliza el motor, datos HMI y mediciones del simulador Parte 1 + Sección 2, mostrando únicamente Silos → Formación → Prensa → Sensores en tres filas compactas.
+- Añadido el acceso desde el hub de entregables de NOVOPAN.
+
 ### 2026-07-13 (2) — trazabilidad-total: zarandas conectadas + caída en esparcidoras + ruta fina única
 
 Feedback del usuario sobre la Sección 2: (a) zarandas 1 y 3 flotaban sin tuberías; (b) los cambios "volaban" sobre la banda en vez de entrar por arriba de las esparcidoras; (c) la ruta fina mostraba 2 marcadores en las bandas (raro).
