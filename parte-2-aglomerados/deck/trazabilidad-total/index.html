@@ -12,19 +12,19 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" />
 <link rel="stylesheet" href="vendor/katex/katex.min.css?v=0.17.0" />
-<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260715a" />
+<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260714d" />
 <link rel="stylesheet" href="css/params.css?v=20260714a" />
 <script defer src="vendor/katex/katex.min.js?v=0.17.0"></script>
 </head>
-<body class="s2-section2-stacked">
+<body>
 
 <div class="s2-page">
 
   <!-- ══ HEADER CHROME ══ -->
   <div class="s2-header">
     <div>
-      <div class="s2-header__eyebrow">NOVOPAN · Línea 1 · Sección 2</div>
-      <h1 class="s2-header__title">Sección 2 · Silos → sensores</h1>
+      <div class="s2-header__eyebrow">NOVOPAN · Línea 1 · Trazabilidad total</div>
+      <h1 class="s2-header__title">Parte 1 + Parte 2 · Preparación → tablero</h1>
     </div>
     <div class="s2-header__right">
       <div class="s2-header__meta">
@@ -42,37 +42,33 @@
 
   <!-- ══ STICKY TOOLBAR: tabs + mini-nav + transporte ══ -->
   <div class="s2-toolbar">
-    <div class="s2-toolbar__context">
-      <div class="s2-viewtabs" role="tablist">
-        <button type="button" class="s2-viewtab is-active" data-view="linea" id="tabLinea">Línea</button>
-        <button type="button" class="s2-viewtab" data-view="params" id="tabParams">Parámetros</button>
-      </div>
-      <div class="s2-hmi">
-        <span class="s2-hmi-status is-idle" id="hmiStatus" title="Lectura del CSV del HMI">● HMI CSV · —</span>
-        <button type="button" class="s2-hmi__btn" id="hmiConnectBtn" title="Elegir un CSV local del HMI (fallback)">
-          <span class="ms">upload_file</span> Conectar CSV
-        </button>
-        <input type="file" id="hmiFileInput" accept=".csv,.txt" hidden />
-      </div>
+    <div class="s2-viewtabs" role="tablist">
+      <button type="button" class="s2-viewtab is-active" data-view="linea" id="tabLinea">Línea</button>
+      <button type="button" class="s2-viewtab" data-view="params" id="tabParams">Parámetros</button>
+    </div>
+    <div class="s2-hmi">
+      <span class="s2-hmi-status is-idle" id="hmiStatus" title="Lectura del CSV del HMI">● HMI CSV · —</span>
+      <button type="button" class="s2-hmi__btn" id="hmiConnectBtn" title="Elegir un CSV local del HMI (fallback)">
+        <span class="ms">upload_file</span> Conectar CSV
+      </button>
+      <input type="file" id="hmiFileInput" accept=".csv,.txt" hidden />
     </div>
     <div class="s2-linea-controls" id="lineaControls">
-      <div class="s2-toolbar__row s2-toolbar__row--primary">
-        <div class="s2-speed">
-          <span class="s2-speed__label"><span class="ms">speed</span> Velocidad de prensa</span>
-          <input type="range" class="s2-speed__range" id="speedRange" min="8" max="22" step="0.1" value="14.5" />
-          <span class="s2-speed__box">
-            <input type="number" id="speedInput" min="8" max="22" step="0.1" value="14.5" aria-label="Velocidad de prensa" />
-            <span class="s2-speed__unit">m/min</span>
-          </span>
-        </div>
-        <label class="s2-sec1-toggle" title="Enciende/apaga la Sección 1 (preparación) para concentrarte en la Sección 2">
-          <input type="checkbox" id="sec1Toggle" checked />
-          <span class="s2-sec1-toggle__track"><span class="s2-sec1-toggle__thumb"></span></span>
-          <span class="s2-sec1-toggle__lbl">Sección 1</span>
-        </label>
-        <div class="s2-toolbar__cluster s2-toolbar__cluster--zones">
-          <span class="s2-toolbar__label">Ir a zona</span>
-          <div class="s2-zones">
+    <div class="s2-speed">
+      <span class="s2-speed__label"><span class="ms">speed</span> Velocidad de prensa</span>
+      <input type="range" class="s2-speed__range" id="speedRange" min="8" max="22" step="0.1" value="14.5" />
+      <span class="s2-speed__box">
+        <input type="number" id="speedInput" min="8" max="22" step="0.1" value="14.5" aria-label="Velocidad de prensa" />
+        <span class="s2-speed__unit">m/min</span>
+      </span>
+    </div>
+    <label class="s2-sec1-toggle" title="Enciende/apaga la Sección 1 (preparación) para concentrarte en la Sección 2">
+      <input type="checkbox" id="sec1Toggle" checked />
+      <span class="s2-sec1-toggle__track"><span class="s2-sec1-toggle__thumb"></span></span>
+      <span class="s2-sec1-toggle__lbl">Sección 1</span>
+    </label>
+    <span class="s2-toolbar__label">Ir a zona</span>
+    <div class="s2-zones">
       <button type="button" class="s2-zone-btn" data-scroll="0">
         <span class="s2-zone-btn__dot" style="background:#7A5D00;"></span>
         <strong>1</strong> Preparación
@@ -101,49 +97,41 @@
         <span class="s2-zone-btn__dot" style="background:#0A7D5A;"></span>
         <strong>2E</strong> Calidad
       </button>
-          </div>
-        </div>
-        <label class="s2-time-scale">
-          <span class="ms">timer</span>
-          <span>Tiempo</span>
-          <input type="number" id="timeScaleInput" min="1" max="100000" step="1" value="1"
-                 aria-label="Multiplicador de tiempo"
-                 title="Escribe el multiplicador de simulación. La Sección 2 se limita a 300× para que se vea el detalle." />
-          <span class="s2-time-scale__x">×</span>
-        </label>
-      </div>
-      <div class="s2-toolbar__row s2-toolbar__row--secondary">
-        <div class="s2-toolbar__cluster s2-toolbar__cluster--inject">
-          <span class="s2-toolbar__label">Inyectar P1</span>
-          <div class="s2-preinject">
-            <button type="button" class="s2-preinject__btn" data-pre-trigger="patios" data-label="Patios · cambio receta">
-              <span class="ms">yard</span> Patios
-            </button>
-            <button type="button" class="s2-preinject__btn" data-pre-trigger="silo5" data-label="Silo 5 · CL/core">
-              <span class="ms">inventory_2</span> Silo 5
-            </button>
-            <button type="button" class="s2-preinject__btn" data-pre-trigger="silo6" data-label="Silo 6 · SL/capas">
-              <span class="ms">inventory_2</span> Silo 6
-            </button>
-          </div>
-        </div>
-        <div class="s2-toolbar__spacer"></div>
-        <div class="s2-toolbar__actions">
-          <div class="s2-mover">
-            <span class="s2-mover__label"><span class="ms">drag_pan</span> Mover cambio seleccionado</span>
-            <input type="range" class="s2-mover__range" id="moverRange" min="0" max="85.55" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
-          </div>
-          <button type="button" class="s2-pause-btn" id="pauseBtn" title="Pausar la simulación (los cambios se congelan)">
-            <span class="ms">pause</span> Pausa
-          </button>
-          <button type="button" class="s2-reports-btn" id="reportsToggle">
-            <span class="ms">receipt_long</span> Reportes <span class="s2-reports-btn__count" id="reportsCount">0</span>
-          </button>
-          <button type="button" class="s2-reset-changes-btn" id="resetChangesBtn" title="Borrar todos los cambios y reportes (demo)" aria-label="Reiniciar cambios y reportes">
-            <span class="ms">restart_alt</span>
-          </button>
-        </div>
-      </div>
+    </div>
+    <span class="s2-toolbar__label s2-toolbar__label--p1">Inyectar P1</span>
+    <div class="s2-preinject">
+      <button type="button" class="s2-preinject__btn" data-pre-trigger="patios" data-label="Patios · cambio receta">
+        <span class="ms">yard</span> Patios
+      </button>
+      <button type="button" class="s2-preinject__btn" data-pre-trigger="silo5" data-label="Silo 5 · CL/core">
+        <span class="ms">inventory_2</span> Silo 5
+      </button>
+      <button type="button" class="s2-preinject__btn" data-pre-trigger="silo6" data-label="Silo 6 · SL/capas">
+        <span class="ms">inventory_2</span> Silo 6
+      </button>
+    </div>
+    <div class="s2-toolbar__spacer"></div>
+    <label class="s2-time-scale">
+      <span class="ms">timer</span>
+      <span>Tiempo</span>
+      <input type="number" id="timeScaleInput" min="1" max="100000" step="1" value="1"
+             aria-label="Multiplicador de tiempo"
+             title="Escribe el multiplicador de simulación. La Sección 2 se limita a 300× para que se vea el detalle." />
+      <span class="s2-time-scale__x">×</span>
+    </label>
+    <div class="s2-mover">
+      <span class="s2-mover__label"><span class="ms">drag_pan</span> Mover cambio seleccionado</span>
+      <input type="range" class="s2-mover__range" id="moverRange" min="0" max="85.55" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
+    </div>
+    <button type="button" class="s2-pause-btn" id="pauseBtn" title="Pausar la simulación (los cambios se congelan)">
+      <span class="ms">pause</span> Pausa
+    </button>
+    <button type="button" class="s2-reports-btn" id="reportsToggle">
+      <span class="ms">receipt_long</span> Reportes <span class="s2-reports-btn__count" id="reportsCount">0</span>
+    </button>
+    <button type="button" class="s2-reset-changes-btn" id="resetChangesBtn" title="Borrar todos los cambios y reportes (demo)" aria-label="Reiniciar cambios y reportes">
+      <span class="ms">restart_alt</span>
+    </button>
     </div>
   </div>
 
@@ -163,128 +151,7 @@
   <!-- Escala lineal real: x = 80 + 70 × metros. Tramo medido 0→85.15 m
        (0→80 · 45→3230 · 55→3930 · 71.6→5092 · 85.15→6040.5) + margen hasta 91 m. -->
   <div class="s2-canvas" id="canvasScroll">
-    <!-- Vista operativa compacta: Sección 2 completa en tres filas, sin scroll. -->
-    <svg id="section2CompactCanvas" class="s2-compact-canvas" viewBox="0 0 1600 620" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="compactTitle compactDesc">
-      <title id="compactTitle">Sección 2 · Silos a sensores</title>
-      <desc id="compactDesc">Simulador NOVOPAN organizado en tres filas: alimentación, formación y acabado.</desc>
-      <defs>
-        <marker id="compactArrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#0A7D5A"/></marker>
-        <marker id="compactArrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#1565C0"/></marker>
-        <marker id="compactArrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#52615A"/></marker>
-        <linearGradient id="compactSteel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EFF3F6"/><stop offset="1" stop-color="#AAB8C5"/></linearGradient>
-      </defs>
-
-      <!-- Fila 1 · alimentación paralela -->
-      <g class="s2-compact-row">
-        <rect class="s2-compact-row__bg" x="18" y="18" width="1564" height="158" rx="18"/>
-        <rect class="s2-compact-row__rail s2-compact-row__rail--feed" x="18" y="18" width="72" height="158" rx="18"/>
-        <text class="s2-compact-row__number" x="54" y="71">01</text>
-        <text class="s2-compact-row__name" x="54" y="105">ENTRADA</text>
-        <text class="s2-compact-row__hint" x="112" y="43">SILOS → DOSIFICACIÓN → ENCOLADO</text>
-
-        <path class="s2-compact-flow s2-compact-flow--blue" d="M286 77H336M516 77H566"/>
-        <path class="s2-compact-flow s2-compact-flow--green" d="M286 137H336M516 137H566"/>
-
-        <g class="s2-compact-card s2-compact-card--blue" data-pre-stage="active-silo6" data-label="Silo 6 · fina" transform="translate(112 52)">
-          <rect width="174" height="50" rx="10"/><circle cx="22" cy="25" r="12"/><path d="M14 18h16v9l-8 8-8-8z"/>
-          <text class="s2-compact-card__title" x="43" y="22">SILO 6 · FINA</text><text class="s2-compact-card__meta" x="43" y="37">SL1 + SL2 · capas</text>
-        </g>
-        <g class="s2-compact-card s2-compact-card--blue" data-pre-stage="active-dosSL" data-label="Dosing fina" transform="translate(336 52)">
-          <rect width="180" height="50" rx="10"/><circle cx="22" cy="25" r="12"/><path d="M14 17h16v7l-8 11-8-11z"/>
-          <text class="s2-compact-card__title" x="43" y="22">DOSING FINA</text><text class="s2-compact-card__meta" x="43" y="37">τ 10.8 s · HMI</text>
-        </g>
-        <g class="s2-compact-card s2-compact-card--blue" data-pre-stage="active-encCE" data-label="Encoladora CE" transform="translate(566 52)">
-          <rect width="190" height="50" rx="10"/><circle cx="22" cy="25" r="12"/><path d="M14 21h16M16 26h12M18 31h8"/>
-          <text class="s2-compact-card__title" x="43" y="22">ENCOLADORA CE</text><text class="s2-compact-card__meta" x="43" y="37">capas externas · τ 40 s</text>
-        </g>
-
-        <g class="s2-compact-card s2-compact-card--green" data-pre-stage="active-silo5" data-label="Silo 5 · gruesa" transform="translate(112 112)">
-          <rect width="174" height="50" rx="10"/><circle cx="22" cy="25" r="12"/><path d="M14 18h16v9l-8 8-8-8z"/>
-          <text class="s2-compact-card__title" x="43" y="22">SILO 5 · GRUESA</text><text class="s2-compact-card__meta" x="43" y="37">CL · core</text>
-        </g>
-        <g class="s2-compact-card s2-compact-card--green" data-pre-stage="active-dosCL" data-label="Dosing gruesa" transform="translate(336 112)">
-          <rect width="180" height="50" rx="10"/><circle cx="22" cy="25" r="12"/><path d="M14 17h16v7l-8 11-8-11z"/>
-          <text class="s2-compact-card__title" x="43" y="22">DOSING GRUESA</text><text class="s2-compact-card__meta" x="43" y="37">τ 5.3 s · HMI</text>
-        </g>
-        <g class="s2-compact-card s2-compact-card--green" data-pre-stage="active-encCI" data-label="Encoladora CI" transform="translate(566 112)">
-          <rect width="190" height="50" rx="10"/><circle cx="22" cy="25" r="12"/><path d="M14 21h16M16 26h12M18 31h8"/>
-          <text class="s2-compact-card__title" x="43" y="22">ENCOLADORA CI</text><text class="s2-compact-card__meta" x="43" y="37">core · τ 40 s</text>
-        </g>
-
-      </g>
-
-      <!-- Fila 2 · formación y protección -->
-      <g class="s2-compact-row">
-        <rect class="s2-compact-row__bg" x="18" y="190" width="1564" height="190" rx="18"/>
-        <rect class="s2-compact-row__rail s2-compact-row__rail--forming" x="18" y="190" width="72" height="190" rx="18"/>
-        <text class="s2-compact-row__number" x="54" y="250">02</text>
-        <text class="s2-compact-row__name" x="54" y="285">FORMACIÓN</text>
-        <text class="s2-compact-row__hint" x="112" y="217">TRES CAPAS → REGISTRO → PRECOMPRESIÓN → PROTECCIÓN</text>
-
-        <!-- Conexiones dedicadas, encima de ambas superficies: CE se divide a
-             SL1/SL2 y CI alimenta únicamente CL, sin cruces ni diagonales. -->
-        <g class="s2-compact-connection-panel">
-          <rect x="792" y="46" width="770" height="112" rx="14"/>
-          <text x="816" y="69" class="s2-compact-connection-panel__title">ENTREGA A ESPARCIDORES</text>
-          <path class="s2-compact-flow s2-compact-flow--blue" d="M756 77H824V182H319V245"/>
-          <path class="s2-compact-flow s2-compact-flow--blue" d="M824 182H807V245"/>
-          <path class="s2-compact-flow s2-compact-flow--green" d="M756 137H850V230H581V245"/>
-          <text class="s2-compact-connector-label s2-compact-connector-label--blue" x="900" y="88">FINA · 64.57 m · SE DIVIDE EN SL1 + SL2</text>
-          <text class="s2-compact-connector-label s2-compact-connector-label--green" x="930" y="142">GRUESA · 68.5 m · ALIMENTA CL</text>
-          <g class="s2-compact-port s2-compact-port--blue" transform="translate(319 224)"><circle r="13"/><text y="4">SL1</text></g>
-          <g class="s2-compact-port s2-compact-port--green" transform="translate(581 232)"><circle r="13"/><text y="4">CL</text></g>
-          <g class="s2-compact-port s2-compact-port--blue" transform="translate(807 224)"><circle r="13"/><text y="4">SL2</text></g>
-        </g>
-        <line class="s2-compact-belt" x1="112" y1="346" x2="1518" y2="346"/>
-        <line class="s2-compact-belt-motion" x1="112" y1="346" x2="1518" y2="346"/>
-
-        <g class="s2-compact-machine s2-compact-machine--blue s2-machine" data-inject-m="6.63" data-label="SL1 · capa inferior" transform="translate(229 245)">
-          <rect width="180" height="82" rx="12"/><rect class="s2-compact-machine__head" width="180" height="24" rx="12"/><text class="s2-compact-machine__code" x="14" y="17">SL1</text><text class="s2-compact-machine__title" x="14" y="47">ESPARCIDOR 1</text><text class="s2-compact-machine__meta" x="14" y="65">capa inferior · 6.63 m</text><path class="s2-compact-drop" d="M90 82V98"/>
-        </g>
-        <g class="s2-compact-machine s2-compact-machine--green s2-machine" data-inject-m="15" data-label="CL · core" transform="translate(491 245)">
-          <rect width="180" height="82" rx="12"/><rect class="s2-compact-machine__head" width="180" height="24" rx="12"/><text class="s2-compact-machine__code" x="14" y="17">CL</text><text class="s2-compact-machine__title" x="14" y="47">ESPARCIDOR 2</text><text class="s2-compact-machine__meta" x="14" y="65">core · 15.00 m</text><path class="s2-compact-drop" d="M90 82V98"/>
-        </g>
-        <g class="s2-compact-machine s2-compact-machine--blue s2-machine" data-inject-m="22.25" data-label="SL2 · capa superior" transform="translate(717 245)">
-          <rect width="180" height="82" rx="12"/><rect class="s2-compact-machine__head" width="180" height="24" rx="12"/><text class="s2-compact-machine__code" x="14" y="17">SL2</text><text class="s2-compact-machine__title" x="14" y="47">ESPARCIDOR 3</text><text class="s2-compact-machine__meta" x="14" y="65">capa superior · 22.25 m</text><path class="s2-compact-drop" d="M90 82V98"/>
-        </g>
-        <g class="s2-compact-mini s2-machine" data-inject-m="26.68" data-label="Registro de colchón" transform="translate(860 260)"><rect width="138" height="58" rx="10"/><text x="14" y="25">REGISTRO</text><text class="s2-compact-machine__meta" x="14" y="42">colchón completo</text></g>
-        <g class="s2-compact-mini s2-compact-mini--blue s2-machine" data-inject-m="31.4" data-label="Preprensa" transform="translate(1020 260)"><rect width="138" height="58" rx="10"/><text x="14" y="25">PREPRENSA</text><text class="s2-compact-machine__meta" x="14" y="42">26.68–33.86 m</text></g>
-        <g class="s2-compact-mini s2-machine" data-inject-m="35.99" data-label="Desmoldante #2" transform="translate(1180 238)"><rect width="112" height="42" rx="10"/><text x="12" y="26">SPRAY</text></g>
-        <g class="s2-compact-mini s2-machine" data-inject-m="37.69" data-label="Detector de metales" transform="translate(1310 238)"><rect width="112" height="42" rx="10"/><text x="12" y="19">DETECTOR</text><text class="s2-compact-machine__meta" x="12" y="33">de metales</text></g>
-        <g class="s2-compact-mini s2-machine" data-inject-m="39.56" data-label="Cortadores de filo" transform="translate(1180 290)"><rect width="112" height="42" rx="10"/><text x="12" y="19">CORTADORES</text><text class="s2-compact-machine__meta" x="12" y="33">de filo</text></g>
-        <g class="s2-compact-mini s2-compact-mini--danger s2-machine" data-inject-m="44.9" data-label="Nariz · rechazo" transform="translate(1310 290)"><rect width="112" height="42" rx="10"/><text x="12" y="19">NARIZ</text><text class="s2-compact-machine__meta" x="12" y="33">rechazo</text></g>
-        <g class="s2-compact-layer-key" transform="translate(868 332)"><rect width="20" height="5" fill="#E4B657"/><rect y="5" width="20" height="7" fill="#C98B2E"/><rect y="12" width="20" height="5" fill="#ECC873"/><text x="28" y="13">COLCHÓN SL1 + CL + SL2</text></g>
-      </g>
-
-      <!-- Transición visual entre filas, fuera de cualquier equipo. -->
-      <path class="s2-compact-wrap" d="M1518 346H1550V408H112"/>
-      <text class="s2-compact-wrap__label" x="1400" y="399">CONTINÚA EN FILA 03</text>
-
-      <!-- Fila 3 · calor, prensado y calidad -->
-      <g class="s2-compact-row">
-        <rect class="s2-compact-row__bg" x="18" y="394" width="1564" height="208" rx="18"/>
-        <rect class="s2-compact-row__rail s2-compact-row__rail--finish" x="18" y="394" width="72" height="208" rx="18"/>
-        <text class="s2-compact-row__number" x="54" y="458">03</text>
-        <text class="s2-compact-row__name" x="54" y="493">ACABADO</text>
-        <text class="s2-compact-row__hint" x="112" y="428">PRECALENTAMIENTO → PRENSA CONTINUA → CORTE → SENSORES</text>
-        <line class="s2-compact-board" x1="112" y1="548" x2="1518" y2="548"/>
-        <line class="s2-compact-belt-motion" x1="112" y1="548" x2="1518" y2="548"/>
-
-        <g class="s2-compact-finish s2-compact-finish--heat s2-machine" data-inject-m="46.86" data-label="Vapor EVOsteam" transform="translate(130 454)"><rect width="170" height="72" rx="12"/><text class="s2-compact-finish__tag" x="14" y="21">2C</text><text class="s2-compact-finish__title" x="14" y="43">VAPOR · EVOsteam</text><text class="s2-compact-finish__meta" x="14" y="59">precalentamiento</text></g>
-        <g class="s2-compact-press s2-machine" data-inject-m="55" data-label="Prensa continua" transform="translate(330 444)"><rect width="700" height="94" rx="12"/><rect class="s2-compact-press__top" width="700" height="27" rx="12"/><g class="s2-compact-press__frames"><path d="M40 31V88M90 31V88M140 31V88M190 31V88M240 31V88M290 31V88M340 31V88M390 31V88M440 31V88M490 31V88M540 31V88M590 31V88M640 31V88"/></g><text x="18" y="20">2D · PRENSA CONTINUA</text><text class="s2-compact-finish__meta" x="18" y="51">19 marcos · calor + presión · 55–71.6 m</text><rect class="s2-compact-press__board" x="18" y="68" width="664" height="8" rx="4"/></g>
-        <g class="s2-compact-finish s2-machine" data-inject-m="78.3" data-label="Cuchillos de refila" transform="translate(1050 454)"><rect width="125" height="72" rx="12"/><text class="s2-compact-finish__tag" x="12" y="21">2E</text><text class="s2-compact-finish__title" x="12" y="43">REFILA</text><text class="s2-compact-finish__meta" x="12" y="59">1.35 m</text></g>
-        <g class="s2-compact-finish s2-machine" data-inject-m="80.35" data-label="Sierra transversal" transform="translate(1190 454)"><rect width="125" height="72" rx="12"/><text class="s2-compact-finish__tag" x="12" y="21">2E</text><text class="s2-compact-finish__title" x="12" y="43">SIERRA</text><text class="s2-compact-finish__meta" x="12" y="59">transversal</text></g>
-        <g class="s2-compact-sensors s2-machine" data-inject-m="85.15" data-label="Sensor de calidad 1 (85.15 m)" transform="translate(1330 444)"><rect width="220" height="94" rx="12"/><text x="14" y="22">SENSORES 1 · 2 · 3</text><g transform="translate(14 34)"><rect width="35" height="28" rx="5"/><rect x="43" width="35" height="28" rx="5"/><rect x="86" width="35" height="28" rx="5"/><rect x="129" width="35" height="28" rx="5"/><text x="17" y="19">E</text><text x="60" y="19">R</text><text x="103" y="19">P</text><text x="146" y="19">D</text></g><text class="s2-compact-finish__meta" x="14" y="82">85.15 · 85.35 · 85.55 m · FIN</text><circle cx="198" cy="19" r="6" fill="#51C77A"/></g>
-        <g class="s2-compact-meter"><text x="112" y="580">45 m</text><text x="370" y="580">55 m</text><text x="850" y="580">71.6 m</text><text x="1518" y="580" text-anchor="end">85.55 m · FIN</text></g>
-      </g>
-
-      <!-- Trazadores de cambios activos, posicionados por JS sobre la ruta compacta. -->
-      <g id="compactTracers"></g>
-    </svg>
-
-    <svg id="lineCanvas" class="s2-stacked-canvas" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="stackedTitle stackedDesc">
-      <title id="stackedTitle">Sección 2 · Simulador original apilado en tres filas</title>
-      <desc id="stackedDesc">El simulador original, desde los silos hasta los sensores, dividido en tres recortes horizontales consecutivos sin alterar sus equipos ni proporciones.</desc>
+    <svg id="lineCanvas" width="10650" height="650" viewBox="-2200 0 10650 650">
       <defs>
         <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#EAEEF2"/><stop offset="0.5" stop-color="#C3CCD6"/><stop offset="1" stop-color="#98A6B4"/>
@@ -624,12 +491,6 @@
         <polygon points="853,64 867,64 860,76" fill="#0A7D5A"/>
       </g>
 
-      <!-- El dibujo original de la Sección 2 permanece como una sola fuente.
-           Las tres filas visibles de abajo son recortes consecutivos de este
-           mismo grupo: no hay máquinas redibujadas ni proporciones alteradas. -->
-      <defs id="section2SourceDefs">
-      <g id="section2Source">
-
       <!-- ══════════ 0 · SILOS · DOSIFICACIÓN Y ENCOLADO — ANIMADO ══════════ -->
       <g id="section2Intake" class="s2-intake">
         <rect x="-20" y="42" width="1880" height="520" fill="rgba(55,71,79,0.028)"/>
@@ -701,8 +562,8 @@
         </g>
         <line x1="398" y1="534" x2="2100" y2="534" stroke="#2C80D8" stroke-width="8" stroke-linecap="round"/>
         <line x1="398" y1="534" x2="2100" y2="534" stroke="#BFDDFB" stroke-width="2" stroke-dasharray="22 18" stroke-linecap="round"/>
-        <line x1="928" y1="494" x2="2750" y2="494" stroke="#0A7D5A" stroke-width="8" stroke-linecap="round"/>
-        <line x1="928" y1="494" x2="2750" y2="494" stroke="#BCE8D7" stroke-width="2" stroke-dasharray="22 18" stroke-linecap="round"/>
+        <line x1="928" y1="494" x2="2750" y2="494" stroke="#2C80D8" stroke-width="8" stroke-linecap="round"/>
+        <line x1="928" y1="494" x2="2750" y2="494" stroke="#BFDDFB" stroke-width="2" stroke-dasharray="22 18" stroke-linecap="round"/>
         <circle cx="398" cy="534" r="13" fill="#C5D0DA" stroke="#758697" stroke-width="2"/>
         <circle cx="928" cy="494" r="13" fill="#C5D0DA" stroke="#758697" stroke-width="2"/>
         <rect x="1410" y="484" width="270" height="38" rx="8" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="2"/>
@@ -1084,132 +945,8 @@
       <!-- ── TRAZADORES (uno por cada cambio inyectado · poblado por JS, colores distintos) ── -->
       <g id="tracers"></g>
       </g>
-
-      <!-- Conexión visual limpia sobre el mismo dibujo original. Conserva las
-           bandas y equipos; únicamente aclara qué encoladora alimenta a cada
-           esparcidor mediante rutas ortogonales sin diagonales ni cruces. -->
-      <g id="s2CleanConnections" class="s2-original-connections" pointer-events="none">
-        <path class="s2-original-connection-underlay" d="M398 534H1750Q1764 534 1764 520V50H2444V70"/>
-        <path class="s2-original-connection-underlay" d="M1764 50H3538V70"/>
-        <path class="s2-original-connection-underlay" d="M928 494H1820Q1834 494 1834 480V62H3030V70"/>
-        <path class="s2-original-connection s2-original-connection--fine" d="M398 534H1750Q1764 534 1764 520V50H2444V70"/>
-        <path class="s2-original-connection s2-original-connection--fine" d="M1764 50H3538V70"/>
-        <path class="s2-original-connection s2-original-connection--coarse" d="M928 494H1820Q1834 494 1834 480V62H3030V70"/>
-        <circle cx="1764" cy="50" r="6" fill="#1565C0" stroke="#FFFFFF" stroke-width="3"/>
-        <g class="s2-original-route-chip" transform="translate(1574 82)">
-          <rect width="176" height="23" rx="11.5" fill="#FFFFFF" stroke="#1565C0" stroke-width="1.5"/>
-          <text x="88" y="15" text-anchor="middle" fill="#1565C0">CE → SL1 + SL2</text>
-        </g>
-        <g class="s2-original-route-chip" transform="translate(1758 82)">
-          <rect width="122" height="23" rx="11.5" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="1.5"/>
-          <text x="61" y="15" text-anchor="middle" fill="#0A7D5A">CI → CL</text>
-        </g>
-      </g>
-
       <!-- Trazadores upstream ARRIBA de todo (z-order) -->
       <g id="preTracers"></g>
-
-      </g>
-      </defs>
-
-      <!-- Tres recortes consecutivos del SVG original. Cada <use> apunta a la
-           misma fuente, por lo que animaciones, capas y trazadores siguen
-           siendo exactamente los del simulador actual. -->
-      <g class="s2-stack-row s2-stack-row--1">
-        <rect class="s2-stack-row__surface" x="12" y="12" width="1576" height="278" rx="16"/>
-        <rect class="s2-stack-row__titlebar" x="24" y="22" width="1552" height="31" rx="9"/>
-        <text class="s2-stack-row__index" x="42" y="43">01</text>
-        <text class="s2-stack-row__title" x="78" y="43">SILOS · DOSIFICACIÓN · ENCOLADO → FORMACIÓN</text>
-        <text class="s2-stack-row__continuation" x="1554" y="43" text-anchor="end">CONTINÚA ABAJO ↓</text>
-        <svg class="s2-stack-viewport" x="66.5" y="58" width="1467" height="220" viewBox="-20 45 3800 570" preserveAspectRatio="xMidYMid meet" overflow="hidden">
-          <use href="#section2Source" pointer-events="none"/>
-          <g class="s2-stack-hits">
-            <rect data-pre-stage="active-silo6" data-label="Silo 6 · fina" x="190" y="78" width="250" height="175" rx="18"/>
-            <rect data-pre-stage="active-dosSL" data-label="Dosing fina" x="190" y="250" width="250" height="180" rx="18"/>
-            <rect data-pre-stage="active-encCE" data-label="Encoladora CE" x="190" y="430" width="250" height="125" rx="18"/>
-            <rect data-pre-stage="active-silo5" data-label="Silo 5 · gruesa" x="770" y="55" width="330" height="185" rx="18"/>
-            <rect data-pre-stage="active-dosCL" data-label="Dosing gruesa" x="770" y="225" width="330" height="180" rx="18"/>
-            <rect data-pre-stage="active-encCI" data-label="Encoladora CI" x="770" y="405" width="330" height="130" rx="18"/>
-            <rect data-inject-m="0.7" data-label="Desmoldante #1" x="1978" y="108" width="104" height="315" rx="12"/>
-            <rect data-inject-m="6.63" data-label="SL1 · capa inferior" x="2075" y="58" width="495" height="370" rx="12"/>
-            <rect data-inject-m="15" data-label="CL · core" x="2796" y="58" width="315" height="370" rx="12"/>
-            <rect data-inject-m="22.25" data-label="SL2 · capa superior" x="3198" y="58" width="455" height="370" rx="12"/>
-          </g>
-        </svg>
-      </g>
-
-      <g class="s2-stack-row s2-stack-row--2">
-        <rect class="s2-stack-row__surface" x="12" y="311" width="1576" height="278" rx="16"/>
-        <rect class="s2-stack-row__titlebar" x="24" y="321" width="1552" height="31" rx="9"/>
-        <text class="s2-stack-row__index" x="42" y="342">02</text>
-        <text class="s2-stack-row__title" x="78" y="342">PRECOMPRESIÓN · PROTECCIÓN · PRECALENTAMIENTO</text>
-        <text class="s2-stack-row__continuation" x="1554" y="342" text-anchor="end">CONTINÚA ABAJO ↓</text>
-        <svg class="s2-stack-viewport" x="404.5" y="357" width="791" height="220" viewBox="3780 45 2050 570" preserveAspectRatio="xMidYMid meet" overflow="hidden">
-          <use href="#section2Source" pointer-events="none"/>
-          <g class="s2-stack-hits">
-            <rect data-inject-m="29.06" data-label="Pre-prensa" x="3940" y="105" width="480" height="325" rx="12"/>
-            <rect data-inject-m="35.99" data-label="Desmoldante #2" x="4410" y="120" width="180" height="305" rx="12"/>
-            <rect data-inject-m="37.69" data-label="Detector de metales" x="4570" y="120" width="125" height="305" rx="12"/>
-            <rect data-inject-m="39.56" data-label="Cortadores de filo" x="4690" y="110" width="175" height="320" rx="12"/>
-            <rect data-inject-m="44.9" data-label="Nariz · rechazo" x="5070" y="120" width="200" height="320" rx="12"/>
-            <rect data-inject-m="46.86" data-label="Vapor EVOsteam" x="5260" y="105" width="240" height="325" rx="12"/>
-          </g>
-        </svg>
-      </g>
-
-      <g class="s2-stack-row s2-stack-row--3">
-        <rect class="s2-stack-row__surface" x="12" y="610" width="1576" height="278" rx="16"/>
-        <rect class="s2-stack-row__titlebar" x="24" y="620" width="1552" height="31" rx="9"/>
-        <text class="s2-stack-row__index" x="42" y="641">03</text>
-        <text class="s2-stack-row__title" x="78" y="641">PRENSA CONTINUA → CORTE → SENSORES</text>
-        <text class="s2-stack-row__continuation s2-stack-row__continuation--end" x="1554" y="641" text-anchor="end">FIN · 85.55 m</text>
-        <svg class="s2-stack-viewport" x="294.5" y="656" width="1011" height="220" viewBox="5830 45 2620 570" preserveAspectRatio="xMidYMid meet" overflow="hidden">
-          <use href="#section2Source" pointer-events="none"/>
-          <g class="s2-stack-hits">
-            <rect data-inject-m="55" data-label="Prensa continua" x="5820" y="95" width="1190" height="340" rx="12"/>
-            <rect data-inject-m="78.3" data-label="Cuchillos de refila · inicio" x="7440" y="120" width="150" height="315" rx="12"/>
-            <rect data-inject-m="80.35" data-label="Sierra transversal · inicio" x="7615" y="120" width="155" height="315" rx="12"/>
-            <rect data-inject-m="85.15" data-label="Sensor de calidad 1 (85.15 m)" x="7865" y="100" width="230" height="340" rx="12"/>
-          </g>
-        </svg>
-      </g>
-
-      <!-- Vista de planta: los mismos equipos y puntos de inyección, reordenados
-           en dos filas continuas. Solo se activa en /simulador-seccion-2. -->
-      <g class="s2-two-row-layout" aria-label="Sección 2 en dos filas">
-        <rect class="s2-two-row__surface" x="12" y="12" width="1576" height="876" rx="18"/>
-        <svg class="s2-two-row__viewport s2-two-row__viewport--feed" x="36" y="36" width="1528" height="398" viewBox="-20 45 3800 570" preserveAspectRatio="xMidYMid meet" overflow="hidden">
-          <use href="#section2Source" pointer-events="none"/>
-          <g class="s2-stack-hits">
-            <rect data-pre-stage="active-silo6" data-label="Silo 6 · fina" x="190" y="78" width="250" height="175" rx="18"/>
-            <rect data-pre-stage="active-dosSL" data-label="Dosing fina" x="190" y="250" width="250" height="180" rx="18"/>
-            <rect data-pre-stage="active-encCE" data-label="Encoladora CE" x="190" y="430" width="250" height="125" rx="18"/>
-            <rect data-pre-stage="active-silo5" data-label="Silo 5 · gruesa" x="770" y="55" width="330" height="185" rx="18"/>
-            <rect data-pre-stage="active-dosCL" data-label="Dosing gruesa" x="770" y="225" width="330" height="180" rx="18"/>
-            <rect data-pre-stage="active-encCI" data-label="Encoladora CI" x="770" y="405" width="330" height="130" rx="18"/>
-            <rect data-inject-m="0.7" data-label="Desmoldante #1" x="1978" y="108" width="104" height="315" rx="12"/>
-            <rect data-inject-m="6.63" data-label="SL1 · capa inferior" x="2075" y="58" width="495" height="370" rx="12"/>
-            <rect data-inject-m="15" data-label="CL · core" x="2796" y="58" width="315" height="370" rx="12"/>
-            <rect data-inject-m="22.25" data-label="SL2 · capa superior" x="3198" y="58" width="455" height="370" rx="12"/>
-          </g>
-        </svg>
-        <path class="s2-two-row__continuation" d="M1534 410h24v42H46v24"/>
-        <svg class="s2-two-row__viewport s2-two-row__viewport--finish" x="36" y="454" width="1528" height="398" viewBox="3780 45 4670 570" preserveAspectRatio="xMidYMid meet" overflow="hidden">
-          <use href="#section2Source" pointer-events="none"/>
-          <g class="s2-stack-hits">
-            <rect data-inject-m="29.06" data-label="Pre-prensa" x="3940" y="105" width="480" height="325" rx="12"/>
-            <rect data-inject-m="35.99" data-label="Desmoldante #2" x="4410" y="120" width="180" height="305" rx="12"/>
-            <rect data-inject-m="37.69" data-label="Detector de metales" x="4570" y="120" width="125" height="305" rx="12"/>
-            <rect data-inject-m="39.56" data-label="Cortadores de filo" x="4690" y="110" width="175" height="320" rx="12"/>
-            <rect data-inject-m="44.9" data-label="Nariz · rechazo" x="5070" y="120" width="200" height="320" rx="12"/>
-            <rect data-inject-m="46.86" data-label="Vapor EVOsteam" x="5260" y="105" width="240" height="325" rx="12"/>
-            <rect data-inject-m="55" data-label="Prensa continua" x="5820" y="95" width="1190" height="340" rx="12"/>
-            <rect data-inject-m="78.3" data-label="Cuchillos de refila · inicio" x="7440" y="120" width="150" height="315" rx="12"/>
-            <rect data-inject-m="80.35" data-label="Sierra transversal · inicio" x="7615" y="120" width="155" height="315" rx="12"/>
-            <rect data-inject-m="85.15" data-label="Sensor de calidad 1 (85.15 m)" x="7865" y="100" width="230" height="340" rx="12"/>
-          </g>
-        </svg>
-      </g>
     </svg>
   </div>
 
@@ -1323,6 +1060,6 @@
   });
 })();
 </script>
-<script type="module" src="js/combined-app.js?v=20260715a"></script>
+<script type="module" src="js/combined-app.js?v=20260714d"></script>
 </body>
 </html>

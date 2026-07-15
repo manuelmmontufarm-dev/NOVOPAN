@@ -78,12 +78,6 @@ def inject_base(html_path: Path, base_href: str) -> None:
     if needle in html:
         return
     html = html.replace("<head>", f"<head>\n  {needle}", 1)
-    if base_href == "/simulador-seccion-2/":
-        html = html.replace(
-            '<body class="s2-section2-stacked">',
-            '<body class="s2-section2-stacked s2-section2-two-row">',
-            1,
-        )
     html_path.write_text(html, encoding="utf-8")
 
 for html_path, base in [

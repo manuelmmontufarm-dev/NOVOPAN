@@ -90,16 +90,12 @@
 
 ## Historial
 
-### 2026-07-15 — Simulador operativo Sección 2 en una pantalla
+### 2026-07-15 — Simulador operativo Sección 2 · restaurado en una línea
 
 - Nueva ruta pública: `/simulador-seccion-2`.
-- Reutiliza el motor, datos HMI y mediciones del simulador Parte 1 + Sección 2, mostrando únicamente Silos → Formación → Prensa → Sensores en tres filas compactas.
+- Restaurado el diagrama original horizontal, de una sola línea, para revisar el proceso completo sin la composición compacta.
+- El motor conserva las distancias ajustadas con la última prueba de papel (14-jul): Sensor 1 ≈ 88.0 m, pendiente de confirmación con flexómetro.
 - Añadido el acceso desde el hub de entregables de NOVOPAN.
-
-### 2026-07-15 — Simulador operativo Sección 2: composición Claude Design de dos filas
-
-- La ruta `/simulador-seccion-2` ahora muestra exactamente dos filas continuas: Silos/encolado/formación y Pre-prensa/prensa/sensores.
-- Eliminadas de esta ruta las barras oscuras, numeración y títulos repetidos de las filas; se conservan el SVG original, los puntos de inyección, el motor y los controles.
 
 ### 2026-07-13 (2) — trazabilidad-total: zarandas conectadas + caída en esparcidoras + ruta fina única
 
