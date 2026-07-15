@@ -1696,6 +1696,29 @@ body.sec1-off .s2-zone-btn[data-scroll="2200"] { display: none; }
   stroke-dasharray: 8 6;
 }
 
+/* Ruta operativa: dos filas continuas como el layout de Claude Design.
+   Las filas viejas siguen en el DOM para no romper el motor compartido. */
+.s2-two-row-layout { display: none; }
+.s2-section2-two-row .s2-stack-row { display: none; }
+.s2-section2-two-row .s2-two-row-layout { display: block; }
+.s2-two-row__surface {
+  fill: rgba(255, 255, 255, .94);
+  stroke: #C8D2CC;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 3px 5px rgba(16,40,32,.09));
+}
+.s2-two-row__viewport { isolation: isolate; overflow: hidden !important; }
+.s2-two-row__continuation {
+  fill: none;
+  stroke: #9AABA1;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 8 7;
+  marker-end: url(#wfArrow);
+}
+.s2-section2-two-row .s2-sec1-toggle { display: none; }
+
 .s2-original-connection-underlay {
   fill: none;
   stroke: rgba(255, 255, 255, .96);

@@ -96,6 +96,11 @@
 - Reutiliza el motor, datos HMI y mediciones del simulador Parte 1 + Sección 2, mostrando únicamente Silos → Formación → Prensa → Sensores en tres filas compactas.
 - Añadido el acceso desde el hub de entregables de NOVOPAN.
 
+### 2026-07-15 — Simulador operativo Sección 2: composición Claude Design de dos filas
+
+- La ruta `/simulador-seccion-2` ahora muestra exactamente dos filas continuas: Silos/encolado/formación y Pre-prensa/prensa/sensores.
+- Eliminadas de esta ruta las barras oscuras, numeración y títulos repetidos de las filas; se conservan el SVG original, los puntos de inyección, el motor y los controles.
+
 ### 2026-07-13 (2) — trazabilidad-total: zarandas conectadas + caída en esparcidoras + ruta fina única
 
 Feedback del usuario sobre la Sección 2: (a) zarandas 1 y 3 flotaban sin tuberías; (b) los cambios "volaban" sobre la banda en vez de entrar por arriba de las esparcidoras; (c) la ruta fina mostraba 2 marcadores en las bandas (raro).

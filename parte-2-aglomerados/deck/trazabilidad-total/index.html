@@ -1173,6 +1173,43 @@
           </g>
         </svg>
       </g>
+
+      <!-- Vista de planta: los mismos equipos y puntos de inyección, reordenados
+           en dos filas continuas. Solo se activa en /simulador-seccion-2. -->
+      <g class="s2-two-row-layout" aria-label="Sección 2 en dos filas">
+        <rect class="s2-two-row__surface" x="12" y="12" width="1576" height="876" rx="18"/>
+        <svg class="s2-two-row__viewport s2-two-row__viewport--feed" x="36" y="36" width="1528" height="398" viewBox="-20 45 3800 570" preserveAspectRatio="xMidYMid meet" overflow="hidden">
+          <use href="#section2Source" pointer-events="none"/>
+          <g class="s2-stack-hits">
+            <rect data-pre-stage="active-silo6" data-label="Silo 6 · fina" x="190" y="78" width="250" height="175" rx="18"/>
+            <rect data-pre-stage="active-dosSL" data-label="Dosing fina" x="190" y="250" width="250" height="180" rx="18"/>
+            <rect data-pre-stage="active-encCE" data-label="Encoladora CE" x="190" y="430" width="250" height="125" rx="18"/>
+            <rect data-pre-stage="active-silo5" data-label="Silo 5 · gruesa" x="770" y="55" width="330" height="185" rx="18"/>
+            <rect data-pre-stage="active-dosCL" data-label="Dosing gruesa" x="770" y="225" width="330" height="180" rx="18"/>
+            <rect data-pre-stage="active-encCI" data-label="Encoladora CI" x="770" y="405" width="330" height="130" rx="18"/>
+            <rect data-inject-m="0.7" data-label="Desmoldante #1" x="1978" y="108" width="104" height="315" rx="12"/>
+            <rect data-inject-m="6.63" data-label="SL1 · capa inferior" x="2075" y="58" width="495" height="370" rx="12"/>
+            <rect data-inject-m="15" data-label="CL · core" x="2796" y="58" width="315" height="370" rx="12"/>
+            <rect data-inject-m="22.25" data-label="SL2 · capa superior" x="3198" y="58" width="455" height="370" rx="12"/>
+          </g>
+        </svg>
+        <path class="s2-two-row__continuation" d="M1534 410h24v42H46v24"/>
+        <svg class="s2-two-row__viewport s2-two-row__viewport--finish" x="36" y="454" width="1528" height="398" viewBox="3780 45 4670 570" preserveAspectRatio="xMidYMid meet" overflow="hidden">
+          <use href="#section2Source" pointer-events="none"/>
+          <g class="s2-stack-hits">
+            <rect data-inject-m="29.06" data-label="Pre-prensa" x="3940" y="105" width="480" height="325" rx="12"/>
+            <rect data-inject-m="35.99" data-label="Desmoldante #2" x="4410" y="120" width="180" height="305" rx="12"/>
+            <rect data-inject-m="37.69" data-label="Detector de metales" x="4570" y="120" width="125" height="305" rx="12"/>
+            <rect data-inject-m="39.56" data-label="Cortadores de filo" x="4690" y="110" width="175" height="320" rx="12"/>
+            <rect data-inject-m="44.9" data-label="Nariz · rechazo" x="5070" y="120" width="200" height="320" rx="12"/>
+            <rect data-inject-m="46.86" data-label="Vapor EVOsteam" x="5260" y="105" width="240" height="325" rx="12"/>
+            <rect data-inject-m="55" data-label="Prensa continua" x="5820" y="95" width="1190" height="340" rx="12"/>
+            <rect data-inject-m="78.3" data-label="Cuchillos de refila · inicio" x="7440" y="120" width="150" height="315" rx="12"/>
+            <rect data-inject-m="80.35" data-label="Sierra transversal · inicio" x="7615" y="120" width="155" height="315" rx="12"/>
+            <rect data-inject-m="85.15" data-label="Sensor de calidad 1 (85.15 m)" x="7865" y="100" width="230" height="340" rx="12"/>
+          </g>
+        </svg>
+      </g>
     </svg>
   </div>
 
