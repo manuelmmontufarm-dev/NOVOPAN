@@ -27,6 +27,7 @@ find "$PUBLIC/trazabilidad" -type f \( -name '*.md' -o -name 'CLAUDE_*' \) -dele
 # Trazabilidad Sección 2 — vista línea horizontal (reusa motor en ../trazabilidad/js/core/)
 mkdir -p "$PUBLIC/trazabilidad-linea"
 cp -R "$DECK/trazabilidad-linea/." "$PUBLIC/trazabilidad-linea/"
+rm -rf "$PUBLIC/trazabilidad-linea/claude-design-handoff"
 find "$PUBLIC/trazabilidad-linea" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
 
 # Trazabilidad Parte 1 — preparación de madera + clasificación real HMI 10-jul-2026
@@ -36,6 +37,7 @@ cp -R "$PARTE1_APP/trazabilidad-preparacion/." "$PUBLIC/trazabilidad-preparacion
 # Trazabilidad total — Parte 1 conectada a Sección 2
 mkdir -p "$PUBLIC/trazabilidad-total"
 cp -R "$DECK/trazabilidad-total/." "$PUBLIC/trazabilidad-total/"
+rm -rf "$PUBLIC/trazabilidad-total/claude-design-handoff"
 find "$PUBLIC/trazabilidad-total" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
 
 # Simulador operativo — solo Sección 2. Reutiliza exactamente el motor,
@@ -43,6 +45,7 @@ find "$PUBLIC/trazabilidad-total" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o
 # apilada para la pantalla de planta.
 mkdir -p "$PUBLIC/simulador-seccion-2"
 cp -R "$DECK/trazabilidad-total/." "$PUBLIC/simulador-seccion-2/"
+rm -rf "$PUBLIC/simulador-seccion-2/claude-design-handoff"
 find "$PUBLIC/simulador-seccion-2" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
 
 # Design system tokens — CSS imports ../../_ds/... from trazabilidad/css/

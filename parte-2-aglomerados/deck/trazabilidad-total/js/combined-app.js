@@ -615,8 +615,6 @@ function initSimulation() {
       sensor.dataset.label = `Sensor de calidad 1 (${activeGeometry.sensor1M.toFixed(2)} m)`;
       sensor.setAttribute('transform', `translate(${xm(activeGeometry.sensor1M).toFixed(1)} 0)`);
     }
-    const readings = document.getElementById('readingsPanel');
-    if (readings) readings.setAttribute('transform', `translate(${xm(activeGeometry.sensor3M) + 105} 0)`);
     const rulerLine = document.getElementById('metricRulerLine');
     if (rulerLine) rulerLine.setAttribute('x2', xm(activeGeometry.processEndM).toFixed(1));
     const boundaries = { start: 0, redStart: activeGeometry.redStartM, pressStart: activeGeometry.pressStartM, pressEnd: activeGeometry.pressEndM };
@@ -1364,15 +1362,24 @@ function initSimulation() {
     }
   }
 
-  /* Muestra el τ de residencia REAL de cada encolador (tEncCE fina · tEncCI core)
-     en los chips de la zona de entrada, sincronizado con el modelo/CSV del HMI. */
+  /* Muestra todos los tiempos de entrada calculados por el motor de ruta.
+     Los chips quedan sincronizados con el CSV HMI y nunca conservan cifras
+     dibujadas a mano que puedan quedar obsoletas. */
   function renderIntakeTaus() {
-    const set = (id, key) => {
+    const route = computeRoute(bridgeP1ToModel(modelParams), { lineSpeed: vPrensa });
+    const step = (total, name) => total?.steps?.find((item) => item.name === name)?.q;
+    const set = (id, quantity) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = `${Math.round(Number(modelParams?.[key]) || 0)} s`;
+      if (el) el.textContent = quantity?.value == null ? '—' : `${quantity.value.toFixed(1)} s`;
     };
-    set('intakeTauEncCE', 'p1:tEncCE');
-    set('intakeTauEncCI', 'p1:tEncCI');
+    set('intakeTauSilo6', step(route.fine, 'τ_silo6'));
+    set('intakeTauDosingSL', step(route.fine, 'τ_dosingSL'));
+    set('intakeTauEncCE', step(route.fine, 'τ_mixerCE'));
+    set('intakeTimeInclSL', step(route.fine, 't_inclSL'));
+    set('intakeTauSilo5', step(route.coarse, 'τ_silo5'));
+    set('intakeTauDosingCL', step(route.coarse, 'τ_dosingCL'));
+    set('intakeTauEncCI', step(route.coarse, 'τ_mixerCI'));
+    set('intakeTimeInclCL', step(route.coarse, 't_inclCL'));
   }
 
   // ── HMI en vivo vía CSV local (releído cada 2 s; estático ahora, listo para el servidor) ──

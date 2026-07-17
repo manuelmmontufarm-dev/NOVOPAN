@@ -111,6 +111,22 @@ test('τ_dosingCL correcto', () => approx(tauDosing(defaultParamValues(), 'dosin
 test('t_inclCL correcto', () => approx(tInclined(defaultParamValues(), 'inclCL').value, HAND.tInclCL, 'inclCL'));
 test('coarseUpstream = Σ pasos', () => approx(coarseUpstream(defaultParamValues()).value, HAND.coarse, 'coarse'));
 
+/* Valores nominales fijos de la prueba de planta. Estos cruces literales evitan
+   que una cifra dibujada en la UI se desvíe aunque cambien otras pruebas. */
+group('Valores nominales visibles');
+test('chips ruta fina coinciden con las ecuaciones y valores HMI', () => {
+  approx(tauSilo(defaultParamValues(), 'silo6').value, 3885.3333, 'silo6', 0.001);
+  approx(tauDosing(defaultParamValues(), 'dosingSL').value, 11.1111, 'dosingSL', 0.001);
+  approx(tauMixer(defaultParamValues(), 'mixerCE').value, 40, 'encoladora CE');
+  approx(tInclined(defaultParamValues(), 'inclSL').value, 38.9367, 'inclinada fina', 0.001);
+});
+test('chips ruta gruesa coinciden con las ecuaciones y valores HMI', () => {
+  approx(tauSilo(defaultParamValues(), 'silo5').value, 1416.1589, 'silo5', 0.001);
+  approx(tauDosing(defaultParamValues(), 'dosingCL').value, 4.9669, 'dosingCL', 0.001);
+  approx(tauMixer(defaultParamValues(), 'mixerCI').value, 40, 'encoladora CI');
+  approx(tInclined(defaultParamValues(), 'inclCL').value, 42.5907, 'inclinada gruesa', 0.001);
+});
+
 /* ── Registro SL1 / CL / SL2 ── */
 group('Registro de capas');
 test('t_SL1 = fina + esparcidor1', () => approx(layerArrivals(defaultParamValues()).tSL1.value, HAND.tSL1, 'SL1'));
