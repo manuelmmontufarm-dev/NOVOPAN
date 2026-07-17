@@ -119,6 +119,20 @@
   .row input.unk { background: #FDECEA; border-color: #B00020; color: #8E0000; }
   .row .u { width: 52px; color: var(--ink-500); font-size: 11px; }
   code { background: var(--sunken); border-radius: 4px; padding: 0 4px; }
+  .phead { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .params-lock { flex: 0 0 auto; padding: 6px 12px; border: 1px solid var(--green); border-radius: 8px; color: var(--green); background: #fff; font: 700 12px 'Barlow', sans-serif; cursor: pointer; }
+  .params-auth { width: min(470px, calc(100vw - 28px)); padding: 0; border: 0; border-radius: 16px; color: var(--ink-900); background: transparent; box-shadow: 0 24px 70px rgba(0,38,27,.32); }
+  .params-auth::backdrop { background: rgba(6,23,17,.64); backdrop-filter: blur(3px); }
+  .params-auth form { display: grid; gap: 14px; padding: 24px; background: #fff; border-top: 6px solid var(--yellow); }
+  .params-auth .eyebrow { color: var(--green-600); font-size: 10px; font-weight: 800; letter-spacing: .16em; }
+  .params-auth h2 { margin: 2px 0 0; font: 800 24px/1.05 'Barlow Semi Condensed', sans-serif; text-transform: uppercase; }
+  .params-auth p { margin: 0; color: var(--ink-500); }
+  .params-auth label { display: grid; gap: 6px; font-weight: 700; }
+  .params-auth input { width: 100%; padding: 10px 12px; border: 2px solid var(--line-300); border-radius: 9px; font: 700 16px 'Barlow', sans-serif; }
+  .params-auth .feedback { min-height: 20px; color: #C62828; font-weight: 700; }
+  .params-auth .actions { display: flex; justify-content: flex-end; gap: 9px; }
+  .params-auth button { padding: 8px 13px; border-radius: 8px; border: 1px solid var(--line-300); font: 700 12px 'Barlow', sans-serif; cursor: pointer; }
+  .params-auth button[type="submit"] { color: #fff; background: var(--green); border-color: var(--green); }
   footer { padding: 10px 16px 16px; font-size: 11px; color: var(--ink-500); border-top: 1px solid var(--line-100); background: var(--page); }
 </style>
 
@@ -173,9 +187,19 @@
 </div>
 
 <div class="view" id="viewParams">
-  <div class="phead">Parámetros del modelo. <b>Blanco</b> = dato real del HMI (10-jul-2026) o del sim v3. <b style="background:#FFF3CD;padding:0 4px;border:1px solid #E08000;border-radius:4px">Naranja</b> = valor <b>imaginado (placeholder)</b> para poder modelar la línea entera — al editarlo se vuelve blanco. Vacío = <span class="tbd">TBD</span> (τ = 0 s). Convención: recipiente <code>τ=M/F</code> · banda <code>t=L/v</code>.</div>
+  <div class="phead"><span>Parámetros del modelo. <b>Blanco</b> = dato real del HMI (10-jul-2026) o del sim v3. <b style="background:#FFF3CD;padding:0 4px;border:1px solid #E08000;border-radius:4px">Naranja</b> = valor <b>imaginado (placeholder)</b> para poder modelar la línea entera — al editarlo se vuelve blanco. Vacío = <span class="tbd">TBD</span> (τ = 0 s). Convención: recipiente <code>τ=M/F</code> · banda <code>t=L/v</code>.</span><button type="button" class="params-lock" id="lockP1Params">🔒 Bloquear</button></div>
   <div class="pgrid" id="pgrid"></div>
 </div>
+
+<dialog class="params-auth" id="p1ParamsAuth">
+  <form method="dialog" id="p1ParamsAuthForm">
+    <div><span class="eyebrow">ACCESO RESTRINGIDO</span><h2>Parámetros de calibración</h2></div>
+    <p>Ingresa la clave para modificar tiempos, caudales y metros. El acceso se mantiene 15 minutos en esta pestaña.</p>
+    <label>Clave <input type="password" id="p1ParamsKey" autocomplete="current-password" required></label>
+    <p class="feedback" id="p1ParamsFeedback" aria-live="polite"></p>
+    <div class="actions"><button type="button" id="p1ParamsCancel">Cancelar</button><button type="submit">🔑 Desbloquear</button></div>
+  </form>
+</dialog>
 
 <div id="reports" class="hide">
   <h4>Reportes de cambios <button id="repClose">✕</button></h4>
@@ -191,7 +215,7 @@
 "use strict";
 /* ================= PARÁMETROS (defaults HMI) ================= */
 const P = {
-  pila1_M: 5000, pila1_F: 9000, tDS: 20, tr1: 40,
+  pila1_M: 5000, pila1_F: 7000, tDS: 20, tr1: 40,
   s1: { rho: 271, V: 150, L: 50, F: 7000 },
   pila2_M: 10000, pila2_F: 20000, esperaDesv: 90, tr2: 45,
   s2: { rho: 230, V: 200, L: 25.4, F: 13990 },
@@ -209,7 +233,7 @@ const P = {
   s4: { rho: 238, V: 60, L: 30, Fmin: 60.2 },
   s8: { rho: 238, V: 40, L: 30, Fmin: 60.2 },
   dosG: { M: 25, F: 302 }, dosF: { M: 20, F: 108 },
-  tEncCI: 30, tEncCE: 30,
+  tEncCI: 40, tEncCE: 40,
   inclG: { L: 68.5, v: 96.5 }, inclF: { L: 64.57, v: 99.5 },
 };
 /* paths con valor IMAGINADO (placeholder), no confirmado en HMI/planta.
@@ -688,9 +712,41 @@ function buildParams() {
 }
 
 /* ---------- UI wiring ---------- */
+const PARAMS_KEY_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
+const PARAMS_SESSION_KEY = 'novopan-params-unlocked-until';
+async function hashKey(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function paramsUnlocked() {
+  try { return Date.now() < (Number(sessionStorage.getItem(PARAMS_SESSION_KEY)) || 0); } catch { return false; }
+}
+function requestParamsAccess() {
+  if (paramsUnlocked()) return Promise.resolve(true);
+  const dlg = document.getElementById('p1ParamsAuth');
+  const form = document.getElementById('p1ParamsAuthForm');
+  const input = document.getElementById('p1ParamsKey');
+  const feedback = document.getElementById('p1ParamsFeedback');
+  return new Promise(resolve => {
+    const finish = ok => { dlg.close(); input.value = ''; feedback.textContent = ''; resolve(ok); };
+    document.getElementById('p1ParamsCancel').onclick = () => finish(false);
+    dlg.oncancel = e => { e.preventDefault(); finish(false); };
+    form.onsubmit = async e => {
+      e.preventDefault();
+      if (await hashKey(input.value) !== PARAMS_KEY_HASH) { feedback.textContent = 'Clave incorrecta.'; input.select(); return; }
+      try { sessionStorage.setItem(PARAMS_SESSION_KEY, String(Date.now() + 15 * 60 * 1000)); } catch {}
+      finish(true);
+    };
+    dlg.showModal(); requestAnimationFrame(() => input.focus());
+  });
+}
 function syncUi() { document.getElementById('nChg').textContent = changes.length; }
 document.getElementById('tabLinea').addEventListener('click', () => setView('linea'));
-document.getElementById('tabParams').addEventListener('click', () => setView('params'));
+document.getElementById('tabParams').addEventListener('click', async () => { if (await requestParamsAccess()) setView('params'); });
+document.getElementById('lockP1Params').addEventListener('click', () => {
+  try { sessionStorage.removeItem(PARAMS_SESSION_KEY); } catch {}
+  setView('linea');
+});
 function setView(v) {
   document.getElementById('viewLinea').classList.toggle('on', v === 'linea');
   document.getElementById('viewParams').classList.toggle('on', v === 'params');

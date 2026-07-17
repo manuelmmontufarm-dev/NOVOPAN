@@ -91,109 +91,244 @@ function el(tag, attrs, txt) {
   return node;
 }
 
-/* Rótulo centrado (por encima de un equipo). */
+/* Rótulo centrado (HUD glass). */
 function centerLabel(g, cx, top, w, title, sub, color, injectNode, injectLabel) {
-  const box = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': injectNode, 'data-label': injectLabel });
-  box.appendChild(el('rect', { x: cx - w / 2, y: top, width: w, height: 30, rx: 6, fill: '#FFFFFF', stroke: color, 'stroke-width': 1.5 }));
-  box.appendChild(el('text', { x: cx, y: top + 14, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 13, fill: '#1A1D1B' }, title));
-  box.appendChild(el('text', { x: cx, y: top + 25, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#676E69' }, sub));
+  const box = el('g', { class: 's2-machine s2-up-node s2-hud-tag', 'data-inject-node': injectNode, 'data-label': injectLabel });
+  box.appendChild(el('rect', { x: cx - w / 2, y: top, width: w, height: 34, rx: 8, fill: 'rgba(255,255,255,0.92)', stroke: color, 'stroke-width': 1.6, filter: 'url(#equipShadow)' }));
+  box.appendChild(el('rect', { x: cx - w / 2, y: top, width: 5, height: 34, rx: 2, fill: color }));
+  box.appendChild(el('text', { x: cx + 2, y: top + 15, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, title));
+  box.appendChild(el('text', { x: cx + 2, y: top + 27, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#676E69' }, sub));
   g.appendChild(box);
   return box;
 }
 
-/* Rótulo lateral (a un costado de un equipo, alineado hacia la columna). */
+/* Rótulo lateral (HUD glass). */
 function sideLabel(g, side, edgeX, yc, title, sub, color, injectNode, injectLabel) {
-  const w = 150;
-  const box = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': injectNode, 'data-label': injectLabel });
+  const w = 158;
+  const box = el('g', { class: 's2-machine s2-up-node s2-hud-tag', 'data-inject-node': injectNode, 'data-label': injectLabel });
   const x = side === 'left' ? edgeX - w : edgeX;
   const anchor = side === 'left' ? 'end' : 'start';
-  const tx = side === 'left' ? edgeX - 10 : edgeX + 10;
-  box.appendChild(el('rect', { x, y: yc - 17, width: w, height: 34, rx: 6, fill: '#FFFFFF', stroke: color, 'stroke-width': 1.5 }));
-  box.appendChild(el('text', { x: tx, y: yc - 2, 'text-anchor': anchor, 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 13, fill: '#1A1D1B' }, title));
-  box.appendChild(el('text', { x: tx, y: yc + 11, 'text-anchor': anchor, 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#676E69' }, sub));
+  const tx = side === 'left' ? edgeX - 12 : edgeX + 12;
+  const accentX = side === 'left' ? x + w - 5 : x;
+  box.appendChild(el('rect', { x, y: yc - 19, width: w, height: 38, rx: 8, fill: 'rgba(255,255,255,0.94)', stroke: color, 'stroke-width': 1.6, filter: 'url(#equipShadow)' }));
+  box.appendChild(el('rect', { x: accentX, y: yc - 19, width: 5, height: 38, rx: 2, fill: color }));
+  box.appendChild(el('text', { x: tx, y: yc - 2, 'text-anchor': anchor, 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, title));
+  box.appendChild(el('text', { x: tx, y: yc + 12, 'text-anchor': anchor, 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#676E69' }, sub));
   g.appendChild(box);
   return box;
 }
 
 /* Chip de tiempo. data-chip para refrescar sin redibujar. cy = centro. */
 function timeChip(g, cx, cy, chipId) {
-  const c = el('g', { 'data-chip': chipId });
-  c.appendChild(el('rect', { x: cx - 34, y: cy - 9, width: 68, height: 18, rx: 9, fill: '#EEF0EB', stroke: '#D9DDD9', 'data-chip-bg': chipId }));
+  const c = el('g', { 'data-chip': chipId, class: 's2-hud-chip' });
+  c.appendChild(el('rect', { x: cx - 36, y: cy - 11, width: 72, height: 22, rx: 11, fill: 'rgba(26,29,27,0.88)', stroke: 'rgba(255,255,255,0.12)', 'data-chip-bg': chipId }));
   c.appendChild(el('text', {
-    x: cx, y: cy + 4, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif",
-    'font-weight': 700, 'font-size': 11, fill: '#3D423F', 'data-chip-text': chipId,
+    x: cx, y: cy + 4, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif",
+    'font-weight': 800, 'font-size': 12, fill: '#FFDE00', 'data-chip-text': chipId,
   }, '—'));
   g.appendChild(c);
 }
 
 /* Tubería vertical entre dos equipos + hilo de material cayendo. */
 function pipe(g, cx, y0, y1, color) {
-  g.appendChild(el('rect', { x: cx - 7, y: y0, width: 14, height: Math.max(0, y1 - y0), fill: 'url(#steel)', stroke: '#6B7886', 'stroke-width': 1 }));
-  g.appendChild(el('line', { x1: cx, y1: y0, x2: cx, y2: y1, stroke: color, 'stroke-width': 3, 'stroke-dasharray': '6 8', opacity: 0.55, style: 'animation:fall 1.2s linear infinite' }));
+  const h = Math.max(0, y1 - y0);
+  g.appendChild(el('rect', { x: cx - 9, y: y0, width: 18, height: h, rx: 3, fill: 'url(#steel)', stroke: '#5E6A76', 'stroke-width': 1 }));
+  g.appendChild(el('rect', { x: cx - 5, y: y0, width: 3, height: h, fill: 'rgba(255,255,255,0.35)' }));
+  g.appendChild(el('line', { x1: cx, y1: y0 + 2, x2: cx, y2: y1 - 2, stroke: color, 'stroke-width': 3, 'stroke-dasharray': '5 7', opacity: 0.65, style: 'animation:fall 1.2s linear infinite' }));
 }
 
 /* Codo: caída del encolador a la banda + cuarto de vuelta a horizontal. */
 function elbow(g, cx, yFrom, beltY, color) {
-  const r = 20;
+  const r = 22;
   const d = `M ${cx} ${yFrom} L ${cx} ${beltY - r} Q ${cx} ${beltY} ${cx + r} ${beltY}`;
+  g.appendChild(el('path', { d, fill: 'none', stroke: '#6B7886', 'stroke-width': 12, 'stroke-linecap': 'round', opacity: 0.35 }));
   g.appendChild(el('path', { d, fill: 'none', stroke: '#98A6B4', 'stroke-width': 8, 'stroke-linecap': 'round' }));
-  g.appendChild(el('path', { d, fill: 'none', stroke: color, 'stroke-width': 3, 'stroke-dasharray': '5 8', opacity: 0.6, style: 'animation:fall 1.1s linear infinite' }));
+  g.appendChild(el('path', { d, fill: 'none', stroke: color, 'stroke-width': 3, 'stroke-dasharray': '5 8', opacity: 0.7, style: 'animation:fall 1.1s linear infinite' }));
 }
 
-/* Silo (tolva cónica) — mismo dibujo, recolocado en vertical. top = borde
-   superior del cuerpo. La salida cae hacia el dosing (abajo). */
+/* Silo cilíndrico 3D (tolva industrial) — top = borde superior del cuerpo. */
 function drawSilo(g, cx, top, color, which) {
-  const grp = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': `silo-${which}`, 'data-label': which === 'fine' ? 'Silo 6 · fina' : 'Silo 5 · gruesa' });
-  grp.appendChild(el('rect', { x: cx - 44, y: top, width: 88, height: 82, rx: 8, fill: 'url(#steel)', stroke: '#6B7886', 'stroke-width': 1.5 }));
-  grp.appendChild(el('polygon', { points: `${cx - 44},${top + 82} ${cx + 44},${top + 82} ${cx + 12},${top + 118} ${cx - 12},${top + 118}`, fill: 'url(#steel)', stroke: '#6B7886', 'stroke-width': 1.5 }));
-  grp.appendChild(el('rect', { x: cx - 12, y: top + 118, width: 24, height: 10, fill: '#4A5560' }));
-  grp.appendChild(el('rect', { x: cx - 38, y: top + 34, width: 76, height: 44, rx: 4, fill: which === 'fine' ? '#ECC873' : '#C98B2E', opacity: 0.85 }));
-  grp.appendChild(el('line', { x1: cx - 44, y1: top + 34, x2: cx + 44, y2: top + 34, stroke: '#6B7886', 'stroke-width': 1, 'stroke-dasharray': '3 3' }));
+  const grp = el('g', {
+    class: 's2-machine s2-up-node s2-equip s2-equip--silo',
+    'data-inject-node': `silo-${which}`,
+    'data-label': which === 'fine' ? 'Silo 6 · fina' : 'Silo 5 · gruesa',
+    filter: 'url(#equipShadow)',
+  });
+  const w = 86;
+  const bodyH = 78;
+  const rx = w / 2;
+  const chip = which === 'fine' ? 'url(#chipFine)' : 'url(#chipThick)';
+  const fillTop = top + 28;
+  const fillH = 42;
+
+  // sombra en piso
+  grp.appendChild(el('ellipse', { cx, cy: top + 126, rx: 40, ry: 7, fill: 'rgba(26,36,44,0.22)' }));
+
+  // patas / estructura
+  grp.appendChild(el('line', { x1: cx - 34, y1: top + 88, x2: cx - 28, y2: top + 122, stroke: '#5A6570', 'stroke-width': 3, 'stroke-linecap': 'round' }));
+  grp.appendChild(el('line', { x1: cx + 34, y1: top + 88, x2: cx + 28, y2: top + 122, stroke: '#5A6570', 'stroke-width': 3, 'stroke-linecap': 'round' }));
+  grp.appendChild(el('line', { x1: cx - 30, y1: top + 108, x2: cx + 30, y2: top + 108, stroke: '#7A8794', 'stroke-width': 2 }));
+
+  // cono de descarga
+  grp.appendChild(el('polygon', {
+    points: `${cx - rx},${top + bodyH} ${cx + rx},${top + bodyH} ${cx + 14},${top + 112} ${cx - 14},${top + 112}`,
+    fill: 'url(#binCone)', stroke: '#5A6570', 'stroke-width': 1.2,
+  }));
+  grp.appendChild(el('rect', { x: cx - 12, y: top + 112, width: 24, height: 10, rx: 2, fill: '#3C4652', stroke: '#2A323A', 'stroke-width': 1 }));
+
+  // cuerpo cilíndrico
+  grp.appendChild(el('rect', { x: cx - rx, y: top + 8, width: w, height: bodyH - 8, fill: 'url(#binShellTall)', stroke: '#6B7886', 'stroke-width': 1.4 }));
+  // elipse inferior (base del cilindro)
+  grp.appendChild(el('ellipse', { cx, cy: top + bodyH, rx, ry: 10, fill: 'url(#binLid)', stroke: '#6B7886', 'stroke-width': 1 }));
+  // material (nivel)
+  grp.appendChild(el('rect', { x: cx - rx + 6, y: fillTop, width: w - 12, height: fillH, fill: chip, opacity: 0.92 }));
+  grp.appendChild(el('ellipse', { cx, cy: fillTop, rx: rx - 6, ry: 7, fill: which === 'fine' ? '#F0D078' : '#E0A84A', opacity: 0.9 }));
+  // anillos de refuerzo
+  for (const yy of [top + 30, top + 52, top + 74]) {
+    grp.appendChild(el('ellipse', { cx, cy: yy, rx: rx - 1, ry: 6, fill: 'none', stroke: 'rgba(90,101,112,0.55)', 'stroke-width': 1.4 }));
+  }
+  // brillo cilíndrico
+  grp.appendChild(el('rect', { x: cx - rx + 10, y: top + 12, width: 10, height: bodyH - 18, rx: 4, fill: 'rgba(255,255,255,0.38)' }));
+  // tapa / plataforma superior
+  grp.appendChild(el('ellipse', { cx, cy: top + 8, rx, ry: 12, fill: 'url(#binLid)', stroke: '#6B7886', 'stroke-width': 1.5 }));
+  grp.appendChild(el('ellipse', { cx, cy: top + 6, rx: rx - 10, ry: 7, fill: '#E8EEF3', stroke: color, 'stroke-width': 2 }));
+  // barandal / pasarela
+  grp.appendChild(el('line', { x1: cx - rx + 6, y1: top + 2, x2: cx + rx - 6, y2: top + 2, stroke: '#4A5560', 'stroke-width': 2 }));
+  grp.appendChild(el('line', { x1: cx - rx + 8, y1: top - 6, x2: cx - rx + 8, y2: top + 2, stroke: '#4A5560', 'stroke-width': 1.5 }));
+  grp.appendChild(el('line', { x1: cx + rx - 8, y1: top - 6, x2: cx + rx - 8, y2: top + 2, stroke: '#4A5560', 'stroke-width': 1.5 }));
+  grp.appendChild(el('line', { x1: cx - rx + 8, y1: top - 6, x2: cx + rx - 8, y2: top - 6, stroke: '#4A5560', 'stroke-width': 1.5 }));
+  // brida de entrada
+  grp.appendChild(el('rect', { x: cx - 10, y: top - 14, width: 20, height: 10, rx: 2, fill: '#7A8794', stroke: '#4A5560', 'stroke-width': 1 }));
+  // acento de ruta
+  grp.appendChild(el('rect', { x: cx - 18, y: top + 14, width: 36, height: 5, rx: 2, fill: color }));
+
   g.appendChild(grp);
 }
 
-/* Dosing (bin + cono) — recolocado en vertical. top = borde superior. */
+/* Dosing bin cilíndrico 3D — tolva industrial tipo silo corto (foto planta). */
 function drawDosing(g, cx, top, color, which) {
-  const grp = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': `dosing-${which}`, 'data-label': which === 'fine' ? 'Dosing fina' : 'Dosing gruesa' });
-  grp.appendChild(el('rect', { x: cx - 40, y: top, width: 80, height: 58, rx: 6, fill: 'url(#steel)', stroke: '#6B7886', 'stroke-width': 1.5 }));
-  grp.appendChild(el('rect', { x: cx - 40, y: top, width: 80, height: 8, rx: 3, fill: color }));
-  grp.appendChild(el('polygon', { points: `${cx - 40},${top + 58} ${cx + 40},${top + 58} ${cx + 10},${top + 88} ${cx - 10},${top + 88}`, fill: '#3C4652' }));
-  const drops = el('g', { fill: which === 'fine' ? '#ECC873' : '#C98B2E' });
-  drops.appendChild(el('circle', { cx: cx - 6, cy: top + 100, r: 2.5, style: 'animation:fall 1.1s linear infinite' }));
-  drops.appendChild(el('circle', { cx: cx + 5, cy: top + 100, r: 2, style: 'animation:fall 1.3s linear infinite;animation-delay:.4s' }));
+  const grp = el('g', {
+    class: 's2-machine s2-up-node s2-equip s2-equip--dosing',
+    'data-inject-node': `dosing-${which}`,
+    'data-label': which === 'fine' ? 'Dosing fina' : 'Dosing gruesa',
+    filter: 'url(#equipShadow)',
+  });
+  const w = 72;
+  const bodyH = 50;
+  const rx = w / 2;
+  const ry = 13; // elipse de tapa (más “cilindro” que caja)
+  const chip = which === 'fine' ? 'url(#chipFine)' : 'url(#chipThick)';
+  const yBody = top + ry;
+  const yBase = yBody + bodyH;
+
+  // sombra en piso
+  grp.appendChild(el('ellipse', { cx, cy: top + 100, rx: 34, ry: 6, fill: 'rgba(26,36,44,0.26)' }));
+
+  // patas + travesaño
+  grp.appendChild(el('line', { x1: cx - 28, y1: yBase - 4, x2: cx - 22, y2: top + 96, stroke: '#5A6570', 'stroke-width': 2.8, 'stroke-linecap': 'round' }));
+  grp.appendChild(el('line', { x1: cx + 28, y1: yBase - 4, x2: cx + 22, y2: top + 96, stroke: '#5A6570', 'stroke-width': 2.8, 'stroke-linecap': 'round' }));
+  grp.appendChild(el('line', { x1: cx - 24, y1: top + 84, x2: cx + 24, y2: top + 84, stroke: '#7A8794', 'stroke-width': 1.8 }));
+
+  // cono hopper
+  grp.appendChild(el('polygon', {
+    points: `${cx - rx + 2},${yBase} ${cx + rx - 2},${yBase} ${cx + 11},${top + 86} ${cx - 11},${top + 86}`,
+    fill: 'url(#binCone)', stroke: '#5A6570', 'stroke-width': 1.2,
+  }));
+  grp.appendChild(el('ellipse', { cx, cy: yBase, rx: rx - 2, ry: 7, fill: '#8A949E', stroke: '#5A6570', 'stroke-width': 1 }));
+  // válvula
+  grp.appendChild(el('rect', { x: cx - 10, y: top + 86, width: 20, height: 7, rx: 2, fill: '#3C4652', stroke: '#2A323A', 'stroke-width': 1 }));
+  grp.appendChild(el('rect', { x: cx - 6, y: top + 93, width: 12, height: 5, rx: 1, fill: '#5A6570' }));
+
+  // cuerpo cilíndrico (rect + elipses = 3D)
+  grp.appendChild(el('rect', { x: cx - rx, y: yBody, width: w, height: bodyH, fill: 'url(#binShell)', stroke: '#6B7886', 'stroke-width': 1.3 }));
+  // anillos de refuerzo (elipses = lectura cilíndrica)
+  for (const yy of [yBody + 12, yBody + 26, yBody + 40]) {
+    grp.appendChild(el('ellipse', { cx, cy: yy, rx: rx - 0.5, ry: 6, fill: 'none', stroke: 'rgba(60,70,80,0.45)', 'stroke-width': 1.35 }));
+  }
+  // material interno (nivel)
+  grp.appendChild(el('rect', { x: cx - rx + 8, y: yBody + 16, width: w - 16, height: 28, fill: chip, opacity: 0.95 }));
+  grp.appendChild(el('ellipse', { cx, cy: yBody + 16, rx: rx - 8, ry: 5, fill: which === 'fine' ? '#F0D078' : '#E0A84A' }));
+  // ventana de inspección
+  grp.appendChild(el('rect', { x: cx - 14, y: yBody + 14, width: 28, height: 30, rx: 5, fill: 'none', stroke: '#2A323A', 'stroke-width': 1.6, opacity: 0.55 }));
+  grp.appendChild(el('rect', { x: cx - 12, y: yBody + 16, width: 6, height: 26, rx: 2, fill: 'rgba(255,255,255,0.12)' }));
+  // highlight vertical (curvatura)
+  grp.appendChild(el('rect', { x: cx - rx + 8, y: yBody + 2, width: 7, height: bodyH - 4, rx: 3, fill: 'rgba(255,255,255,0.45)' }));
+  grp.appendChild(el('rect', { x: cx + rx - 16, y: yBody + 4, width: 5, height: bodyH - 8, rx: 2, fill: 'rgba(0,0,0,0.10)' }));
+
+  // tapa elíptica + anillo de ruta + pasarela
+  grp.appendChild(el('ellipse', { cx, cy: yBody, rx, ry, fill: 'url(#binLid)', stroke: '#6B7886', 'stroke-width': 1.5 }));
+  grp.appendChild(el('ellipse', { cx, cy: top + 4, rx: rx - 7, ry: ry - 4, fill: '#EEF2F6', stroke: color, 'stroke-width': 2.5 }));
+  grp.appendChild(el('line', { x1: cx - rx + 6, y1: top + 2, x2: cx + rx - 6, y2: top + 2, stroke: '#3C4652', 'stroke-width': 2 }));
+  grp.appendChild(el('line', { x1: cx - rx + 10, y1: top - 7, x2: cx - rx + 10, y2: top + 2, stroke: '#3C4652', 'stroke-width': 1.4 }));
+  grp.appendChild(el('line', { x1: cx + rx - 10, y1: top - 7, x2: cx + rx - 10, y2: top + 2, stroke: '#3C4652', 'stroke-width': 1.4 }));
+  grp.appendChild(el('line', { x1: cx - rx + 10, y1: top - 7, x2: cx + rx - 10, y2: top - 7, stroke: '#3C4652', 'stroke-width': 1.4 }));
+  grp.appendChild(el('rect', { x: cx - 8, y: top - 14, width: 16, height: 10, rx: 2, fill: '#7A8794', stroke: color, 'stroke-width': 1.5 }));
+
+  // partículas cayendo
+  const drops = el('g', { fill: which === 'fine' ? '#E0B456' : '#C98B2E' });
+  drops.appendChild(el('circle', { cx: cx - 5, cy: top + 104, r: 2.4, style: 'animation:fall 1.1s linear infinite' }));
+  drops.appendChild(el('circle', { cx: cx + 4, cy: top + 104, r: 2, style: 'animation:fall 1.3s linear infinite;animation-delay:.35s' }));
   grp.appendChild(drops);
+
   g.appendChild(grp);
 }
 
-/* Encolador (tambor + spray de resina) — recolocado, entra por arriba y sale
-   por abajo hacia el codo. cy = centro del tambor. */
+/* Encolador (tambor + spray de resina) — más volumen 3D. */
 function drawEnc(g, cx, cy, color, which) {
-  const grp = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': `enc-${which}`, 'data-label': which === 'fine' ? 'Encolador CE' : 'Encolador CI' });
-  grp.appendChild(el('rect', { x: cx - 62, y: cy - 26, width: 124, height: 52, rx: 26, fill: 'url(#steelBlue)', stroke: '#5E7286', 'stroke-width': 1.5 }));
-  const blades = el('g', { stroke: '#5E7286', 'stroke-width': 2, opacity: 0.7 });
-  for (let i = -2; i <= 2; i++) blades.appendChild(el('line', { x1: cx + i * 22, y1: cy - 18, x2: cx + i * 22 + 8, y2: cy + 18 }));
+  const grp = el('g', {
+    class: 's2-machine s2-up-node s2-equip s2-equip--enc',
+    'data-inject-node': `enc-${which}`,
+    'data-label': which === 'fine' ? 'Encolador CE' : 'Encolador CI',
+    filter: 'url(#equipShadow)',
+  });
+  // sombra
+  grp.appendChild(el('ellipse', { cx, cy: cy + 38, rx: 58, ry: 8, fill: 'rgba(26,36,44,0.2)' }));
+  // cuerpo tambor
+  grp.appendChild(el('rect', { x: cx - 64, y: cy - 28, width: 128, height: 56, rx: 28, fill: 'url(#steelBlue)', stroke: '#5E7286', 'stroke-width': 1.6 }));
+  grp.appendChild(el('ellipse', { cx: cx - 64, cy, rx: 10, ry: 28, fill: '#8FA3B8', stroke: '#5E7286', 'stroke-width': 1 }));
+  grp.appendChild(el('ellipse', { cx: cx + 64, cy, rx: 10, ry: 28, fill: '#6B8298', stroke: '#5E7286', 'stroke-width': 1 }));
+  // highlight
+  grp.appendChild(el('rect', { x: cx - 50, y: cy - 22, width: 100, height: 10, rx: 5, fill: 'rgba(255,255,255,0.28)' }));
+  const blades = el('g', { stroke: '#4A5A6A', 'stroke-width': 2, opacity: 0.75 });
+  for (let i = -2; i <= 2; i++) blades.appendChild(el('line', { x1: cx + i * 22, y1: cy - 16, x2: cx + i * 22 + 10, y2: cy + 16 }));
   grp.appendChild(blades);
-  const mist = el('g', { fill: '#9FC0D8' });
-  mist.appendChild(el('ellipse', { cx: cx - 20, cy: cy - 34, rx: 8, ry: 5, opacity: 0.45, style: 'animation:mist 2.4s ease-in-out infinite' }));
-  mist.appendChild(el('ellipse', { cx: cx + 18, cy: cy - 36, rx: 9, ry: 5, opacity: 0.45, style: 'animation:mist 2.8s ease-in-out infinite;animation-delay:.6s' }));
+  const mist = el('g', { fill: '#9FC0D8', filter: 'url(#softGlow)' });
+  mist.appendChild(el('ellipse', { cx: cx - 20, cy: cy - 36, rx: 9, ry: 6, opacity: 0.5, style: 'animation:mist 2.4s ease-in-out infinite' }));
+  mist.appendChild(el('ellipse', { cx: cx + 18, cy: cy - 38, rx: 10, ry: 6, opacity: 0.5, style: 'animation:mist 2.8s ease-in-out infinite;animation-delay:.6s' }));
   grp.appendChild(mist);
-  grp.appendChild(el('polygon', { points: `${cx - 8},${cy + 26} ${cx + 8},${cy + 26} ${cx},${cy + 40}`, fill: '#4A5560' }));
+  // salida
+  grp.appendChild(el('polygon', { points: `${cx - 10},${cy + 28} ${cx + 10},${cy + 28} ${cx},${cy + 42}`, fill: '#3C4652', stroke: '#2A323A', 'stroke-width': 1 }));
+  // anillo de ruta
+  grp.appendChild(el('rect', { x: cx - 22, y: cy + 18, width: 44, height: 4, rx: 2, fill: color }));
   g.appendChild(grp);
 }
 
-/* Banda inclinada HORIZONTAL: corre desde la columna hacia el metro 0. */
+/* Banda inclinada HORIZONTAL 3D: corre desde la columna hacia el metro 0. */
 function drawBelt(g, cfg) {
   const { beltX0, beltX1, beltY, which, inclLabel, inclTitle, color, lenM, vFix } = cfg;
-  const grp = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': `incl-${which}`, 'data-label': inclLabel });
-  grp.appendChild(el('rect', { x: beltX0, y: beltY - 16, width: beltX1 - beltX0, height: 32, fill: 'transparent' }));
-  grp.appendChild(el('line', { x1: beltX0, y1: beltY, x2: beltX1, y2: beltY, stroke: '#1565C0', 'stroke-width': 7, 'stroke-linecap': 'round', opacity: 0.85 }));
-  grp.appendChild(el('line', { x1: beltX0, y1: beltY, x2: beltX1, y2: beltY, stroke: '#BBDEFB', 'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-dasharray': '10 12', style: 'animation:conveyor 1.1s linear infinite' }));
-  grp.appendChild(el('circle', { cx: beltX0, cy: beltY, r: 9, fill: 'url(#steel)', stroke: '#6B7886', 'stroke-width': 1.5 }));
-  grp.appendChild(el('circle', { cx: beltX1, cy: beltY, r: 9, fill: 'url(#steel)', stroke: '#6B7886', 'stroke-width': 1.5 }));
+  const grp = el('g', { class: 's2-machine s2-up-node s2-equip s2-equip--belt', 'data-inject-node': `incl-${which}`, 'data-label': inclLabel });
+  const len = beltX1 - beltX0;
+  grp.appendChild(el('rect', { x: beltX0, y: beltY - 18, width: len, height: 36, fill: 'transparent' }));
+  // rail sombra
+  grp.appendChild(el('rect', { x: beltX0, y: beltY - 2, width: len, height: 14, rx: 7, fill: 'rgba(13,71,161,0.18)' }));
+  // superficie 3D
+  grp.appendChild(el('rect', { x: beltX0, y: beltY - 9, width: len, height: 18, rx: 9, fill: 'url(#beltBlue3d)', stroke: '#0D47A1', 'stroke-width': 1.4, filter: 'url(#equipShadow)' }));
+  grp.appendChild(el('rect', { x: beltX0 + 4, y: beltY - 7, width: len - 8, height: 5, rx: 3, fill: 'rgba(255,255,255,0.28)' }));
+  grp.appendChild(el('line', {
+    x1: beltX0 + 8, y1: beltY, x2: beltX1 - 8, y2: beltY,
+    stroke: 'rgba(255,255,255,0.55)', 'stroke-width': 2.5, 'stroke-linecap': 'round',
+    'stroke-dasharray': '12 10', style: 'animation:conveyor 1.1s linear infinite',
+  }));
+  // tambores
+  for (const dx of [beltX0, beltX1]) {
+    grp.appendChild(el('circle', { cx: dx, cy: beltY, r: 12, fill: 'url(#steel)', stroke: '#5E6A76', 'stroke-width': 1.6 }));
+    grp.appendChild(el('circle', { cx: dx, cy: beltY, r: 5, fill: '#4A5560' }));
+    grp.appendChild(el('circle', { cx: dx - 2, cy: beltY - 2, r: 2, fill: 'rgba(255,255,255,0.45)' }));
+  }
   g.appendChild(grp);
   const midX = (beltX0 + 220 + beltX1) / 2;
-  centerLabel(g, midX, beltY - 50, 200, inclTitle, `${lenM} m @ ${vFix} m/min · Medido (v fija HMI)`, color, `incl-${which}`, inclLabel);
-  timeChip(g, midX, beltY + 30, `incl-${which}`);
+  centerLabel(g, midX, beltY - 52, 210, inclTitle, `${lenM} m @ ${vFix} m/min · Medido (v fija HMI)`, color, `incl-${which}`, inclLabel);
+  timeChip(g, midX, beltY + 32, `incl-${which}`);
 }
 
 /* Conector final: de la banda al metro 0 (esparcidores en el tramo métrico). */
@@ -216,8 +351,8 @@ function renderColumn(g, cfg) {
   // espina gris de la columna (detrás de los equipos)
   g.appendChild(el('line', { x1: cx, y1: siloTop, x2: cx, y2: encBottom, stroke: '#98A6B4', 'stroke-width': 3, opacity: 0.5 }));
 
-  // título de ruta (arriba de la columna)
-  g.appendChild(el('text', { x: cx, y: siloTop - 30, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 13, fill: color }, route));
+  // título de ruta (arriba de la columna, con aire sobre el silo)
+  g.appendChild(el('text', { x: cx, y: siloTop - 36, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: color, 'letter-spacing': '0.04em' }, route));
 
   // tuberías entre etapas
   pipe(g, cx, siloTop + 128, dosingTop, color);
@@ -247,13 +382,14 @@ export function renderUpstream() {
   if (!g) return;
   g.innerHTML = '';
 
-  // Fondo de zona esquemática
-  g.appendChild(el('rect', { x: 0, y: 42, width: DIVIDER_X, height: 456, fill: 'rgba(55,71,79,0.04)' }));
+  // Fondo de zona esquemática (atmósfera industrial suave)
+  g.appendChild(el('rect', { x: 0, y: 42, width: DIVIDER_X, height: 456, fill: 'url(#upZoneBg)' }));
 
-  // Cinta de zona
-  const ribbon = el('g', { 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 13, 'text-anchor': 'middle', fill: '#fff', 'letter-spacing': '0.06em' });
-  ribbon.appendChild(el('rect', { x: 600, y: 10, width: 600, height: 26, rx: 13, fill: '#37474F' }));
-  ribbon.appendChild(el('text', { x: 900, y: 27 }, '0 · SILOS · DOSIFICACIÓN Y ENCOLADO — MODELO v3'));
+  // Cinta de zona (HUD ribbon)
+  const ribbon = el('g', { 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, 'text-anchor': 'middle', fill: '#fff', 'letter-spacing': '0.08em' });
+  ribbon.appendChild(el('rect', { x: 560, y: 8, width: 680, height: 28, rx: 14, fill: '#1A2E28', stroke: '#0A7D5A', 'stroke-width': 1.5, filter: 'url(#equipShadow)' }));
+  ribbon.appendChild(el('rect', { x: 560, y: 8, width: 8, height: 28, rx: 2, fill: '#FFDE00' }));
+  ribbon.appendChild(el('text', { x: 900, y: 26 }, '0 · SILOS · DOSIFICACIÓN Y ENCOLADO — MODELO v3'));
   g.appendChild(ribbon);
   g.appendChild(el('text', {
     x: 900, y: 52, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif",
@@ -261,10 +397,10 @@ export function renderUpstream() {
   }, 'Cascada vertical por TIEMPO de residencia (τ = M/F × 60) → banda inclinada horizontal al metro 0'));
 
   // Divisor: aquí empieza la escala métrica del colchón
-  g.appendChild(el('line', { x1: DIVIDER_X, y1: 44, x2: DIVIDER_X, y2: 490, stroke: '#37474F', 'stroke-width': 2, 'stroke-dasharray': '6 5' }));
+  g.appendChild(el('line', { x1: DIVIDER_X, y1: 44, x2: DIVIDER_X, y2: 490, stroke: '#1A2E28', 'stroke-width': 2.5, 'stroke-dasharray': '7 5' }));
   g.appendChild(el('text', {
     x: DIVIDER_X - 8, y: 484, 'text-anchor': 'end', 'font-family': "'Barlow',sans-serif",
-    'font-weight': 700, 'font-size': 9, fill: '#37474F', 'letter-spacing': '0.05em',
+    'font-weight': 700, 'font-size': 9, fill: '#1A2E28', 'letter-spacing': '0.05em',
   }, 'FIN TRAMO ESQUEMÁTICO → ESCALA MÉTRICA (70 px = 1 m)'));
   g.appendChild(el('text', {
     x: DIVIDER_X - 8, y: 497, 'text-anchor': 'end', 'font-family': "'Barlow',sans-serif",
@@ -273,27 +409,26 @@ export function renderUpstream() {
 
   // Botón "cambio de receta" (arranca en LOS DOS silos → 3 capas)
   const btn = el('g', { class: 's2-machine s2-up-node s2-up-recipe', 'data-inject-node': 'silos', 'data-label': 'Cambio de receta · silos' });
-  btn.appendChild(el('rect', { x: 24, y: 60, width: 68, height: 84, rx: 10, fill: '#FFDE00', stroke: '#1A1D1B', 'stroke-width': 1.5 }));
-  btn.appendChild(el('text', { x: 58, y: 86, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, 'CAMBIO'));
-  btn.appendChild(el('text', { x: 58, y: 100, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, 'RECETA'));
-  btn.appendChild(el('text', { x: 58, y: 118, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#3D423F' }, 'silos 5 + 6'));
-  btn.appendChild(el('text', { x: 58, y: 128, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#3D423F' }, '3 capas'));
+  btn.appendChild(el('rect', { x: 22, y: 58, width: 72, height: 88, rx: 12, fill: '#FFDE00', stroke: '#1A1D1B', 'stroke-width': 1.6, filter: 'url(#equipShadow)' }));
+  btn.appendChild(el('rect', { x: 22, y: 58, width: 72, height: 6, rx: 3, fill: '#1A2E28' }));
+  btn.appendChild(el('text', { x: 58, y: 88, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, 'CAMBIO'));
+  btn.appendChild(el('text', { x: 58, y: 102, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#1A1D1B' }, 'RECETA'));
+  btn.appendChild(el('text', { x: 58, y: 120, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 600, 'font-size': 8, fill: '#3D423F' }, 'silos 5 + 6'));
+  btn.appendChild(el('text', { x: 58, y: 132, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 700, 'font-size': 8, fill: '#004E38' }, '3 capas'));
   g.appendChild(btn);
 
-  // Botones DISCRETOS de cambio combinado (ambas rutas) — pastillas compactas entre
-  // las dos columnas. El cambio se ve en LAS DOS filas (mismo color) y se unen en la
-  // línea de formación. (Dosing/encoladoras siguen clicables por separado = una ruta.)
+  // Botones DISCRETOS de cambio combinado (ambas rutas)
   const drawComboBtn = (node, cy, label) => {
-    const bx = 420, bw = 118, bh = 26, by = cy - bh / 2;
+    const bx = 420, bw = 124, bh = 28, by = cy - bh / 2;
     const b = el('g', { class: 's2-machine s2-up-node', 'data-inject-node': node, 'data-label': `Cambio · ${label} (ambas rutas)` });
-    b.appendChild(el('rect', { x: bx - bw / 2, y: by, width: bw, height: bh, rx: 13, fill: '#FFFFFF', stroke: '#0A7D5A', 'stroke-width': 1.5 }));
-    b.appendChild(el('circle', { cx: bx - bw / 2 + 15, cy, r: 7, fill: '#0A7D5A' }));
-    b.appendChild(el('text', { x: bx - bw / 2 + 15, y: cy + 4, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 800, 'font-size': 12, fill: '#fff' }, '+'));
-    b.appendChild(el('text', { x: bx + 8, y: cy + 4, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 700, 'font-size': 10, fill: '#1A1D1B' }, `cambio ${label}`));
+    b.appendChild(el('rect', { x: bx - bw / 2, y: by, width: bw, height: bh, rx: 14, fill: 'rgba(255,255,255,0.96)', stroke: '#0A7D5A', 'stroke-width': 1.6, filter: 'url(#equipShadow)' }));
+    b.appendChild(el('circle', { cx: bx - bw / 2 + 16, cy, r: 8, fill: '#0A7D5A' }));
+    b.appendChild(el('text', { x: bx - bw / 2 + 16, y: cy + 4, 'text-anchor': 'middle', 'font-family': "'Barlow',sans-serif", 'font-weight': 800, 'font-size': 13, fill: '#fff' }, '+'));
+    b.appendChild(el('text', { x: bx + 10, y: cy + 4, 'text-anchor': 'middle', 'font-family': "'Barlow Semi Condensed',sans-serif", 'font-weight': 700, 'font-size': 10, fill: '#1A1D1B' }, `cambio ${label}`));
     g.appendChild(b);
   };
-  drawComboBtn('dosing', 253, 'dosing');   // a la altura de las dosificadoras
-  drawComboBtn('enc', 381, 'encolador');   // a la altura de las encoladoras
+  drawComboBtn('dosing', 253, 'dosing');
+  drawComboBtn('enc', 381, 'encolador');
 
   // Columnas verticales: FINA (izquierda) y GRUESA (derecha)
   renderColumn(g, COLS.fine);
@@ -313,14 +448,14 @@ export function refreshUpstreamChips(params) {
     if (!txt || !bg) return;
     if (node.tbd) {
       txt.textContent = 'TBD';
-      txt.setAttribute('fill', '#B00020');
-      bg.setAttribute('fill', '#FDECEA');
+      txt.setAttribute('fill', '#FF8A80');
+      bg.setAttribute('fill', 'rgba(80,16,16,0.92)');
       bg.setAttribute('stroke', '#B00020');
     } else {
       txt.textContent = `${node.sec.toFixed(1)} s`;
-      txt.setAttribute('fill', '#1B5E20');
-      bg.setAttribute('fill', '#E3F1E8');
-      bg.setAttribute('stroke', '#9CCFAE');
+      txt.setAttribute('fill', '#FFDE00');
+      bg.setAttribute('fill', 'rgba(26,29,27,0.88)');
+      bg.setAttribute('stroke', 'rgba(10,125,90,0.65)');
     }
   };
   for (const id of ['silo-fine', 'dosing-fine', 'enc-fine', 'incl-fine', 'silo-thick', 'dosing-thick', 'enc-thick', 'incl-thick']) {

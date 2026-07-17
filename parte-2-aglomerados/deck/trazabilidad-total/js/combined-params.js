@@ -18,6 +18,8 @@ import {
   tauForNode, transportForNode, flowFor,
 } from '../../trazabilidad/js/core/trace-engine.js';
 import { KIND_BY_KEY, TAG_BY_KEY } from './hmi-csv.js';
+import { lockParameters, requestParametersAccess } from './params-auth.js';
+import { geometryFromParams, validateGeometry } from './line-bridge.js';
 
 export const P1_PARAMS = [
   { key: 'p1:pila1_M', label: 'Masa · pila de aserrín', unit: 'kg', default: 5000 },
@@ -100,7 +102,23 @@ export const P1_PARAMS = [
   { key: 'p1:inclG_v', label: 'Velocidad · banda inclinada CL', unit: 'm/min', default: 96.5, hidden: true },
   { key: 'p1:inclF_L', label: 'Longitud · banda inclinada SL', unit: 'm', default: 64.57, hidden: true },
   { key: 'p1:inclF_v', label: 'Velocidad · banda inclinada SL', unit: 'm/min', default: 99.5, hidden: true },
-  { key: 'p1:postPress_L', label: 'Longitud · fin prensa → sensores', unit: 'm', default: 13.55 },
+  { key: 'p1:postPress_L', label: 'Longitud · fin prensa → Sensor 1', unit: 'm', default: 16.4 },
+  { key: 'geom:sensor2Offset', label: 'Offset · Sensor 1 → Sensor 2', unit: 'm', default: 0.2 },
+  { key: 'geom:sensor3Offset', label: 'Offset · Sensor 1 → Sensor 3', unit: 'm', default: 0.4 },
+  { key: 'geom:esp1', label: 'Posición · Esparcidor 1', unit: 'm', default: 6.63 },
+  { key: 'geom:esp2', label: 'Posición · Esparcidor 2', unit: 'm', default: 15 },
+  { key: 'geom:esp3', label: 'Posición · Esparcidor 3', unit: 'm', default: 22.25 },
+  { key: 'geom:magnet', label: 'Posición · Imán', unit: 'm', default: 26.68 },
+  { key: 'geom:sprays2', label: 'Posición · Desmoldante #2', unit: 'm', default: 35.99 },
+  { key: 'geom:detector', label: 'Posición · Detector metales', unit: 'm', default: 37.69 },
+  { key: 'geom:cutters', label: 'Posición · Cortadores de filo', unit: 'm', default: 39.56 },
+  { key: 'geom:nose', label: 'Posición · Nariz/rechazo', unit: 'm', default: 44.9 },
+  { key: 'geom:vapor', label: 'Posición · Vapor', unit: 'm', default: 46.86 },
+  { key: 'geom:prepress', label: 'Posición · Pre-prensa', unit: 'm', default: 47 },
+  { key: 'geom:refilaStart', label: 'Inicio · Cuchillos de refila', unit: 'm', default: 81.7 },
+  { key: 'geom:refilaEnd', label: 'Fin · Cuchillos de refila', unit: 'm', default: 83 },
+  { key: 'geom:sawStart', label: 'Inicio · Sierra transversal', unit: 'm', default: 84.1 },
+  { key: 'geom:sawEnd', label: 'Fin · Sierra transversal', unit: 'm', default: 86.4 },
 ];
 
 const PARAM_BY_KEY = Object.fromEntries(P1_PARAMS.map((p) => [p.key, p]));
@@ -419,7 +437,7 @@ function finalRouteEquation(params, speed) {
   const fCL = n(params, '_global:F_CL', 118);
   const pSL1 = n(params, '_global:pctSL1', 47.1);
   const pSL2 = n(params, '_global:pctSL2', 52.9);
-  const lSensor3 = 85.55;
+  const lSensor3 = geometryFromParams(params).sensor3M;
   const vPrensa = n(params, 'v_prensa', speed);
 
   const silo = (rho, volume, level, flow) => flow > 0 ? rho * volume * level / 100 / flow * 60 : 0;
@@ -487,6 +505,28 @@ function renderGlobals(params, speed) {
   return card;
 }
 
+const GEOMETRY_KEYS = [
+  'p1:postPress_L', 'geom:sensor2Offset', 'geom:sensor3Offset',
+  'geom:esp1', 'geom:esp2', 'geom:esp3', 'geom:magnet', 'geom:sprays2',
+  'geom:detector', 'geom:cutters', 'geom:nose', 'geom:vapor', 'geom:prepress',
+  'geom:refilaStart', 'geom:refilaEnd', 'geom:sawStart', 'geom:sawEnd',
+];
+
+function renderGeometryCalibration(params) {
+  const geometry = geometryFromParams(params);
+  const errors = validateGeometry(geometry);
+  const card = document.createElement('section');
+  card.className = 'globals-card globals-card--csv geometry-card';
+  card.innerHTML = `
+    <header class="globals-card__hd"><h4>Calibración física de la línea</h4>
+      <p class="globals-card__sub">Todos los valores están medidos desde el inicio de formación. Los cambios actualizan regla, equipos, tiempos y sensores.</p></header>
+    <div class="equation-card__fields">${GEOMETRY_KEYS.map((key) => fieldHtml(PARAM_BY_KEY[key])).join('')}</div>
+    <div class="geometry-validation ${errors.length ? 'is-error' : 'is-ok'}" id="geometryValidation">
+      ${errors.length ? errors.join(' · ') : `Coherente · fin prensa ${geometry.pressEndM.toFixed(2)} m · S1 ${geometry.sensor1M.toFixed(2)} m · S2 ${geometry.sensor2M.toFixed(2)} m · S3 ${geometry.sensor3M.toFixed(2)} m`}
+    </div>`;
+  return card;
+}
+
 export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsvDownload }) {
   const speed = speedGetter ?? (() => 14.5);
   let params = { ...defaultParams(), ...defaultPart1Params(), v_prensa: speed() };
@@ -538,6 +578,7 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     grid.innerHTML = '';
     grid.appendChild(renderOverview(params, v));
     grid.appendChild(renderGlobals(params, v));
+    grid.appendChild(renderGeometryCalibration(params));
 
     let currentGroup = '';
     for (const step of P1_STEPS) {
@@ -578,9 +619,9 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
       kind: 'measured',
       stepId: postStep.id,
       fields: [fieldHtml(PARAM_BY_KEY['p1:postPress_L']), fieldHtml({ key: 'v_prensa', label: 'Velocidad de prensa', unit: 'm/min', kind: 'hmi-live' })],
-      note: '13,55 m medidos desde la salida activa de prensa (71,60 m) hasta los sensores (85,15 m).',
+      note: '16,40 m efectivos desde fin de prensa (71,60 m) hasta Sensor 1 (≈88,00 m), según prueba de papel del 14-jul-2026; confirmar con flexómetro.',
     });
-    const length = n(params, 'p1:postPress_L', 13.55);
+    const length = n(params, 'p1:postPress_L', 16.4);
     const postSpeed = n(params, 'v_prensa', v);
     renderEquation(postCard, {
       symbolic: String.raw`t=\frac{L_{post}\,[\mathrm{m}]}{v_{prensa}\,[\mathrm{m\,min^{-1}}]}\cdot60\,\mathrm{s\,min^{-1}}`,
@@ -607,7 +648,7 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     const v = n(params, 'v_prensa', speed());
     for (const card of grid.querySelectorAll('[data-step-id]')) {
       if (card.dataset.stepId === 'postprensa') {
-        const length = n(params, 'p1:postPress_L', 13.55);
+        const length = n(params, 'p1:postPress_L', 16.4);
         renderEquation(card, {
           symbolic: String.raw`t=\frac{L_{post}\,[\mathrm{m}]}{v_{prensa}\,[\mathrm{m\,min^{-1}}]}\cdot60\,\mathrm{s\,min^{-1}}`,
           substituted: String.raw`t=\frac{${texN(length)}\,\mathrm{m}}{${texN(v)}\,\mathrm{m\,min^{-1}}}\cdot60\,\mathrm{s\,min^{-1}}`,
@@ -625,6 +666,15 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     for (const card of grid.querySelectorAll('[data-total-equation="route-sensor3"]')) {
       renderFinalRouteTotalValues(card, finalRouteEquation(params, v));
     }
+    const status = document.getElementById('geometryValidation');
+    if (status) {
+      const geometry = geometryFromParams(params);
+      const errors = validateGeometry(geometry);
+      status.className = `geometry-validation ${errors.length ? 'is-error' : 'is-ok'}`;
+      status.textContent = errors.length
+        ? errors.join(' · ')
+        : `Coherente · fin prensa ${geometry.pressEndM.toFixed(2)} m · S1 ${geometry.sensor1M.toFixed(2)} m · S2 ${geometry.sensor2M.toFixed(2)} m · S3 ${geometry.sensor3M.toFixed(2)} m`;
+    }
   }
 
   function setView(view) {
@@ -641,7 +691,14 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
   }
 
   tabLinea?.addEventListener('click', () => setView('linea'));
-  tabParams?.addEventListener('click', () => setView('params'));
+  tabParams?.addEventListener('click', async () => {
+    if (await requestParametersAccess()) setView('params');
+  });
+  document.getElementById('lockParamsBtn')?.addEventListener('click', () => {
+    lockParameters();
+    setView('linea');
+    showFeedback('Parámetros bloqueados.');
+  });
   document.getElementById('resetParamsBtn')?.addEventListener('click', async () => {
     await onCsvReset?.();
     showFeedback('CSV del servidor recargado.');

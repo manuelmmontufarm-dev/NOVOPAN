@@ -23,6 +23,11 @@
   --fs-caption: 13px;
 }
 
+.s2-test-point { cursor: pointer; outline: none; }
+.s2-test-point circle { fill: #ffde00; stroke: #7a5d00; stroke-width: 1.5; transition: transform .15s ease, fill .15s ease; }
+.s2-test-point text { fill: #3d3300; font: 800 8px 'Barlow', sans-serif; text-anchor: middle; pointer-events: none; }
+.s2-test-point:hover circle, .s2-test-point:focus circle { fill: #fff2a3; transform: scale(1.22); }
+
 * { box-sizing: border-box; }
 
 body {
@@ -1232,3 +1237,40 @@ body.sec1-off .s2-zone-btn[data-scroll="2200"] { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .s2-csv-banner .ms, input.is-hmi-flash { animation: none !important; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   MODO UNA PANTALLA (js/onepage-layout.js añade body.onepage)
+   Todo visible sin scroll: chrome compacto + canvas sin overflow.
+   ════════════════════════════════════════════════════════════ */
+body.onepage { height: 100vh; overflow: hidden; }
+body.onepage .s2-page { height: 100vh; min-height: 0; }
+
+/* header compacto */
+body.onepage .s2-header { padding: 6px 18px; border-bottom-width: 3px; gap: 14px; }
+body.onepage .s2-header__title { font-size: 19px; }
+body.onepage .s2-header__eyebrow { font-size: 10px; }
+body.onepage .s2-header__meta { display: none; }
+body.onepage .s2-clock { padding: 3px 12px; min-width: 128px; border-width: 1.5px; }
+body.onepage .s2-clock__time { font-size: 22px; }
+body.onepage .s2-clock__pct { font-size: 9px; margin-top: 1px; }
+
+/* toolbar en una sola fila compacta */
+body.onepage .s2-toolbar { padding: 5px 12px; gap: 10px; }
+body.onepage .s2-linea-controls { gap: 10px; }
+body.onepage .s2-speed { padding: 3px 10px; gap: 8px; }
+body.onepage .s2-speed__range { width: 170px; }
+body.onepage .s2-speed__box input { font-size: 16px; width: 52px; }
+body.onepage .s2-mover__range { width: 130px; }
+body.onepage .s2-mover__label span:last-child { display: none; }
+
+/* canvas: el SVG recompuesto llena el alto disponible, sin scroll */
+body.onepage .s2-canvas { overflow: hidden; display: flex; }
+body.onepage .s2-canvas svg { flex: 1; min-width: 0; min-height: 0; }
+/* con Sección 1 encendida no cabe: se permite scroll vertical solo entonces */
+body.onepage.sec1-on .s2-canvas { overflow-y: auto; display: block; }
+
+/* leyenda en una línea fina */
+body.onepage .s2-legend { padding: 3px 14px; font-size: 10px; gap: 12px; }
+body.onepage .s2-legend__spacer { display: none; }
+body.onepage .s2-legend__swatch { width: 13px; height: 9px; }
+body.onepage .s2-legend__dot { width: 10px; height: 10px; }

@@ -721,27 +721,57 @@ function initSimulation() {
   });
 }
 
-// scroll suave a una zona (chips 2A–2E), portado del handoff
-function scrollCanvasTo(x) {
-  const el = document.getElementById('canvasScroll');
-  if (!el) return;
-  const start = el.scrollLeft;
-  const target = Math.max(0, Math.min(x, el.scrollWidth - el.clientWidth));
-  const d = target - start;
+// Vista apilada (2 filas): los chips enfocan fila y recortan la fila superior si aplica.
+const FEED_VIEWBOX = {
+  silos: '-20 45 1280 570',
+  formacion: '1680 45 2200 570',
+  all: '-20 45 3800 570',
+};
+
+function focusStackRow(row, feedPane = 'all') {
+  const root = document.getElementById('lineCanvas');
+  if (!root) return;
+  root.querySelectorAll('.s2-two-row__chrome').forEach((el) => {
+    el.classList.toggle('is-focused', el.classList.contains(`s2-two-row__chrome--${row}`));
+  });
+  root.querySelectorAll('.s2-zone-btn').forEach((btn) => {
+    const sameRow = btn.dataset.row === row;
+    const samePane = !btn.dataset.feedPane || btn.dataset.feedPane === feedPane;
+    btn.classList.toggle('is-active', sameRow && (row !== 'feed' || samePane));
+  });
+  const feedVp = root.querySelector('.s2-two-row__viewport--feed');
+  if (feedVp && row === 'feed') {
+    feedVp.setAttribute('viewBox', FEED_VIEWBOX[feedPane] || FEED_VIEWBOX.all);
+  }
+  const canvas = document.getElementById('canvasScroll');
+  if (!canvas) return;
+  const targetY = row === 'finish' ? Math.max(0, canvas.scrollHeight - canvas.clientHeight) : 0;
+  const start = canvas.scrollTop;
+  const d = targetY - start;
+  if (Math.abs(d) < 2) return;
   const t0 = performance.now();
-  const dur = 450;
+  const dur = 380;
   const step = (now) => {
     const p = Math.min(1, (now - t0) / dur);
-    el.scrollLeft = start + d * (1 - Math.pow(1 - p, 3));
+    canvas.scrollTop = start + d * (1 - Math.pow(1 - p, 3));
     if (p < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
 
 function wireZoneChips() {
-  document.querySelectorAll('.s2-zone-btn[data-scroll]').forEach((btn) => {
-    btn.addEventListener('click', () => scrollCanvasTo(parseFloat(btn.dataset.scroll)));
+  document.querySelectorAll('.s2-zone-btn[data-row]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      focusStackRow(btn.dataset.row, btn.dataset.feedPane || 'all');
+    });
   });
+  document.querySelectorAll('.s2-zone-btn[data-scroll]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const x = parseFloat(btn.dataset.scroll);
+      focusStackRow(x >= 3700 ? 'finish' : 'feed', x >= 1800 ? 'formacion' : 'silos');
+    });
+  });
+  focusStackRow('feed', 'silos');
 }
 
 function init() {
