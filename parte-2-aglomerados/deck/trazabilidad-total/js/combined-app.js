@@ -15,10 +15,10 @@
    ============================================================ */
 
 import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
-import { buildAnnotations, PROCESS_TOTAL_M } from './line-bridge.js';
+import { buildAnnotations, geometryFromParams, validateGeometry } from './line-bridge.js';
 import { initParams, loadParams, loadPart1Params } from './combined-params.js';
 import { initHmiCsv } from './hmi-csv.js';
-import { computeRoute, formatSec, STATUS_LABEL, PARAM_INDEX, MIXER_TAU_SEC } from './route-model.js';
+import { computeRoute, formatSec, STATUS_LABEL, MIXER_TAU_SEC } from './route-model.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const QUITO_TZ = 'America/Guayaquil';
@@ -28,17 +28,13 @@ const DEFAULT_SPEED = SPEED_PRESETS.find((p) => p.id === 'observed-jun24')?.mPer
 const SPEED_MIN = 8;
 const SPEED_MAX = 22;
 
-// Sensores de calidad 1/2/3: distancia desde el registro (m=0, arranque del
-// colchón). Se leen del route-model (única fuente de verdad) para que la
-// simulación visual y las ecuaciones usen exactamente los mismos metros.
-const SENSOR_DEFS = [
-  { key: 'sensor1', m: PARAM_INDEX['sensor1.distance'].value, label: `Sensor de calidad 1 (${PARAM_INDEX['sensor1.distance'].value} m)` },
-  { key: 'sensor2', m: PARAM_INDEX['sensor2.distance'].value, label: `Sensor de calidad 2 (${PARAM_INDEX['sensor2.distance'].value} m)` },
-  { key: 'sensor3', m: PARAM_INDEX['sensor3.distance'].value, label: `Sensor de calidad 3 (${PARAM_INDEX['sensor3.distance'].value} m) · fin de proceso` },
+let activeGeometry = geometryFromParams({ ...loadParams(), ...loadPart1Params() });
+const sensorDefs = () => [
+  { key: 'sensor1', m: activeGeometry.sensor1M, label: `Sensor de calidad 1 (${activeGeometry.sensor1M.toFixed(2)} m)` },
+  { key: 'sensor2', m: activeGeometry.sensor2M, label: `Sensor de calidad 2 (${activeGeometry.sensor2M.toFixed(2)} m)` },
+  { key: 'sensor3', m: activeGeometry.sensor3M, label: `Sensor de calidad 3 (${activeGeometry.sensor3M.toFixed(2)} m) · fin de proceso` },
 ];
-// Fin del recorrido simulado: el ÚLTIMO sensor (85.55 m), no el primero —
-// así ningún cambio "desaparece" antes de cruzar los sensores 2 y 3.
-const PROCESS_END_M = Math.max(PROCESS_TOTAL_M, ...SENSOR_DEFS.map((s) => s.m));
+const processEndM = () => activeGeometry.processEndM;
 
 // Waypoints con nombre (m absolutos) para registrar en qué equipo y a qué hora
 // real pasó cada cambio. Los equipos "esparcidores" con material que cae (SL1/
@@ -50,31 +46,31 @@ const PROCESS_END_M = Math.max(PROCESS_TOTAL_M, ...SENSOR_DEFS.map((s) => s.m));
 // que salió exacto: 16.6 m ↔ 63 s). Marcadas como derivadas · POR CONFIRMAR con
 // flexómetro. La pre-prensa se movió a su lugar físico (después del cortador de
 // filos, justo antes de la prensa), no a 29 m como estaba.
-const NAMED_WAYPOINTS = [
+function namedWaypoints() { return [
   { m: 0.7, label: 'Desmoldante #1' },
-  { m: 6.63, label: 'SL1 · capa inferior' },
-  { m: 15.0, label: 'CL · core' },
-  { m: 22.25, label: 'SL2 · capa superior' },
-  { m: 26.68, label: 'Imán / tambor azul' },
-  { m: 35.99, label: 'Desmoldante #2' },
-  { m: 37.69, label: 'Detector de metales' },
-  { m: 39.56, label: 'Cortadores de filo' },
-  { m: 44.9, label: 'Nariz · rechazo' },
-  { m: 46.86, label: 'Vapor EVOsteam' },
-  { m: 47.0, label: 'Pre-prensa' },              // corregido: va antes de la prensa (prueba papel)
-  { m: 55.0, label: 'Prensa continua' },
-  { m: 71.6, label: 'Fin prensa' },
-  { m: 81.7, label: 'Cuchillos de refila · inicio' },   // 78.3 → 81.7 (prueba papel, por confirmar)
-  { m: 83.0, label: 'Cuchillos de refila · fin' },       // 79.65 → 83.0
-  { m: 84.1, label: 'Sierra transversal · inicio' },     // 80.35 → 84.1
-  { m: 86.4, label: 'Sierra transversal · fin' },        // 82.65 → 86.4
-  ...SENSOR_DEFS.map((s) => ({ m: s.m, label: s.label })),
-].sort((a, b) => a.m - b.m);
+  { m: activeGeometry.esp1M, label: 'SL1 · capa inferior' },
+  { m: activeGeometry.esp2M, label: 'CL · core' },
+  { m: activeGeometry.esp3M, label: 'SL2 · capa superior' },
+  { m: activeGeometry.magnetM, label: 'Imán / tambor azul' },
+  { m: activeGeometry.sprays2M, label: 'Desmoldante #2' },
+  { m: activeGeometry.detectorM, label: 'Detector de metales' },
+  { m: activeGeometry.cuttersM, label: 'Cortadores de filo' },
+  { m: activeGeometry.noseM, label: 'Nariz · rechazo' },
+  { m: activeGeometry.vaporM, label: 'Vapor EVOsteam' },
+  { m: activeGeometry.prepressM, label: 'Pre-prensa' },
+  { m: activeGeometry.pressStartM, label: 'Prensa continua' },
+  { m: activeGeometry.pressEndM, label: 'Fin prensa' },
+  { m: activeGeometry.refilaStartM, label: 'Cuchillos de refila · inicio' },
+  { m: activeGeometry.refilaEndM, label: 'Cuchillos de refila · fin' },
+  { m: activeGeometry.sawStartM, label: 'Sierra transversal · inicio' },
+  { m: activeGeometry.sawEndM, label: 'Sierra transversal · fin' },
+  ...sensorDefs().map((s) => ({ m: s.m, label: s.label })),
+].sort((a, b) => a.m - b.m); }
 
-const FINISH_LABEL = SENSOR_DEFS[SENSOR_DEFS.length - 1].label;
+const finishLabel = () => sensorDefs()[2].label;
 
 function nextWaypoint(posM) {
-  return NAMED_WAYPOINTS.find((wp) => wp.m > posM + 1e-6) ?? null;
+  return namedWaypoints().find((wp) => wp.m > posM + 1e-6) ?? null;
 }
 
 // Paleta de colores para cambios simultáneos (se cicla si hay más de 8 activos).
@@ -105,11 +101,11 @@ const NODE_POS = {
   silo5: [-440, 212], silo6: [-440, 338],
   // polvo → biomasa
   silo4: [-760, 618], silo8: [-620, 618], quemador: [-340, 618],
-  // zona animada (intake)
-  activeSilo5: [860, 155], activeDosingCL: [860, 305], activeEncCI: [860, 460],
-  activeSilo6: [330, 185], activeDosingSL: [330, 330], activeEncCE: [330, 500],
+  // zona animada (intake · franja compacta)
+  activeSilo5: [1760, 60], activeDosingCL: [2045, 118], activeEncCI: [2415, 127],
+  activeSilo6: [100, 60], activeDosingSL: [385, 118], activeEncCE: [755, 127],
   // entradas a la Sección 2
-  clGate: [2970, 248], sl1Gate: [2444, 360], sl2Gate: [3538, 360],
+  clGate: [3110, 76], sl1Gate: [1450, 76], sl2Gate: [1450, 76],
 };
 const NODE_LABEL = {
   patios: 'Patios · rumas', pm1: 'Piso móvil 1', ds: 'Clasificador', silo1: 'Silo 1 · Aserrín',
@@ -158,18 +154,18 @@ const EDGE_VIA = {
   'cribaG>zaranda2': [[-1060, 428], [-1060, 338]],
   'zaranda2>silo5': [[-950, 338], [-950, 212]],
   'clasSL>ws1': [[-612, 338]],
-  'silo5>activeSilo5': [[-582, 212], [-582, 14], [860, 14]],
-  'silo6>activeSilo6': [[-618, 408], [-618, 30], [330, 30]],
-  'activeEncCI>clGate': [[928, 494], [2750, 494]],
-  'activeEncCE>sl1Gate': [[398, 534], [2100, 534]],
-  'activeEncCE>sl2Gate': [[398, 534], [2100, 534]],
+  'silo5>activeSilo5': [[-582, 212], [-582, 6], [1760, 6]],
+  'silo6>activeSilo6': [[-618, 338], [-618, 20], [100, 20]],
+  'activeEncCI>clGate': [[2500, 150]],
+  'activeEncCE>sl1Gate': [[840, 150]],
+  'activeEncCE>sl2Gate': [[840, 150]],
 };
 // launchM/label al entrar a la Sección 2 animada.
-const GATE_LAUNCH = {
-  clGate: { launchM: 15.0, launchLabel: 'CL/core entra a Esparcidor 2' },
-  sl1Gate: { launchM: 6.63, launchLabel: 'SL entra a Esparcidor 1' },
-  sl2Gate: { launchM: 22.25, launchLabel: 'SL entra a Esparcidor 3' },
-};
+const gateLaunch = (gate) => ({
+  clGate: { launchM: activeGeometry.esp2M, launchLabel: 'CL/core entra a Esparcidor 2' },
+  sl1Gate: { launchM: activeGeometry.esp1M, launchLabel: 'SL entra a Esparcidor 1' },
+  sl2Gate: { launchM: activeGeometry.esp3M, launchLabel: 'SL entra a Esparcidor 3' },
+})[gate];
 
 /* Configuración por punto de inyección (data-pre-stage) → ramas + nodo de arranque.
    b3 = las 3 capas (antes de la bifurcación); bsl = ruta SL; bcl = ruta CL. */
@@ -310,7 +306,7 @@ function preMilestonesFor(startAt, branch, params) {
     if (!nxt || !NODE_POS[nxt]) break;
     t += edgeDt(cur, nxt, d);
     const via = EDGE_VIA[`${cur}>${nxt}`];
-    miles.push(at(nxt, { t, ...(via ? { via } : {}), ...(GATE_LAUNCH[nxt] ?? {}) }));
+    miles.push(at(nxt, { t, ...(via ? { via } : {}), ...(gateLaunch(nxt) ?? {}) }));
     cur = nxt;
   }
   return miles;
@@ -355,22 +351,18 @@ function posOnPreRoute(miles, elapsed) {
 
 // ── Constantes de geometría (escala lineal real · Parte 1) ──
 // x = X0 + PX_PER_M × metros. Waypoints clave (px):
-//   0 m → 80 · 45 m → 3230 · 55 m → 3930 · 71.6 m → 5092 · 85.15 m → 6040.5.
+//   0 m → 80 · 45 m → 3230 · 55 m → 3930 · 71.6 m → 5092 · S1 88 m → 6240.
 const BELT_Y = 400;
 const X0 = 80;            // metro 0
 const PX_PER_M = 70;      // px por metro
 const xm = (m) => X0 + PX_PER_M * m;
-const PRESS_START_X = xm(55);   // 3930
-const PRESS_END_X = xm(71.6);   // 5092
 const END = xm(91);             // 6450 · margen visual después de sensores
 
 // Punto donde cada capa "aparece" y sube en el colchón: el mismo punto real
 // donde cae el material (3/4 de la zona del esparcidor) — no el cabezal
 // dibujado — para que la subida del relieve coincida con el punto de inyección
 // del cambio (NAMED_WAYPOINTS / data-inject-m de SL1 · CL · SL2).
-const SL1_X = xm(6.63);   // 544
-const CL_X = xm(15.0);    // 1130
-const SL2_X = xm(22.25);  // 1638
+const layerX = (layer) => xm(({ SL1: activeGeometry.esp1M, CL: activeGeometry.esp2M, SL2: activeGeometry.esp3M })[layer]);
 
 // Descenso del cambio POR DENTRO del esparcidor: entra por el tope del cabezal
 // (donde lo entrega la banda inclinada), baja por la tolva → cuerpo → rodillos →
@@ -385,19 +377,21 @@ const lerp = (a, b, t) => a + (b - a) * clamp(t, 0, 1);
 
 // multiplicador de compresión global a lo largo de x (anclado a metros)
 function comp(x) {
-  const preIn = xm(31.4);        // 2278 · entra pre-prensa
-  const preOut = xm(33.86);      // 2450 · sale pre-prensa comprimido
+  const preIn = xm(activeGeometry.prepressM);
+  const preOut = xm(Math.min(activeGeometry.pressStartM, activeGeometry.prepressM + 2.46));
+  const pressStartX = xm(activeGeometry.pressStartM);
+  const pressEndX = xm(activeGeometry.pressEndM);
   if (x < preIn) return 1;
   if (x < preOut) return lerp(1, 0.62, (x - preIn) / (preOut - preIn));
-  if (x < PRESS_START_X) return 0.62;
-  if (x < PRESS_END_X) return lerp(0.62, 0.38, (x - PRESS_START_X) / (PRESS_END_X - PRESS_START_X));
+  if (x < pressStartX) return 0.62;
+  if (x < pressEndX) return lerp(0.62, 0.38, (x - pressStartX) / (pressEndX - pressStartX));
   return 0.38;
 }
 
 // alturas base por capa (con rampas de entrada en cada cabezal), luego comprimidas
-const bh = (x) => (x < SL1_X ? 0 : x < SL1_X + 40 ? ((x - SL1_X) / 40) * 9 : 9) * comp(x);
-const ch = (x) => (x < CL_X ? 0 : x < CL_X + 40 ? ((x - CL_X) / 40) * 15 : 15) * comp(x);
-const th = (x) => (x < SL2_X ? 0 : x < SL2_X + 40 ? ((x - SL2_X) / 40) * 9 : 9) * comp(x);
+const bh = (x) => (x < layerX('SL1') ? 0 : x < layerX('SL1') + 40 ? ((x - layerX('SL1')) / 40) * 9 : 9) * comp(x);
+const ch = (x) => (x < layerX('CL') ? 0 : x < layerX('CL') + 40 ? ((x - layerX('CL')) / 40) * 15 : 15) * comp(x);
+const th = (x) => (x < layerX('SL2') ? 0 : x < layerX('SL2') + 40 ? ((x - layerX('SL2')) / 40) * 9 : 9) * comp(x);
 
 const bottomTop = (x) => BELT_Y - bh(x);
 const coreTop = (x) => BELT_Y - bh(x) - ch(x);
@@ -422,9 +416,9 @@ function el(tag, attrs) {
 }
 
 function renderColchon() {
-  document.getElementById('layerBottom').setAttribute('d', genLayer(SL1_X, () => BELT_Y, bottomTop));
-  document.getElementById('layerCore').setAttribute('d', genLayer(CL_X, bottomTop, coreTop));
-  document.getElementById('layerTop').setAttribute('d', genLayer(SL2_X, coreTop, topTop));
+  document.getElementById('layerBottom').setAttribute('d', genLayer(layerX('SL1'), () => BELT_Y, bottomTop));
+  document.getElementById('layerCore').setAttribute('d', genLayer(layerX('CL'), bottomTop, coreTop));
+  document.getElementById('layerTop').setAttribute('d', genLayer(layerX('SL2'), coreTop, topTop));
 }
 
 function renderRollers() {
@@ -443,8 +437,9 @@ const FRAME_POS_M = [
 
 function renderFrames() {
   const g = document.getElementById('pressFrames');
+  g.textContent = '';
   for (const pos of FRAME_POS_M) {
-    const x = +xm(55 + pos).toFixed(1);
+    const x = +xm(activeGeometry.pressStartM + (pos / 16.6) * activeGeometry.pressM).toFixed(1);
     g.appendChild(el('line', { x1: x, y1: 188, x2: x, y2: 416 }));
   }
 }
@@ -452,6 +447,8 @@ function renderFrames() {
 function renderRuler() {
   const gTicks = document.getElementById('rulerTicks');
   const gLabels = document.getElementById('rulerLabels');
+  gTicks.textContent = '';
+  gLabels.textContent = '';
   const addTick = (m, major, label) => {
     const x = +xm(m).toFixed(1);
     gTicks.appendChild(el('line', { x1: x, y1: 470, x2: x, y2: major ? 458 : 464 }));
@@ -461,16 +458,19 @@ function renderRuler() {
       gLabels.appendChild(t);
     }
   };
-  for (let m = 0; m <= 84; m++) addTick(m, m % 5 === 0, m % 5 === 0 ? String(m) : null);
-  addTick(71.6, true, '71.6');   // fin prensa
-  addTick(85.15, true, '85.15'); // sensores / fin de proceso
+  for (let m = 0; m <= Math.floor(activeGeometry.processEndM); m++) addTick(m, m % 5 === 0, m % 5 === 0 ? String(m) : null);
+  addTick(activeGeometry.pressEndM, true, activeGeometry.pressEndM.toFixed(1));
+  addTick(activeGeometry.sensor1M, true, activeGeometry.sensor1M.toFixed(1));
+  addTick(activeGeometry.sensor3M, true, activeGeometry.sensor3M.toFixed(1));
 }
 
 // anotaciones discretas de distancias medidas (una sola vez)
 function renderAnnotations() {
-  const { segments, waypoints } = buildAnnotations();
+  const { segments, waypoints } = buildAnnotations(activeGeometry);
   const gSeg = document.getElementById('distSegments');
   const gWp = document.getElementById('distWaypoints');
+  gSeg.textContent = '';
+  gWp.textContent = '';
 
   for (const s of segments) {
     const t = el('text', {
@@ -564,6 +564,72 @@ function initSimulation() {
   const reportsCount = document.getElementById('reportsCount');
   const resetChangesBtn = document.getElementById('resetChangesBtn');
 
+  function applyGeometry(params) {
+    activeGeometry = geometryFromParams(params);
+    const byLabel = (label) => document.querySelector(`.s2-machine[data-label="${label}"]`);
+    const setMachine = (label, m, move = true) => {
+      const node = byLabel(label);
+      if (!node) return;
+      node.dataset.injectM = String(m);
+      if (move) node.setAttribute('transform', `translate(${xm(m).toFixed(1)} 0)`);
+    };
+    setMachine('Desmoldante #1', 0.7);
+    const spreaderVisuals = [
+      ['SL1 · capa inferior', activeGeometry.esp1M, 365],
+      ['CL · core', activeGeometry.esp2M, 230],
+      ['SL2 · capa superior', activeGeometry.esp3M, 335],
+    ];
+    for (const [label, m, localDropX] of spreaderVisuals) {
+      setMachine(label, m, false);
+      const node = byLabel(label);
+      if (node) node.setAttribute('transform', `translate(${(xm(m) - localDropX).toFixed(1)} 0)`);
+    }
+    setMachine('Pre-prensa', activeGeometry.prepressM, false);
+    const prepress = byLabel('Pre-prensa');
+    if (prepress) prepress.setAttribute('transform', `translate(${(835 + PX_PER_M * (activeGeometry.prepressM - 29.06)).toFixed(1)} 0)`);
+    setMachine('Desmoldante #2', activeGeometry.sprays2M);
+    setMachine('Detector de metales', activeGeometry.detectorM);
+    setMachine('Cortadores de filo', activeGeometry.cuttersM);
+    setMachine('Nariz · rechazo', activeGeometry.noseM);
+    setMachine('Vapor EVOsteam', activeGeometry.vaporM);
+    setMachine('Prensa continua', activeGeometry.pressStartM, false);
+    setMachine('Cuchillos de refila · inicio', activeGeometry.refilaStartM, false);
+    const refila = byLabel('Cuchillos de refila · inicio');
+    if (refila) refila.setAttribute('transform', `translate(${xm((activeGeometry.refilaStartM + activeGeometry.refilaEndM) / 2).toFixed(1)} 0)`);
+    setMachine('Sierra transversal · inicio', activeGeometry.sawStartM, false);
+    const saw = byLabel('Sierra transversal · inicio');
+    if (saw) saw.setAttribute('transform', `translate(${xm((activeGeometry.sawStartM + activeGeometry.sawEndM) / 2).toFixed(1)} 0)`);
+    const sensor = document.querySelector('.s2-machine[data-label^="Sensor de calidad 1"]');
+    if (sensor) {
+      sensor.dataset.injectM = String(activeGeometry.sensor1M);
+      sensor.dataset.label = `Sensor de calidad 1 (${activeGeometry.sensor1M.toFixed(2)} m)`;
+      sensor.setAttribute('transform', `translate(${xm(activeGeometry.sensor1M).toFixed(1)} 0)`);
+    }
+    const readings = document.getElementById('readingsPanel');
+    if (readings) readings.setAttribute('transform', `translate(${xm(activeGeometry.sensor3M) + 105} 0)`);
+    const rulerLine = document.getElementById('metricRulerLine');
+    if (rulerLine) rulerLine.setAttribute('x2', xm(activeGeometry.processEndM).toFixed(1));
+    const boundaries = { start: 0, redStart: activeGeometry.redStartM, pressStart: activeGeometry.pressStartM, pressEnd: activeGeometry.pressEndM };
+    document.querySelectorAll('.s2-test-point[data-test-boundary]').forEach((node) => {
+      const m = boundaries[node.dataset.testBoundary];
+      if (!Number.isFinite(m)) return;
+      node.dataset.injectM = String(m);
+      node.setAttribute('transform', `translate(${xm(m).toFixed(1)} 0)`);
+    });
+    if (moverRange) {
+      moverRange.max = String(activeGeometry.processEndM);
+      moverRange.value = String(Math.min(Number(moverRange.value) || 0, activeGeometry.processEndM));
+    }
+    for (const ch of changes) ch.posM = Math.min(ch.posM, activeGeometry.processEndM);
+    renderColchon();
+    renderFrames();
+    renderRuler();
+    renderAnnotations();
+    const errors = validateGeometry(activeGeometry);
+    if (errors.length) console.error('[geometry] Calibración inválida', errors, activeGeometry);
+    else console.info('[geometry] Calibración aplicada', activeGeometry);
+  }
+
   function syncSpeedUI() {
     if (speedRange && document.activeElement !== speedRange) speedRange.value = vPrensa;
     if (speedInput && document.activeElement !== speedInput) speedInput.value = vPrensa;
@@ -575,7 +641,7 @@ function initSimulation() {
   }
 
   function labelForM(m) {
-    const hit = NAMED_WAYPOINTS.find((wp) => Math.abs(wp.m - m) < 0.05);
+    const hit = namedWaypoints().find((wp) => Math.abs(wp.m - m) < 0.05);
     return hit ? hit.label : `Inyectado @ ${m.toFixed(1)} m`;
   }
 
@@ -583,20 +649,18 @@ function initSimulation() {
   // SL2 22.25), devuelve su τ de residencia (s) leído de los params del modelo
   // (editable en panel / CSV). Con esto el cambio BAJA por dentro del esparcidor
   // durante ese tiempo antes de caer al colchón. Fuera de un esparcidor → dropM null.
-  const SPREADER_CONFIG = {
-    '6.63': { massKey: 'mass:esp1-zone', flow: (p) => num(p, '_global:F_SL') * num(p, '_global:pctSL1') / 100 },
-    '15': { massKey: 'mass:esp2-zone', flow: (p) => num(p, '_global:F_CL') },
-    '22.25': { massKey: 'mass:esp3-zone', flow: (p) => num(p, '_global:F_SL') * num(p, '_global:pctSL2') / 100 },
-  };
-  const SPREADER_LAYER = { '6.63': 'SL1', '15': 'CL', '22.25': 'SL2' };
+  const spreaderConfigs = () => [
+    { m: activeGeometry.esp1M, layer: 'SL1', massKey: 'mass:esp1-zone', flow: (p) => num(p, '_global:F_SL') * num(p, '_global:pctSL1') / 100 },
+    { m: activeGeometry.esp2M, layer: 'CL', massKey: 'mass:esp2-zone', flow: (p) => num(p, '_global:F_CL') },
+    { m: activeGeometry.esp3M, layer: 'SL2', massKey: 'mass:esp3-zone', flow: (p) => num(p, '_global:F_SL') * num(p, '_global:pctSL2') / 100 },
+  ];
   function spreaderDropFor(m) {
-    const s = [6.63, 15.0, 22.25].find((v) => Math.abs(v - m) < 0.15);
-    if (s == null) return { dropM: null, dropDur: 0, layerName: null };
-    const cfg = SPREADER_CONFIG[String(s)];
+    const cfg = spreaderConfigs().find((item) => Math.abs(item.m - m) < 0.15);
+    if (!cfg) return { dropM: null, dropDur: 0, layerName: null };
     const mass = Math.max(0, num(modelParams, cfg.massKey));
     const flow = Math.max(0, cfg.flow(modelParams));
     const tau = mass > 0 && flow > 0 ? mass / flow * 60 : SPREADER_FALLBACK_TAU;
-    return { dropM: s, dropDur: tau, layerName: SPREADER_LAYER[String(s)] };
+    return { dropM: cfg.m, dropDur: tau, layerName: cfg.layer };
   }
 
   /* ── Predicciones por cambio (congeladas al inyectar) ──────────────
@@ -605,10 +669,9 @@ function initSimulation() {
      inyección, para que lo predicho sea comparable con lo observado.
      La calidad de los parámetros (estimado / sin calibrar) se toma del
      route-model, que es quien conoce la fuente de cada dato. */
-  const LAYER_DEPOSIT_M = { SL1: 6.63, CL: 15.0, SL2: 22.25 };
+  const layerDepositM = (layer) => ({ SL1: activeGeometry.esp1M, CL: activeGeometry.esp2M, SL2: activeGeometry.esp3M })[layer];
   function tauEsp(layer) {
-    const key = Object.entries(SPREADER_CONFIG).find(([, cfg]) => cfg.massKey === `mass:${layer === 'SL1' ? 'esp1' : layer === 'CL' ? 'esp2' : 'esp3'}-zone`)?.[0];
-    const cfg = key ? SPREADER_CONFIG[key] : null;
+    const cfg = spreaderConfigs().find((item) => item.layer === layer);
     if (!cfg) return SPREADER_FALLBACK_TAU;
     const mass = Math.max(0, num(modelParams, cfg.massKey));
     const flow = Math.max(0, cfg.flow(modelParams));
@@ -650,11 +713,11 @@ function initSimulation() {
       if (tReg == null || landing > tReg) tReg = landing;
     }
     const sensors = {};
-    for (const s of SENSOR_DEFS) {
+    for (const s of sensorDefs()) {
       let worst = null;
       if (layersIn.length) {
         for (const L of layersIn) {
-          const t = layers[L.layer] + ((s.m - LAYER_DEPOSIT_M[L.layer]) / v) * 60;
+          const t = layers[L.layer] + ((s.m - layerDepositM(L.layer)) / v) * 60;
           if (worst == null || t > worst) worst = t;
         }
       } else if (directM != null && directM <= s.m + 1e-6) {
@@ -818,7 +881,7 @@ function initSimulation() {
       const inDrop = ch.dropM != null && ch.dropDur > 0 && ch.dropAge < ch.dropDur;
       const here = inDrop
         ? `Esparcidor ${ch.layerName ?? ''} (descenso τ)`
-        : ([...NAMED_WAYPOINTS].reverse().find((wp) => wp.m <= ch.posM + 1e-6)?.label ?? 'Inicio del colchón');
+        : ([...namedWaypoints()].reverse().find((wp) => wp.m <= ch.posM + 1e-6)?.label ?? 'Inicio del colchón');
       const wp = nextWaypoint(ch.posM);
       if (!wp && !inDrop) {
         if (labelEl) labelEl.textContent = `En: ${here}`;
@@ -870,7 +933,7 @@ function initSimulation() {
 
   function recordCrossings(ch, prevM) {
     let added = false;
-    for (const wp of NAMED_WAYPOINTS) {
+    for (const wp of namedWaypoints()) {
       if (wp.m > prevM + 1e-6 && wp.m <= ch.posM + 1e-6 && !ch.passed.has(wp.label)) {
         ch.passed.add(wp.label);
         ch.arrivals.push({ label: wp.label, m: wp.m, wallTime: new Date() });
@@ -881,8 +944,8 @@ function initSimulation() {
   }
 
   function finishChange(ch) {
-    if (!ch.passed.has(FINISH_LABEL)) {
-      ch.arrivals.push({ label: FINISH_LABEL, m: PROCESS_END_M, wallTime: new Date() });
+    if (!ch.passed.has(finishLabel())) {
+      ch.arrivals.push({ label: finishLabel(), m: processEndM(), wallTime: new Date() });
     }
     ch.el?.remove();
     const idx = changes.indexOf(ch);
@@ -902,7 +965,7 @@ function initSimulation() {
   // El cambio se inyecta en el equipo donde se hace clic, al INICIO real de ese
   // proceso — no en su cabezal/centro visual — y arranca un trazador nuevo.
   function inject(m, label) {
-    const startM = clamp(m, 0, PROCESS_END_M);
+    const startM = clamp(m, 0, processEndM());
     const startLabel = label ?? labelForM(startM);
     changeSeq += 1;
     const ch = {
@@ -945,7 +1008,7 @@ function initSimulation() {
       id: `${parent.id}-p2-${Math.round(m * 100)}`,
       seq: parent.seq,
       color: parent.color,
-      posM: clamp(m, 0, PROCESS_END_M),
+      posM: clamp(m, 0, processEndM()),
       dropM,
       dropDur,
       layerName,
@@ -1050,8 +1113,8 @@ function initSimulation() {
         if (lastM.launchM != null) {
           if (ch.branch === 'sl') {
             // La ruta fina se SEPARA en la formación: capa inferior (SL1) y superior (SL2)
-            injectDownstreamFromPre(ch, 6.63, 'SL1 · capa inferior (esparcidor 1)');
-            injectDownstreamFromPre(ch, 22.25, 'SL2 · capa superior (esparcidor 3)');
+            injectDownstreamFromPre(ch, activeGeometry.esp1M, 'SL1 · capa inferior (esparcidor 1)');
+            injectDownstreamFromPre(ch, activeGeometry.esp3M, 'SL2 · capa superior (esparcidor 3)');
           } else {
             injectDownstreamFromPre(ch, lastM.launchM, lastM.launchLabel);   // gruesa (CL) → esparcidor 2
           }
@@ -1079,9 +1142,9 @@ function initSimulation() {
       if (!ch.landed && ch.layerName && recordLanding(ch)) crossed = true; // τ=0 o aterrizado por mover manual
       if (scrubbing && ch.id === selectedId) continue; // el movedor controla este directamente
       const prevM = ch.posM;
-      ch.posM = Math.min(ch.posM + advanceM, PROCESS_END_M);
+      ch.posM = Math.min(ch.posM + advanceM, processEndM());
       if (recordCrossings(ch, prevM)) crossed = true;
-      if (ch.posM >= PROCESS_END_M) finishChange(ch); // ya re-renderiza el panel
+      if (ch.posM >= processEndM()) finishChange(ch); // ya re-renderiza el panel
       else updateTracerEl(ch);
     }
     if (crossed) renderReportsList(); // llena en vivo el reporte de cada cambio activo
@@ -1158,9 +1221,9 @@ function initSimulation() {
       recordLanding(sel);          // la caída observada queda registrada igual
     }
     const prevM = sel.posM;
-    sel.posM = clamp(parseFloat(moverRange.value) || 0, 0, PROCESS_END_M);
+    sel.posM = clamp(parseFloat(moverRange.value) || 0, 0, processEndM());
     const crossed = recordCrossings(sel, prevM);
-    if (sel.posM >= PROCESS_END_M) finishChange(sel);
+    if (sel.posM >= processEndM()) finishChange(sel);
     else {
       updateTracerEl(sel);
       if (crossed) renderReportsList();
@@ -1237,6 +1300,13 @@ function initSimulation() {
     g.classList.add('is-injected');
     inject(parseFloat(g.dataset.injectM), g.dataset.label);
   });
+  canvas?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const point = e.target.closest('.s2-test-point[data-inject-m]');
+    if (!point) return;
+    e.preventDefault();
+    inject(parseFloat(point.dataset.injectM), point.dataset.label);
+  });
 
   // Panel de reportes: hora real de Quito por cada equipo y cada cambio completado.
   reportsToggle?.addEventListener('click', () => reportsPanel?.classList.toggle('is-hidden'));
@@ -1267,7 +1337,7 @@ function initSimulation() {
   // Pestaña Parámetros: ahora LEE del CSV del HMI (fuente de verdad).
   const paramsApi = initParams({
     speedGetter: () => vPrensa,
-    onChange: (params) => { modelParams = params; recomputeActivePre(); renderIntakeTaus(); window.__NOVOPAN_ROUTE_MODEL__?.recompute?.(); },
+    onChange: (params) => { modelParams = params; applyGeometry(params); recomputeActivePre(); renderIntakeTaus(); window.__NOVOPAN_ROUTE_MODEL__?.recompute?.(); },
     onCsvEdit: (key, value) => hmiCsvApi?.updateKey(key, value) ?? false,
     onCsvReset: () => hmiCsvApi?.reloadServer(),
     onCsvDownload: () => hmiCsvApi?.downloadCsv() ?? false,
@@ -1305,6 +1375,7 @@ function initSimulation() {
     applyData: (data) => {
       paramsApi.applyExternal(data);            // pisa los params del modelo con el CSV
       modelParams = paramsApi.getParams();
+      applyGeometry(modelParams);
       recomputeActivePre();
       renderIntakeTaus();
       if (data.vPrensa != null) setSpeed(data.vPrensa);
@@ -1320,6 +1391,7 @@ function initSimulation() {
   // Botón "Conectar CSV local" del panel de parámetros → mismo picker que el de la barra
   document.getElementById('hmiConnectBtn2')?.addEventListener('click', () => document.getElementById('hmiConnectBtn')?.click());
 
+  applyGeometry(paramsApi.getParams());
   renderIntakeTaus();   // pinta el τ real de las encoladoras en los chips de entrada
   selfTest();
 
@@ -1349,7 +1421,7 @@ function selfTest() {
     };
     const espOk = Object.values(espTau).every((v) => Number.isFinite(v) && v > 0 && v < 300);
     const mixOk = MIXER_TAU_SEC === 40 && Number(p['p1:tEncCE']) === 40 && Number(p['p1:tEncCI']) === 40;
-    const sensorWps = NAMED_WAYPOINTS.filter((w) => w.label.startsWith('Sensor de calidad'));
+    const sensorWps = namedWaypoints().filter((w) => w.label.startsWith('Sensor de calidad'));
     const senOk = sensorWps.length === 3 && sensorWps.every((w, i, a) => i === 0 || w.m > a[i - 1].m);
     const ok = finite && clOk && slOk && espOk && mixOk && senOk;
     const msg = `[combined] selfTest: duraciones ${finite ? 'OK' : 'FALLO'} · inyección encolador ${clOk && slOk ? 'OK (nace en la máquina)' : 'FALLO'} · τ esparcidoras ${espOk ? 'OK' : 'FALLO'} · encoladoras 40 s ${mixOk ? 'OK' : 'FALLO'} · sensores 1/2/3 ${senOk ? 'OK' : 'FALLO'}`;
@@ -1381,6 +1453,10 @@ function bridgeP1ToModel(p1) {
     if (p1[src] !== undefined && p1[src] !== null && p1[src] !== '') overrides[dst] = p1[src];
   }
   if (p1) {
+    const geometry = geometryFromParams(p1);
+    overrides['sensor1.distance'] = geometry.sensor1M;
+    overrides['sensor2.distance'] = geometry.sensor2M;
+    overrides['sensor3.distance'] = geometry.sensor3M;
     overrides['spreader1.mass'] = p1['mass:esp1-zone'];
     overrides['spreader1.flow'] = num(p1, '_global:F_SL') * num(p1, '_global:pctSL1') / 100;
     overrides['spreader2.mass'] = p1['mass:esp2-zone'];
