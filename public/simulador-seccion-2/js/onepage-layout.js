@@ -5,7 +5,7 @@
      [Sección 1 wireframe — solo si el toggle está encendido]
      [0 · Silos / dosificación / encolado]
      [Línea 0 → 47.6 m  (2A + 2B)]
-     [Línea 47.6 → 92 m (2C + 2D + 2E)]
+     [Línea 47.6 → 88.4 m (2C + 2D + 2E)]
    No toca la simulación: la fila 2 muestra el grupo original
    (recortado) y la fila 3 es un <use> recortado del mismo grupo,
    así los trazadores/colchón se ven en ambas filas sin cambios
@@ -36,12 +36,13 @@
   // ── constantes (coordenadas LOCALES del grupo animado: x = 80 + 70·m) ──
   var L0 = 40;        // borde izq. visible (tambor en x=86)
   var CUT = 3212;     // corte al final de la banda azul (45 m = x 3230): el tambor y la nariz quedan enteros en la fila 2
-  var L1 = 6620;      // borde derecho (incluye sensores a 88.4 m + panel)
+  var L1 = 6420;      // borde derecho (incluye sensores a 88.4 m; sin panel de ejemplo)
+  var ROW_PAD = 28;   // margen lateral común: ambas filas quedan centradas
   var S = 0.78;       // escala relativa de las filas intake / wireframe
   var BAND_H = 572;   // alto de cada fila de línea (incluye regla + anotaciones)
   var GAP = 10;
   var STRIP_H = 262;  // alto de la franja de silos/dosificación (dibujada a escala 1:1)
-  var b1Y = 0, b2Y = 0, iY = 0; // se calculan en compose()
+  var b1Y = 0, b2Y = 0, iY = 0, b1X = 0, b2X = 0; // se calculan en compose()
 
   function el(tag, attrs) {
     var n = document.createElementNS(NS, tag);
@@ -92,9 +93,14 @@
     b2Y = b1Y + BAND_H + GAP + 10;
     if (wf && sec1On) wf.setAttribute('transform', 'translate(4 4) scale(' + S + ')');
     intake.setAttribute('transform', 'translate(30 ' + iY + ')');
-    band1.setAttribute('transform', 'translate(' + (-L0) + ' ' + b1Y + ')');
-    band2.setAttribute('transform', 'translate(' + (-CUT) + ' ' + b2Y + ')');
-    var W = Math.max(CUT - L0, L1 - CUT) + 10;
+    var row1W = CUT - L0;
+    var row2W = L1 - CUT;
+    var contentW = Math.max(row1W, row2W);
+    var W = contentW + ROW_PAD * 2;
+    b1X = ROW_PAD + (contentW - row1W) / 2 - L0;
+    b2X = ROW_PAD + (contentW - row2W) / 2 - CUT;
+    band1.setAttribute('transform', 'translate(' + b1X + ' ' + b1Y + ')');
+    band2.setAttribute('transform', 'translate(' + b2X + ' ' + b2Y + ')');
     var H = b2Y + BAND_H + 6;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     svg.removeAttribute('width');
@@ -106,10 +112,10 @@
     // rótulos de continuación + separadores finos entre filas
     joins.textContent = '';
     var mCut = ((CUT - 80) / 70).toFixed(0);
-    joins.appendChild(el('line', { x1: 30, y1: b1Y - 8, x2: W - 30, y2: b1Y - 8, stroke: '#D9DDD9', 'stroke-width': 2 }));
-    joins.appendChild(el('line', { x1: 30, y1: b2Y - 14, x2: W - 30, y2: b2Y - 14, stroke: '#D9DDD9', 'stroke-width': 2 }));
+    joins.appendChild(el('line', { x1: ROW_PAD, y1: b1Y - 8, x2: W - ROW_PAD, y2: b1Y - 8, stroke: '#D9DDD9', 'stroke-width': 2 }));
+    joins.appendChild(el('line', { x1: ROW_PAD, y1: b2Y - 14, x2: W - ROW_PAD, y2: b2Y - 14, stroke: '#D9DDD9', 'stroke-width': 2 }));
     // conectores banda inclinada → esparcidor (tocan el cabezal que alimentan)
-    var SL1x = 544 - L0, CLx = 1140 - L0 + 40, SL2x = 1638 - L0;
+    var SL1x = b1X + 544, CLx = b1X + 1180, SL2x = b1X + 1638;
     var e1x = 1480, e2x = 3140, ey = iY + 78;
     function connector(d, color) {
       joins.appendChild(el('path', { d: d, fill: 'none', stroke: color, 'stroke-width': 3.5, 'stroke-dasharray': '10 8', 'stroke-linejoin': 'round', opacity: '0.9' }));
@@ -125,9 +131,9 @@
     // GRUESA → CL
     connector('M ' + e2x + ' ' + ey + ' V ' + (iY + 258) + ' H ' + CLx + ' V ' + (b1Y + 42), '#0A7D5A');
     tip(CLx, b1Y + 56, '#0A7D5A');
-    var t1 = el('text', { x: CUT - L0 - 14, y: b1Y + 452, 'text-anchor': 'end', fill: '#676E69' });
+    var t1 = el('text', { x: b1X + CUT - 14, y: b1Y + 452, 'text-anchor': 'end', fill: '#676E69' });
     t1.textContent = mCut + ' m · LA BANDA CONTINÚA ABAJO ↓';
-    var t2 = el('text', { x: 14, y: b2Y + 452, fill: '#676E69' });
+    var t2 = el('text', { x: b2X + CUT + 14, y: b2Y + 452, fill: '#676E69' });
     t2.textContent = '↑ VIENE DE ' + mCut + ' m';
     joins.appendChild(t1); joins.appendChild(t2);
   }
@@ -151,7 +157,7 @@
     var pt = svg.createSVGPoint();
     pt.x = e.clientX; pt.y = e.clientY;
     var p = pt.matrixTransform(svg.getScreenCTM().inverse());
-    var lx = p.x + CUT, ly = p.y - b2Y;   // composed → local del grupo animado
+    var lx = p.x - b2X, ly = p.y - b2Y;   // composed → local del grupo animado
     var best = null, bestD = 1e9;
     hitRects.forEach(function (r) {
       if (r.x + r.w < CUT - 10) return;   // solo equipos de la fila 3
