@@ -21,6 +21,7 @@ const finiteNonNegative = (value, fallback) => {
 
 export const X0 = 80;
 export const PX_PER_M = 70;
+export const VAPOR_ZONE_M = 2.28;
 
 export const DEFAULT_GEOMETRY = Object.freeze({
   whiteM: 45,
@@ -38,7 +39,7 @@ export const DEFAULT_GEOMETRY = Object.freeze({
   cuttersM: 39.56,
   noseM: 44.9,
   vaporM: 46.86,
-  prepressM: 47,
+  prepressM: 49.14,
   refilaStartM: 81.7,
   refilaEndM: 83,
   sawStartM: 84.1,
@@ -58,6 +59,7 @@ export function geometryFromParams(params = {}) {
     const paramKey = `geom:${key.replace(/M$/, '')}`;
     g[key] = finiteNonNegative(params[paramKey], DEFAULT_GEOMETRY[key]);
   }
+  g.vaporEndM = g.vaporM + VAPOR_ZONE_M;
   g.redStartM = g.whiteM;
   g.pressStartM = g.whiteM + g.redM;
   g.pressEndM = g.pressStartM + g.pressM;
@@ -79,6 +81,7 @@ export function validateGeometry(g) {
   if (g.noseM > g.whiteM) errors.push('La nariz no puede quedar después del fin de la banda blanca.');
   if (g.vaporM < g.redStartM || g.vaporM > g.pressStartM) errors.push('El vapor debe quedar dentro de la banda roja.');
   if (g.prepressM < g.redStartM || g.prepressM > g.pressStartM) errors.push('La pre-prensa debe quedar antes de la prensa continua.');
+  if (g.prepressM < g.vaporEndM) errors.push(`La pre-prensa debe empezar después del vapor (${g.vaporEndM.toFixed(2)} m).`);
   return errors;
 }
 

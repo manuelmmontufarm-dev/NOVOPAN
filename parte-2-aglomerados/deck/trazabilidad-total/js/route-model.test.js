@@ -149,6 +149,10 @@ test('calibración inicial reproduce prensa 71.6 m y sensores 88.0/88.2/88.4 m',
   approx(g.sensor1M, 88.0, 'S1');
   approx(g.sensor2M, 88.2, 'S2');
   approx(g.sensor3M, 88.4, 'S3');
+  approx(g.vaporM, 46.86, 'inicio vapor');
+  approx(g.vaporEndM, 49.14, 'fin vapor');
+  approx(g.prepressM, 49.14, 'inicio pre-prensa');
+  assert(g.prepressM >= g.vaporEndM, 'la pre-prensa debe quedar después del vapor');
   assert(validateGeometry(g).length === 0, 'geometría inicial debe ser coherente');
 });
 test('editar longitudes recalcula sensores sin constantes ocultas', () => {
@@ -166,6 +170,10 @@ test('anotaciones usan refila/sierra corregidas y no 85.15 m', () => {
 test('orden físico inválido se reporta', () => {
   const g = geometryFromParams({ 'geom:sawEnd': 89 });
   assert(validateGeometry(g).length > 0, 'sierra después del sensor debe fallar');
+});
+test('pre-prensa no puede solaparse con la zona de vapor', () => {
+  const g = geometryFromParams({ 'geom:vapor': 46.86, 'geom:prepress': 48 });
+  assert(validateGeometry(g).some((error) => error.includes('después del vapor')), 'debe detectar el solapamiento vapor/pre-prensa');
 });
 
 /* ── Distintas velocidades de línea ── */

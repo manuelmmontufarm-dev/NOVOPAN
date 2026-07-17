@@ -15,7 +15,7 @@
    ============================================================ */
 
 import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
-import { buildAnnotations, geometryFromParams, validateGeometry } from './line-bridge.js';
+import { buildAnnotations, geometryFromParams, validateGeometry, VAPOR_ZONE_M } from './line-bridge.js';
 import { initParams, loadParams, loadPart1Params } from './combined-params.js';
 import { initHmiCsv } from './hmi-csv.js';
 import { computeRoute, formatSec, STATUS_LABEL, MIXER_TAU_SEC } from './route-model.js';
@@ -357,6 +357,7 @@ const X0 = 80;            // metro 0
 const PX_PER_M = 70;      // px por metro
 const xm = (m) => X0 + PX_PER_M * m;
 const END = xm(91);             // 6450 · margen visual después de sensores
+const PREPRESS_LOCAL_START_X = 1240;
 
 // Punto donde cada capa "aparece" y sube en el colchón: el mismo punto real
 // donde cae el material (3/4 de la zona del esparcidor) — no el cabezal
@@ -378,7 +379,7 @@ const lerp = (a, b, t) => a + (b - a) * clamp(t, 0, 1);
 // multiplicador de compresión global a lo largo de x (anclado a metros)
 function comp(x) {
   const preIn = xm(activeGeometry.prepressM);
-  const preOut = xm(Math.min(activeGeometry.pressStartM, activeGeometry.prepressM + 2.46));
+  const preOut = xm(activeGeometry.pressStartM);
   const pressStartX = xm(activeGeometry.pressStartM);
   const pressEndX = xm(activeGeometry.pressEndM);
   if (x < preIn) return 1;
@@ -586,12 +587,21 @@ function initSimulation() {
     }
     setMachine('Pre-prensa', activeGeometry.prepressM, false);
     const prepress = byLabel('Pre-prensa');
-    if (prepress) prepress.setAttribute('transform', `translate(${(835 + PX_PER_M * (activeGeometry.prepressM - 29.06)).toFixed(1)} 0)`);
+    if (prepress) {
+      // El borde izquierdo del pórtico coincide con el inicio medido de la
+      // pre-prensa. Así la zona vapor termina antes y nunca queda "dentro".
+      prepress.setAttribute('transform', `translate(${(xm(activeGeometry.prepressM) - PREPRESS_LOCAL_START_X).toFixed(1)} 0)`);
+    }
     setMachine('Desmoldante #2', activeGeometry.sprays2M);
     setMachine('Detector de metales', activeGeometry.detectorM);
     setMachine('Cortadores de filo', activeGeometry.cuttersM);
     setMachine('Nariz · rechazo', activeGeometry.noseM);
-    setMachine('Vapor EVOsteam', activeGeometry.vaporM);
+    setMachine('Vapor EVOsteam', activeGeometry.vaporM, false);
+    const vapor = byLabel('Vapor EVOsteam');
+    if (vapor) {
+      vapor.dataset.injectM = String(activeGeometry.vaporM);
+      vapor.setAttribute('transform', `translate(${xm(activeGeometry.vaporM + VAPOR_ZONE_M / 2).toFixed(1)} 0)`);
+    }
     setMachine('Prensa continua', activeGeometry.pressStartM, false);
     setMachine('Cuchillos de refila · inicio', activeGeometry.refilaStartM, false);
     const refila = byLabel('Cuchillos de refila · inicio');
