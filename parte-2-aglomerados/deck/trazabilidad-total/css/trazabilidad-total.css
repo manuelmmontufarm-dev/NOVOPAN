@@ -272,11 +272,15 @@ body {
   color: #2A2A2A;
 }
 
-/* Con la Sección 1 apagada, se ocultan sus controles (inyección P1 + zonas de preparación). */
-body.sec1-off .s2-preinject,
-body.sec1-off .s2-toolbar__label--p1,
-body.sec1-off .s2-zone-btn[data-scroll="0"],
-body.sec1-off .s2-zone-btn[data-scroll="2200"] { display: none; }
+/* Con la Sección 1 apagada, se ocultan sus controles (inyección P1 + zonas de
+   preparación) y el wireframe completo. La clase vive en <html> (documentElement):
+   un script inline en <head> la aplica ANTES del primer paint, así no hay flash
+   de la Sección 1 al cargar con el estado persistido en off. */
+.sec1-off .s2-preinject,
+.sec1-off .s2-toolbar__label--p1,
+.sec1-off .s2-zone-btn[data-scroll="0"],
+.sec1-off .s2-zone-btn[data-scroll="2200"],
+.sec1-off #part1Wireframe { display: none; }
 
 /* Pin de inyección en el colchón (antes/entre esparcidoras). */
 .s2-cushion-inject text { pointer-events: none; }

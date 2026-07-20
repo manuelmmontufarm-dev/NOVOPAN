@@ -90,6 +90,14 @@
 
 ## Historial
 
+### 2026-07-20 — Instalación Sección 2 · F1: fix del flash de Sección 1 al cargar
+
+- `/trazabilidad-total`: el estado del switch Sección 1 ahora persiste en `localStorage` (`novopan.sec1On`).
+- Script inline en `<head>` aplica la clase `sec1-off` en `<html>` ANTES del primer paint → ya no se ve la Sección 1 un instante al recargar con la sección apagada.
+- Con S1 apagada el canvas arranca directamente en la formación (scroll fijado durante el parseo).
+- El valor persistido manda sobre la restauración de formularios del navegador (`autocomplete="off"` en el checkbox).
+- Es la fase 1 del plan de fixes para la instalación de hoy (F1–F8, deploy por fases).
+
 ### 2026-07-15 — Simulador operativo Sección 2 · restaurado en una línea
 
 - Nueva ruta pública: `/simulador-seccion-2`.

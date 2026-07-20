@@ -1429,16 +1429,21 @@ function wireZoneChips() {
 }
 
 /* Switch encender/apagar Sección 1 (preparación). Apagada: oculta el wireframe
-   P1, oculta sus controles (vía body.sec1-off en CSS) y salta el scroll a la
-   Sección 2 (formación) para concentrarse ahí. No toca la simulación. */
+   P1 y sus controles (vía la clase sec1-off en <html>, aplicada pre-paint por el
+   script inline de <head>) y salta el scroll a la Sección 2 (formación). El
+   estado persiste en localStorage; el valor guardado manda sobre lo que el
+   navegador restaure en el checkbox. No toca la simulación. */
+const SEC1_STORE_KEY = 'novopan.sec1On';
 function wireSec1Toggle() {
   const toggle = document.getElementById('sec1Toggle');
-  const wireframe = document.getElementById('part1Wireframe');
   if (!toggle) return;
   const canvas = document.getElementById('canvasScroll');
+  let stored = null;
+  try { stored = localStorage.getItem(SEC1_STORE_KEY); } catch { /* sin localStorage */ }
+  toggle.checked = stored == null ? true : stored !== '0';
   const apply = (on) => {
-    if (wireframe) wireframe.style.display = on ? '' : 'none';
-    document.body.classList.toggle('sec1-off', !on);
+    document.documentElement.classList.toggle('sec1-off', !on);
+    try { localStorage.setItem(SEC1_STORE_KEY, on ? '1' : '0'); } catch { /* sin localStorage */ }
     if (!on && canvas) canvas.scrollLeft = 2320;   // salta a la zona de formación (Sección 2)
   };
   toggle.addEventListener('change', () => apply(toggle.checked));
