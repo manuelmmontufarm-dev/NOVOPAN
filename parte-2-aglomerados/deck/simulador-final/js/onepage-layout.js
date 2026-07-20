@@ -81,16 +81,45 @@
   });
   svg.appendChild(joins);
 
-  // ── 2) Composición de filas + viewBox ──
-  // Por defecto: franja de silos/dosificación + DOS filas de línea (0→45 y 45→92 m).
-  // Con Sección 1 encendida se añade arriba el wireframe P1 (con scroll).
+  // ── 2) Composición + viewBox: O Sección 2 O Sección 1, nunca apiladas ──
+  // Vista S2 (default): franja de silos/dosificación + DOS filas de línea
+  // (0→45 y 45→92 m). Vista S1 (flecha ←): el wireframe de preparación a
+  // PANTALLA COMPLETA. Se cambia con las flechas, sin deslizamiento.
+  var s1View = false;
+  var wfOX = 0, wfOY = 0;   // offsets de la vista S1 (para mapear tracers P1)
+  function sec1On() { return !document.documentElement.classList.contains('sec1-off'); }
+
   function compose() {
-    var sec1On = wf && wf.style.display !== 'none';
-    var p1H = sec1On ? Math.round(636 * S) + GAP : 0;
-    iY = p1H;
+    if (!sec1On()) s1View = false;           // apagada ⇒ solo existe la S2
+    document.body.classList.toggle('s1-view', s1View);
+    if (s1View) composeS1(); else composeS2();
+    updateArrows();
+    refreshPreTracers();
+  }
+
+  // Sección 1 a pantalla completa: solo el wireframe, ajustado al viewBox.
+  function composeS1() {
+    [intake, band1, band2, joins].forEach(function (g) { if (g) g.style.display = 'none'; });
+    wf.style.visibility = 'visible';
+    wf.removeAttribute('transform');
+    var bb = wf.getBBox();
+    wfOX = 8 - bb.x; wfOY = 8 - bb.y;
+    wf.setAttribute('transform', 'translate(' + wfOX + ' ' + wfOY + ')');
+    svg.setAttribute('viewBox', '0 0 ' + (bb.width + 16) + ' ' + (bb.height + 16));
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+    document.body.classList.remove('sec1-on');
+  }
+
+  function composeS2() {
+    if (wf) wf.style.visibility = 'hidden';   // la S1 solo se ve en su vista
+    [intake, band1, band2, joins].forEach(function (g) { if (g) g.style.display = ''; });
+    iY = 0;
     b1Y = iY + STRIP_H + GAP;
     b2Y = b1Y + BAND_H + GAP + 10;
-    if (wf && sec1On) wf.setAttribute('transform', 'translate(4 4) scale(' + S + ')');
     intake.setAttribute('transform', 'translate(30 ' + iY + ')');
     band1.setAttribute('transform', 'translate(' + (-L0) + ' ' + b1Y + ')');
     band2.setAttribute('transform', 'translate(' + (-CUT) + ' ' + b2Y + ')');
@@ -101,8 +130,8 @@
     svg.removeAttribute('height');
     svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
     svg.style.width = '100%';
-    svg.style.height = sec1On ? 'auto' : '100%';
-    document.body.classList.toggle('sec1-on', sec1On);
+    svg.style.height = '100%';
+    document.body.classList.remove('sec1-on');
     // rótulos de continuación + separadores finos entre filas
     joins.textContent = '';
     var mCut = ((CUT - 80) / 70).toFixed(0);
@@ -173,9 +202,15 @@
     var m = /translate\(\s*([-\d.]+)[ ,]+([-\d.]+)\s*\)/.exec(node.getAttribute('transform') || '');
     if (!m) return;
     var x = parseFloat(m[1]), y = parseFloat(m[2]);
+    // Región del wireframe P1 (coords globales negativas) vs franja de silos.
+    // Cada tracer solo se ve en SU vista: los de la S1 en la vista S1 y los
+    // de la franja de entrada en la vista S2.
+    var inWf = x < -60;
+    var visible = inWf ? (s1View && sec1On()) : !s1View;
+    node.style.visibility = visible ? '' : 'hidden';
     var cx, cy, sc;
-    if (x < -60 && wf && wf.style.display !== 'none') {
-      cx = 4 + S * (x + 2160); cy = 4 + S * (y - 18); sc = S;
+    if (inWf) {
+      cx = wfOX + (x + 2160); cy = wfOY + (y - 18); sc = 1;
     } else {
       cx = 30 + Math.max(x, -20); cy = iY + y; sc = 1;
     }
@@ -183,6 +218,15 @@
     if (lastWritten.get(node) === val) return;
     lastWritten.set(node, val);
     node.setAttribute('transform', val);
+  }
+
+  // Re-mapea todos los tracers P1 vivos al cambiar de vista.
+  function refreshPreTracers() {
+    if (!preTracers) return;
+    preTracers.querySelectorAll('.p1-tracer').forEach(function (g) {
+      lastWritten.delete(g);
+      mapPreTransform(g);
+    });
   }
   if (preTracers) {
     new MutationObserver(function (muts) {
@@ -244,8 +288,49 @@
     // la franja de silos/dosificación ya está dibujada con tipografía final
   }
 
+  // ── Flechas de navegación S1 ⇄ S2 ──
+  // La flecha ← lleva a la Sección 1 a pantalla completa; la flecha → vuelve
+  // a la Sección 2. Sin slide: cambio directo. La flecha a S1 SOLO existe con
+  // la Sección 1 encendida, y ninguna se muestra en la pestaña Parámetros.
+  var toS1 = null, toS2 = null;
+  function updateArrows() {
+    if (!toS1) return;
+    var canvasEl = document.getElementById('canvasScroll');
+    var lineaVisible = canvasEl && !canvasEl.classList.contains('is-hidden');
+    toS1.style.display = (sec1On() && !s1View && lineaVisible) ? 'flex' : 'none';
+    toS2.style.display = (sec1On() && s1View && lineaVisible) ? 'flex' : 'none';
+  }
+  function makeArrow(id, cls, icon, label, title) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.id = id;
+    b.className = 'op-nav-arrow ' + cls;
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    b.innerHTML = '<span class="ms">' + icon + '</span><span>' + label + '</span>';
+    b.style.display = 'none';
+    document.body.appendChild(b);
+    return b;
+  }
+
   // ── arranque ──
   boostLabels();
+  toS1 = makeArrow('toS1Arrow', 'op-nav-arrow--left', 'arrow_back', 'Sección 1', 'Ver la Sección 1 · preparación (pantalla completa)');
+  toS2 = makeArrow('toS2Arrow', 'op-nav-arrow--right', 'arrow_forward', 'Sección 2', 'Volver a la Sección 2 · formación → tablero');
+  toS1.addEventListener('click', function () { s1View = true; compose(); });
+  toS2.addEventListener('click', function () { s1View = false; compose(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName || '')) return;
+    if (!sec1On()) return;
+    var canvasEl = document.getElementById('canvasScroll');
+    if (!canvasEl || canvasEl.classList.contains('is-hidden')) return;
+    if (e.key === 'ArrowLeft' && !s1View) { s1View = true; compose(); }
+    else if (e.key === 'ArrowRight' && s1View) { s1View = false; compose(); }
+  });
+  // Las pestañas Línea/Parámetros deciden si las flechas se ven.
+  ['tabLinea', 'tabParams'].forEach(function (id) {
+    document.getElementById(id)?.addEventListener('click', function () { setTimeout(updateArrows, 0); });
+  });
   compose();
   var toggle = document.getElementById('sec1Toggle');
   if (toggle) toggle.addEventListener('change', function () { setTimeout(compose, 0); });

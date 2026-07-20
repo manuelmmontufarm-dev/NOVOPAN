@@ -278,6 +278,37 @@ body {
 }
 
 /* Con la Sección 1 apagada, se ocultan sus controles (inyección P1 + zonas de preparación). */
+/* ── F5 · Flechas de navegación S1 ⇄ S2 (o una sección o la otra) ── */
+.op-nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border: none;
+  border-radius: 12px;
+  background: #004E38;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+  opacity: .92;
+}
+.op-nav-arrow:hover, .op-nav-arrow:focus-visible { opacity: 1; }
+.op-nav-arrow .ms { font-size: 22px; }
+.op-nav-arrow--left { left: 10px; }
+.op-nav-arrow--right { right: 10px; }
+/* En la vista S1 la leyenda de capas (que es de la S2) no aplica. */
+body.s1-view #lineaLegend { display: none; }
+
 /* ── F7 · Reportes: fila de total a Sensores + detalle tras dropdown + chip ── */
 .report-card__total {
   display: flex;
