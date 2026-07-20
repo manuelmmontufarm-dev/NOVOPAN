@@ -36,7 +36,11 @@
   // ── constantes (coordenadas LOCALES del grupo animado: x = 80 + 70·m) ──
   var L0 = 40;        // borde izq. visible (tambor en x=86)
   var CUT = 3212;     // corte al final de la banda azul (45 m = x 3230): el tambor y la nariz quedan enteros en la fila 2
-  var L1 = 6620;      // borde derecho (incluye sensores a 88.4 m + panel)
+  // Borde derecho REAL: fin de la regla métrica (= processEnd del mapa visual,
+  // los sensores) + margen para su placa. Antes era fijo 6620 — reservaba el
+  // espacio del panel de lecturas (ya eliminado) y dejaba un vacío a la derecha.
+  var rulerEl = document.getElementById('metricRulerLine');
+  var L1 = (parseFloat(rulerEl && rulerEl.getAttribute('x2')) || 6330) + 120;
   var S = 0.78;       // escala relativa de las filas intake / wireframe
   var BAND_H = 572;   // alto de cada fila de línea (incluye regla + anotaciones)
   var GAP = 10;
