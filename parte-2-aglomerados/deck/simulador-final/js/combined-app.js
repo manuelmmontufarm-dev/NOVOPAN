@@ -15,7 +15,7 @@
    ============================================================ */
 
 import { SPEED_PRESETS } from '../../trazabilidad/js/core/process-graph.js';
-import { buildAnnotations, geometryFromParams, validateGeometry } from './line-bridge.js';
+import { buildAnnotations, geometryFromParams, validateGeometry, mapAbsMToX } from './line-bridge.js';
 import { initParams, loadParams, loadPart1Params } from './combined-params.js';
 import { initHmiCsv } from './hmi-csv.js';
 import { computeRoute, formatSec, STATUS_LABEL, MIXER_TAU_SEC } from './route-model.js';
@@ -406,7 +406,9 @@ function posOnPreRoute(miles, elapsed) {
 const BELT_Y = 400;
 const X0 = 80;            // metro 0
 const PX_PER_M = 70;      // px por metro
-const xm = (m) => X0 + PX_PER_M * m;
+// Mapa VISUAL compartido (line-bridge): lineal fuera de la ventana estética,
+// repartido dentro. El tiempo NUNCA sale de aquí — solo la posición pintada.
+const xm = (m) => mapAbsMToX(m, activeGeometry, true);
 const END = xm(91);             // 6450 · margen visual después de sensores
 
 // Punto donde cada capa "aparece" y sube en el colchón: el mismo punto real
@@ -637,7 +639,9 @@ function initSimulation() {
     }
     setMachine('Pre-prensa', activeGeometry.prepressM, false);
     const prepress = byLabel('Pre-prensa');
-    if (prepress) prepress.setAttribute('transform', `translate(${(835 + PX_PER_M * (activeGeometry.prepressM - 29.06)).toFixed(1)} 0)`);
+    // El cuerpo dibujado (local 1280.6..1605.4 tras el scale 0.8) arranca en el
+    // píxel del mapa visual para la ENTRADA física; su ancho ~cubre el tramo.
+    if (prepress) prepress.setAttribute('transform', `translate(${(xm(activeGeometry.prepressM) - 1280.6).toFixed(1)} 0)`);
     setMachine('Desmoldante #2', activeGeometry.sprays2M);
     setMachine('Detector de metales', activeGeometry.detectorM);
     setMachine('Cortadores de filo', activeGeometry.cuttersM);

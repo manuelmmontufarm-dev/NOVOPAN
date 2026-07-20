@@ -90,6 +90,13 @@
 
 ## Historial
 
+### 2026-07-20 (9) — MAPA VISUAL: la estética desacoplada de la física (definitivo)
+
+- **Regla de Manuel:** «deja que la estética sea la estética, y después a base de tiempos el cambio se mueve como debe». Al restaurar la pre-prensa a 47 m el dibujo volvía a montarse con el vapor (46.86) porque los píxeles eran esclavos de los metros (70 px/m fijo).
+- **Solución estructural (`visualAnchors`/`mapAbsMToX` en line-bridge, única fuente m→px):** fuera de la ventana [banda roja → prensa] el mapa es el lineal de siempre (toda el arte estática alineada, onepage intacto). DENTRO, los píxeles se reparten estéticamente (nariz | vapor 23% | aire | cuerpo pre-prensa 36→83% | aire | prensa) con extremos clavados al lineal (continuo y monótono). El marcador calcula su posición SIEMPRE en metros por ecuaciones y solo se PINTA con el mapa → en pantalla va más rápido o más lento por tramo, su tiempo es el físico.
+- Si la calibración rompe el orden físico (p.ej. fin de pre-prensa tras la prensa) el mapa cae al lineal y la validación avisa — nunca un mapa no monótono, nunca crash (verificado con largo=12).
+- **Verificado con números cambiados** (vapor→46, largo→6 ⇒ fin 53): los tiempos siguen a los números nuevos — vapor→entrada 4 s (eq 4.1) · entrada→fin 25 s (eq 24.8) · fin→prensa 9 s (eq 8.3). Restaurado a valores medidos; 56/56 tests.
+
 ### 2026-07-20 (8) — pre-prensa: física restaurada de las medidas + verificación tramo-por-tramo de TODO el recorrido
 
 - **Se revirtió el error de ayer:** la posición de la pre-prensa había sido movida 47 → 49.7 m para arreglar un solape del DIBUJO — violaba la lógica maestra (el diseño jamás cambia la física). Vuelve a **47 m** (prueba de papel 14-jul) en line-bridge, Constantes y hmi.csv.

@@ -84,8 +84,46 @@ export function validateGeometry(g) {
   return errors;
 }
 
-export function mapAbsMToX(absM, geometry = geometryFromParams()) {
-  return X0 + PX_PER_M * clamp(absM, 0, geometry.processEndM);
+/* ── Mapa VISUAL m→px: la estética desacoplada de la física ──────────────
+   Fuera de la ventana [redStartM, pressStartM] el mapa es el lineal de
+   siempre (X0 + 70·m): toda el arte estática (bandas, prensa, sensores,
+   cortes de fila del onepage) queda alineada. DENTRO de la ventana los
+   píxeles se reparten para que nariz / vapor / pre-prensa se LEAN
+   separados; los extremos quedan clavados al lineal (mapa continuo y
+   monótono). La posición del cambio se calcula SIEMPRE en metros con las
+   ecuaciones y solo se PINTA con este mapa: en pantalla el marcador va
+   más rápido o más lento según el tramo, pero su tiempo es el físico.
+   Si la calibración rompe el orden (vapor fuera de la ventana, pre-prensa
+   antes del vapor, fin de pre-prensa después de la prensa) se cae al mapa
+   lineal — nunca a uno no monótono. */
+function visualAnchors(g) {
+  const lin = (m) => X0 + PX_PER_M * m;
+  const w0 = g.redStartM, w1 = g.pressStartM;
+  const vap = g.vaporM, pIn = g.prepressM, pOut = g.prepressM + g.prepressLenM;
+  if (!(w0 < vap && vap <= pIn && pIn < pOut && pOut < w1)) return null;
+  const x0 = lin(w0), span = lin(w1) - x0;
+  return [
+    [w0, x0],
+    [vap, x0 + span * 0.23],   // el vapor respira tras la nariz
+    [pIn, x0 + span * 0.36],   // aire vapor → entrada de pre-prensa
+    [pOut, x0 + span * 0.83],  // cuerpo de la pre-prensa
+    [w1, x0 + span],           // aire fin de pre-prensa → prensa
+  ];
+}
+
+export function mapAbsMToX(absM, geometry = geometryFromParams(), noClamp = false) {
+  const m = noClamp ? absM : clamp(absM, 0, geometry.processEndM);
+  const a = visualAnchors(geometry);
+  if (a && m > a[0][0] && m < a[a.length - 1][0]) {
+    for (let i = 1; i < a.length; i++) {
+      if (m <= a[i][0]) {
+        const [m0, px0] = a[i - 1];
+        const [m1, px1] = a[i];
+        return px0 + (px1 - px0) * ((m - m0) / Math.max(1e-9, m1 - m0));
+      }
+    }
+  }
+  return X0 + PX_PER_M * m;
 }
 
 export function buildAnnotations(geometry = geometryFromParams()) {
