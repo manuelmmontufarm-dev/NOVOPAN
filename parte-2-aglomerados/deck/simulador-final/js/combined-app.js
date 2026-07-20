@@ -19,6 +19,7 @@ import { buildAnnotations, geometryFromParams, validateGeometry } from './line-b
 import { initParams, loadParams, loadPart1Params } from './combined-params.js';
 import { initHmiCsv } from './hmi-csv.js';
 import { computeRoute, formatSec, STATUS_LABEL, MIXER_TAU_SEC } from './route-model.js';
+import { sound } from './sound.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const QUITO_TZ = 'America/Guayaquil';
@@ -1023,6 +1024,7 @@ function initSimulation() {
       if (wp.m > prevM + 1e-6 && wp.m <= ch.posM + 1e-6 && !ch.passed.has(wp.label)) {
         ch.passed.add(wp.label);
         ch.arrivals.push({ label: wp.label, m: wp.m, wallTime: new Date() });
+        if (wp.label.startsWith('Sensor de calidad')) sound.sensor();
         added = true;
       }
     }
@@ -1032,6 +1034,7 @@ function initSimulation() {
   function finishChange(ch) {
     if (!ch.passed.has(finishLabel())) {
       ch.arrivals.push({ label: finishLabel(), m: processEndM(), wallTime: new Date() });
+      sound.sensor();
     }
     ch.el?.remove();
     const idx = changes.indexOf(ch);
@@ -1075,6 +1078,7 @@ function initSimulation() {
     selectedId = ch.id;
     syncMoverEnabled();
     renderReportsList(); // el reporte nace con el cambio, no solo al completarse
+    sound.inject();
     ensureRunning();
   }
 
@@ -1154,6 +1158,7 @@ function initSimulation() {
     selectedId = null;
     syncMoverEnabled();
     renderReportsList();
+    sound.inject();
     ensureRunning();
   }
 
@@ -1294,6 +1299,25 @@ function initSimulation() {
     updateReportCountdowns();
   }
   pauseBtn?.addEventListener('click', () => setPaused(!paused));
+
+  // ── Sonidos (F6): muteados por defecto; el botón activa y persiste ──
+  const soundBtn = document.getElementById('soundBtn');
+  function syncSoundBtn() {
+    if (!soundBtn) return;
+    soundBtn.innerHTML = `<span class="ms">${sound.isMuted() ? 'volume_off' : 'volume_up'}</span>`;
+    soundBtn.title = sound.isMuted() ? 'Sonidos silenciados · click para activar' : 'Sonidos activos · click para silenciar';
+    soundBtn.classList.toggle('is-on', !sound.isMuted());
+  }
+  soundBtn?.addEventListener('click', () => {
+    sound.setMuted(!sound.isMuted());
+    syncSoundBtn();
+    if (!sound.isMuted()) sound.click();   // feedback inmediato al activar
+  });
+  syncSoundBtn();
+  // Click sutil de UI en botones, tabs, dropdowns y switches (delegado).
+  document.addEventListener('click', (e) => {
+    if (e.target !== soundBtn && e.target.closest?.('button, summary, .s2-sec1-toggle')) sound.click();
+  }, true);
 
   // Movedor manual: adelanta/retrocede el cambio SELECCIONADO (el último inyectado).
   const endScrub = () => { scrubbing = false; last = performance.now(); };

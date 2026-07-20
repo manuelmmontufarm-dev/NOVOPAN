@@ -880,6 +880,8 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
 .s2-pause-btn:hover { background: #E3EEE8; border-color: #0A7D5A; }
 .s2-pause-btn.is-paused { background: #FFF6DB; border-color: #C9A227; color: #7A5D00; }
 .s2-pause-btn .ms { font-size: 18px; }
+/* Botón de sonido (F6): muteado por defecto; verde cuando está activo. */
+.s2-sound-btn.is-on { background: #E3F2EA; border-color: #0A7D5A; color: #0A7D5A; }
 
 .s2-reports-panel {
   position: fixed;

@@ -90,6 +90,14 @@
 
 ## Historial
 
+### 2026-07-20 (3) — SIMULADOR FINAL completo: F4 S1 enchufable · F5 flecha S1⇄S2 · F6 sonidos — cierre del plan F1–F8
+
+- **F4:** los tiempos A→B estimados de la Sección 1 se guardan en un almacén local (`novopan.p1Overrides`) aplicado ENCIMA del CSV — editarlos ya no detiene el polling del HMI (la S1 no se lee del HMI). Silos siguen con τ_silo. Botón «Restablecer tiempos S1» en Parámetros bloqueados.
+- **F5:** o se mira la Sección 1 o la Sección 2, a pantalla completa cada una. Flecha ← (borde izquierdo) → S1 fullscreen; flecha → vuelve a S2. Sin slide; también con teclado. La flecha solo existe con S1 encendida. Mismo reloj y simulación: los cambios de S1 avanzan aunque no se miren, y cada tracer se ve solo en su vista.
+- **F6:** sonidos Web Audio sintetizados (llegada a Sensores, inyección de cambio, click de UI), MUTEADOS por defecto; botón de sonido en la toolbar persiste el estado.
+- Tests: `node js/route-model.test.js` → 56/56 OK. Clave del candado: la de siempre del simulador operativo (hash en `js/params-auth.js`).
+- Con esto quedan cerradas las 8 fases del plan de instalación (F1–F8) sobre `/simulador-final`.
+
 ### 2026-07-20 (2) — SIMULADOR FINAL: F2 switch con candado · F3 params S1 colapsables · F7 reportes con countdown
 
 - **F2:** el switch de la Sección 1 salió de la toolbar y vive en «Parámetros bloqueados» dentro de la pestaña Parámetros (protegida por la clave de calibración, sesión 15 min).
