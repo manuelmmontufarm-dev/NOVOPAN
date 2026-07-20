@@ -90,6 +90,13 @@
 
 ## Historial
 
+### 2026-07-20 (7) — fix: el simulador "saltaba" tramos enteros tras un atasco del navegador (Pre-prensa → Prensa sin tiempo)
+
+- **Reporte de Manuel:** según las ecuaciones hay tiempo de banda entre pre-prensa y prensa, pero en pantalla se veía ir directo de una a la otra, sin tiempo.
+- **Causa real (reproducida):** cuando `requestAnimationFrame` se pausa (pestaña oculta, laptop bloqueada, GC largo, devtools) y luego se reanuda, el `dt` del siguiente frame es TODO el tiempo real transcurrido de una vez. Un solo `stepSim(dt)` gigante mueve el trazador de golpe por todo el tramo restante — Prensa, Fin prensa, cuchillos, sierra y los 3 Sensores quedaban registrados con la MISMA hora exacta (verificado: todos a las 10:56:26).
+- **Fix:** `frame()` detecta un atraso >1.5 s y lo trocea en sub-pasos de 0.5 s (tope 240 = 120 s de recuperación por frame) con hora de pared interpolada por sub-paso — mismo tiempo total real (no hay deriva de reloj), pero cada equipo queda sellado con SU hora real, como si el atasco nunca hubiera pasado.
+- **Verificado:** con el mismo escenario (Pre-prensa, tab oculto, TIEMPO 20×), las llegadas ahora quedan espaciadas correctamente: Pre-prensa → Prensa continua 1 s después (= 5.3 m/14.5 m/min a esa escala), → Fin prensa +4 s, → Sensores +3 s más. Reset a TIEMPO 1× para toma de tiempos en planta.
+
 ### 2026-07-20 (6) — LÓGICA MAESTRA: las ecuaciones mandan sobre el dibujo (ruta P1 completa)
 
 - **Bug confirmado por Manuel:** con banda inclinada de 0.000001 m el trazador igual "tardaba" — la residencia de la encoladora (40 s) y el L/v de la banda iban SUMADOS en una sola arista y el dibujo se cruzaba con la suma. Mismo patrón en varios tramos (tDS+tr1, espera+tr2, bunker+trSec, ws2+neumático, clasificadores+reingreso).

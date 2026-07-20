@@ -1295,13 +1295,37 @@ function initSimulation() {
     if (crossed) renderReportsList(); // llena en vivo el reporte de cada cambio activo
   }
 
+  // Umbral a partir del cual un frame se considera "atascado" (tab oculto,
+  // laptop bloqueada, GC largo, devtools, …) y hay que trocear el avance.
+  const STALL_DT_S = 1.5;
+  const STALL_STEP_S = 0.5;   // tamaño de cada sub-paso al recuperar un atasco
+  const STALL_MAX_STEPS = 240; // tope: 240×0.5s = 120s de recuperación por frame
+
   function frame(now) {
-    // Tiempo REAL transcurrido (sin recorte): si el navegador retrasa un frame
-    // (pestaña oculta, GC, etc.) la simulación avanza lo que de verdad pasó —
-    // no deriva por intervalos de JavaScript demorados.
+    // Tiempo REAL transcurrido (sin recorte de TOTAL): si el navegador retrasa
+    // un frame la simulación igual avanza lo que de verdad pasó — no deriva
+    // por intervalos de JavaScript demorados. PERO si el atraso es grande
+    // (rAF pausado con la pestaña oculta y luego reanudado), un solo
+    // stepSim(dt) gigante hace que el trazador SALTE de golpe todo el tramo
+    // en un frame — cruza pre-prensa, prensa, sensores, todo con la MISMA
+    // hora exacta, y en el dibujo "va directo de una máquina a otra" sin
+    // tiempo. Por eso el atraso grande se trocea en sub-pasos con su propia
+    // hora de pared interpolada — mismo total de tiempo, pero cada equipo
+    // queda con SU hora real, como si el atasco nunca hubiera pasado.
     const dt = Math.max(0, (now - last) / 1000);
     last = now;
-    stepSim(dt);
+    if (dt > STALL_DT_S) {
+      const steps = Math.min(STALL_MAX_STEPS, Math.max(1, Math.round(dt / STALL_STEP_S)));
+      const stepDt = dt / steps;
+      const gapStart = Date.now() - dt * 1000;
+      for (let i = 1; i <= steps; i++) {
+        wallNowOverride = new Date(gapStart + stepDt * i * 1000);
+        stepSim(stepDt);
+      }
+      wallNowOverride = null;
+    } else {
+      stepSim(dt);
+    }
     // Countdowns solo ~3 veces/s (no 60 fps): recorta el churn de querySelector/Intl.
     cdAccum += dt;
     if ((changes.length || preChanges.length) && cdAccum >= 0.33) {
