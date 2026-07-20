@@ -90,6 +90,11 @@
 
 ## Historial
 
+### 2026-07-20 (5) — SIMULADOR FINAL · pre-prensa reubicada + fuera el cubo TABLERO ACTUAL
+
+- La pre-prensa NO puede estar en el mismo lugar que el inyector de vapor: se movió al tramo libre entre el fin del vapor (49.1 m) y la entrada de la prensa (55 m). Default `geom:prepress` 47 → **49.7 m** (line-bridge, Constantes y hmi.csv); su cuerpo ocupa ~49.1–54.9 m, pegado a la prensa. Sigue calibrable en Constantes cuando se mida la posición real. (No se movió la prensa: 55→71.6 m es un ancla medida de la regla y los tiempos.)
+- Eliminado DEFINITIVAMENTE el cubo «TABLERO ACTUAL · POST-PRENSA» (valores de ejemplo) junto a los sensores — pedido repetido de Manuel; quedó anotado en la memoria del asistente para no reintroducirlo al rescatar versiones viejas.
+
 ### 2026-07-20 (4) — SIMULADOR FINAL · ronda pre-toma de tiempos (R1–R5)
 
 - **R1 · jitter:** los círculos de cambio en silos/banda inclinada saltaban de lado a lado — el re-mapeo de tracers hacía early-return sin escribir cuando el valor mapeado no cambiaba entre frames, dejando pintado el transform crudo. Corregido (se compara contra el atributo actual).

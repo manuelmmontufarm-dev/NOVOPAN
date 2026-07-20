@@ -38,7 +38,7 @@ export const DEFAULT_GEOMETRY = Object.freeze({
   cuttersM: 39.56,
   noseM: 44.9,
   vaporM: 46.86,
-  prepressM: 47,
+  prepressM: 49.7,
   refilaStartM: 81.7,
   refilaEndM: 83,
   sawStartM: 84.1,

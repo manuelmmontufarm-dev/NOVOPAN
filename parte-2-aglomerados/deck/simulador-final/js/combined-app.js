@@ -606,8 +606,6 @@ function initSimulation() {
       sensor.dataset.label = `Sensor de calidad 1 (${activeGeometry.sensor1M.toFixed(2)} m)`;
       sensor.setAttribute('transform', `translate(${xm(activeGeometry.sensor1M).toFixed(1)} 0)`);
     }
-    const readings = document.getElementById('readingsPanel');
-    if (readings) readings.setAttribute('transform', `translate(${xm(activeGeometry.sensor3M) + 105} 0)`);
     const rulerLine = document.getElementById('metricRulerLine');
     if (rulerLine) rulerLine.setAttribute('x2', xm(activeGeometry.processEndM).toFixed(1));
     const boundaries = { start: 0, redStart: activeGeometry.redStartM, pressStart: activeGeometry.pressStartM, pressEnd: activeGeometry.pressEndM };
