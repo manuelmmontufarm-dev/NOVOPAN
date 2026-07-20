@@ -215,7 +215,12 @@
       cx = 30 + Math.max(x, -20); cy = iY + y; sc = 1;
     }
     var val = 'translate(' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ') scale(' + sc + ')';
-    if (lastWritten.get(node) === val) return;
+    // OJO: comparar contra el ATRIBUTO actual, no contra lastWritten. Si el
+    // valor mapeado no cambió entre frames (tracer esperando su τ en un silo
+    // o subiendo lento la banda inclinada) pero combined-app acaba de escribir
+    // el transform CRUDO, un early-return dejaría pintado el crudo — el
+    // círculo saltaba de lado a lado entre ambas posiciones.
+    if (node.getAttribute('transform') === val) return;
     lastWritten.set(node, val);
     node.setAttribute('transform', val);
   }

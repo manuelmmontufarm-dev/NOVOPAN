@@ -278,6 +278,18 @@ body {
 }
 
 /* Con la Sección 1 apagada, se ocultan sus controles (inyección P1 + zonas de preparación). */
+/* ── R2 · Sub-pestañas de Parámetros: Ecuaciones / Constantes ── */
+.s2-params-subtabs {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0 4px;
+  padding: 4px;
+  background: #EDF1EE;
+  border-radius: 10px;
+  width: max-content;
+}
+#constantsGridTab.is-hidden, #paramsGridTab.is-hidden { display: none; }
+
 /* ── F5 · Flechas de navegación S1 ⇄ S2 (o una sección o la otra) ── */
 .op-nav-arrow {
   position: fixed;

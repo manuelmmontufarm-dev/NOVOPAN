@@ -90,6 +90,14 @@
 
 ## Historial
 
+### 2026-07-20 (4) — SIMULADOR FINAL · ronda pre-toma de tiempos (R1–R5)
+
+- **R1 · jitter:** los círculos de cambio en silos/banda inclinada saltaban de lado a lado — el re-mapeo de tracers hacía early-return sin escribir cuando el valor mapeado no cambiaba entre frames, dejando pintado el transform crudo. Corregido (se compara contra el atributo actual).
+- **R2 · Ecuaciones/Constantes:** la pestaña Parámetros ahora tiene sub-pestañas. «Constantes» = todo lo que NO viene del CSV del HMI (calibración física, longitudes de bandas, volúmenes de silos, tiempos estimados S1) — al editarlas se guardan en el equipo DE FORMA PERMANENTE (localStorage, con todos los alias del tag; mandan sobre el CSV) y el polling del HMI sigue vivo. «Ecuaciones» queda como estaba. Botón «Restablecer constantes» en Parámetros bloqueados.
+- **R3 · persistencia de simulación:** los cambios ya NO dependen del tab: el estado completo se guarda (~3 Hz + al ocultar/cerrar) y al reabrir se restaura y AVANZA lo que de verdad pasó, sellando cada equipo con su hora real interpolada (verificado: 26 min offline → llegadas 09:53:32→09:56:38 coherentes, no la hora de reapertura).
+- **R4 · visual:** PRE PRENSA, VAPOR·EVOsteam y NARIZ·RECHAZO en franjas separadas y legibles (a 47 m conviven físicamente).
+- **R5 · verificación:** route-model 56/56; registro vivo 3987 s = cálculo a mano (τ silo6 3885.3 + dosing 11.1 + encoladora 40 + inclinada 38.9 + esparcidora); sensores 88.00/88.20/88.40 m desde postPress_L=16.4+offsets; TIEMPO arranca en 1× (tiempo real) para la toma de tiempos.
+
 ### 2026-07-20 (3) — SIMULADOR FINAL completo: F4 S1 enchufable · F5 flecha S1⇄S2 · F6 sonidos — cierre del plan F1–F8
 
 - **F4:** los tiempos A→B estimados de la Sección 1 se guardan en un almacén local (`novopan.p1Overrides`) aplicado ENCIMA del CSV — editarlos ya no detiene el polling del HMI (la S1 no se lee del HMI). Silos siguen con τ_silo. Botón «Restablecer tiempos S1» en Parámetros bloqueados.

@@ -17,7 +17,7 @@ import {
 import {
   tauForNode, transportForNode, flowFor,
 } from '../../trazabilidad/js/core/trace-engine.js';
-import { KIND_BY_KEY, TAG_BY_KEY } from './hmi-csv.js';
+import { KIND_BY_KEY, TAG_BY_KEY, TAG_MAP } from './hmi-csv.js';
 import { lockParameters, requestParametersAccess } from './params-auth.js';
 import { geometryFromParams, validateGeometry } from './line-bridge.js';
 
@@ -527,13 +527,20 @@ function renderGeometryCalibration(params) {
   return card;
 }
 
-/* ── Tiempos estimados de la Sección 1: almacén LOCAL, no CSV ────────────
-   La Sección 1 NO se lee del HMI. Sus tiempos estimados (kind 'est', claves
-   p1:) se guardan en localStorage y se aplican ENCIMA del CSV: editarlos no
-   toca el documento CSV ni detiene el polling en vivo. Cuando planta mida un
-   tramo A→B, se escribe aquí y queda enchufado. */
+/* ── Constantes del modelo: almacén LOCAL, no CSV ───────────────────────
+   Todo lo que NO se lee del HMI (kind 'est' o 'measured': longitudes de
+   bandas, volúmenes de silos, posiciones/geometría, tiempos estimados de la
+   Sección 1) se guarda en localStorage y se aplica ENCIMA del CSV: editarlo
+   no toca el documento CSV, no detiene el polling en vivo y PERSISTE para
+   siempre en este equipo. Un tag con alias (p.ej. INCL_CL_L_M ↔ p1:inclG_L
+   y len:incl-thick) se guarda con TODOS sus alias para que ninguna vía lo
+   pise. */
 const P1_LOCAL_KEY = 'novopan.p1Overrides';
-const isP1Local = (key) => typeof key === 'string' && key.startsWith('p1:') && KIND_BY_KEY[key] === 'est';
+const isLocalConstant = (key) => {
+  const kind = KIND_BY_KEY[key];
+  return kind === 'est' || kind === 'measured';
+};
+const aliasesOf = (key) => TAG_MAP[TAG_BY_KEY[key]]?.keys ?? [key];
 
 function loadP1Overrides() {
   try { return JSON.parse(localStorage.getItem(P1_LOCAL_KEY) || '{}') || {}; }
@@ -551,6 +558,8 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
   }
 
   const grid = document.getElementById('paramsGridTab');
+  const constantsGrid = document.getElementById('constantsGridTab');
+  let constantsBuilt = false;
   const feedbackEl = document.getElementById('saveFeedback');
   const tabLinea = document.getElementById('tabLinea');
   const tabParams = document.getElementById('tabParams');
@@ -568,8 +577,8 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     feedbackTimer = setTimeout(() => feedbackEl.classList.remove('is-visible'), 2600);
   }
 
-  function bindInputs() {
-    grid.querySelectorAll('input[data-key]').forEach((input) => {
+  function bindInputs(root = grid) {
+    root.querySelectorAll('input[data-key]').forEach((input) => {
       const key = input.dataset.key;
       input.value = params[key] ?? '';
       const commitToCsv = () => {
@@ -580,15 +589,21 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
           showFeedback('Valor inválido; el CSV no cambió.');
           return;
         }
-        // Tiempos estimados de la Sección 1: se guardan en el almacén local
-        // (la S1 no viene del HMI) sin tocar el CSV ni frenar su polling.
-        if (isP1Local(key)) {
-          p1Overrides[key] = value;
+        // Constantes (longitudes, volúmenes, geometría, tiempos estimados):
+        // almacén local persistente, sin tocar el CSV ni frenar su polling.
+        // Se guardan TODOS los alias del tag.
+        if (isLocalConstant(key)) {
+          for (const alias of aliasesOf(key)) {
+            p1Overrides[alias] = value;
+            params[alias] = value;
+            [grid, constantsGrid].forEach((root) => root?.querySelectorAll(`input[data-key="${CSS.escape(alias)}"]`).forEach((other) => {
+              if (other !== input && document.activeElement !== other) other.value = value;
+            }));
+          }
           saveP1Overrides();
-          params[key] = value;
           refreshEquations();
           onChange?.(params);
-          showFeedback('Sección 1 · guardado local (no viene del HMI).');
+          showFeedback('Constante guardada en este equipo (persistente; no viene del HMI).');
           return;
         }
         const ok = onCsvEdit?.(key, value);
@@ -611,14 +626,20 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
   }
   document.getElementById('sec1Toggle')?.addEventListener('change', () => setTimeout(syncP1WrapOpen, 0));
 
-  // Borra los tiempos locales de la Sección 1 (vuelven los defaults del modelo).
+  // Borra TODAS las constantes locales (vuelven los defaults del modelo y lo
+  // que traiga el CSV en la próxima lectura).
   document.getElementById('resetP1LocalBtn')?.addEventListener('click', () => {
-    const defs = defaultPart1Params();
-    for (const k of Object.keys(p1Overrides)) { params[k] = defs[k]; delete p1Overrides[k]; }
+    const defs = { ...defaultParams(), ...defaultPart1Params() };
+    for (const k of Object.keys(p1Overrides)) {
+      if (defs[k] !== undefined) params[k] = defs[k];
+      delete p1Overrides[k];
+    }
     saveP1Overrides();
     if (built) build();
+    if (constantsBuilt) buildConstants();
+    refreshEquations();
     onChange?.(params);
-    showFeedback('Tiempos de la Sección 1 restablecidos a los valores por defecto.');
+    showFeedback('Constantes locales restablecidas a los valores por defecto.');
   });
 
   function build() {
@@ -626,7 +647,6 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     grid.innerHTML = '';
     grid.appendChild(renderOverview(params, v));
     grid.appendChild(renderGlobals(params, v));
-    grid.appendChild(renderGeometryCalibration(params));
 
     /* Los grupos 01–06 son la Sección 1 (preparación). Viven dentro de un
        <details>: con la Sección 1 apagada arranca COLAPSADO para que las
@@ -704,6 +724,66 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     built = true;
   }
 
+  /* ── Pestaña CONSTANTES: todo lo que NO viene del CSV del HMI ──────────
+     Longitudes, volúmenes, posiciones (calibración física) y tiempos
+     estimados. Editarlas las guarda en este equipo de forma permanente. */
+  function buildConstants() {
+    if (!constantsGrid) return;
+    constantsGrid.innerHTML = '';
+    const intro = document.createElement('p');
+    intro.className = 's2-params__hint';
+    intro.innerHTML = 'Constantes del modelo: <strong>no vienen del CSV del HMI</strong>. Al editarlas se guardan en este equipo de forma permanente (sobreviven recargas y reinicios) y mandan sobre cualquier valor del CSV.';
+    constantsGrid.appendChild(intro);
+    constantsGrid.appendChild(renderGeometryCalibration(params));
+
+    const fields = [];
+    for (const [tag, meta] of Object.entries(TAG_MAP)) {
+      if (meta.kind !== 'est' && meta.kind !== 'measured') continue;
+      const key = meta.keys[0];
+      if (key.startsWith('geom:') || key === 'p1:postPress_L') continue;   // ya están en calibración física
+      if (key === 'p1:tEncCI' || key === 'p1:tEncCE') continue;            // encoladoras fijas en 40 s por diseño
+      const p = PARAM_BY_KEY[key];
+      fields.push({ key, label: p?.label ?? tag, unit: p?.unit ?? meta.unit, kind: meta.kind });
+    }
+    const groupsDef = [
+      { title: 'Longitudes de bandas y línea (m)', match: (f) => f.unit === 'm' },
+      { title: 'Volúmenes de silos y búnker (m³)', match: (f) => f.unit === 'm³' },
+      { title: 'Tiempos estimados · Sección 1 (s)', match: (f) => f.unit === 's' && f.key.startsWith('p1:') },
+      { title: 'Otras constantes', match: () => true },
+    ];
+    const used = new Set();
+    for (const gdef of groupsDef) {
+      const items = fields.filter((f) => !used.has(f.key) && gdef.match(f));
+      items.forEach((f) => used.add(f.key));
+      if (!items.length) continue;
+      const card = document.createElement('section');
+      card.className = 'globals-card globals-card--csv';
+      card.innerHTML = `
+        <header class="globals-card__hd"><h4>${gdef.title}</h4></header>
+        <div class="equation-card__fields">${items.map((f) => fieldHtml(f)).join('')}</div>`;
+      constantsGrid.appendChild(card);
+    }
+    bindInputs(constantsGrid);
+    constantsBuilt = true;
+  }
+
+  /* Sub-pestañas de Parámetros: Ecuaciones (CSV + constantes sustituidas,
+     como siempre) y Constantes (lo editable que no viene del HMI). */
+  const subEc = document.getElementById('subtabEcuaciones');
+  const subCt = document.getElementById('subtabConstantes');
+  function setParamsSubtab(which) {
+    const eq = which === 'ecuaciones';
+    if (!eq && !constantsBuilt) buildConstants();
+    grid?.classList.toggle('is-hidden', !eq);
+    constantsGrid?.classList.toggle('is-hidden', eq);
+    subEc?.classList.toggle('is-active', eq);
+    subCt?.classList.toggle('is-active', !eq);
+    subEc?.setAttribute('aria-selected', String(eq));
+    subCt?.setAttribute('aria-selected', String(!eq));
+  }
+  subEc?.addEventListener('click', () => setParamsSubtab('ecuaciones'));
+  subCt?.addEventListener('click', () => setParamsSubtab('constantes'));
+
   function refreshEquations() {
     if (!built) return;
     const v = n(params, 'v_prensa', speed());
@@ -776,8 +856,8 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
       if (Object.prototype.hasOwnProperty.call(p1Overrides, key)) continue;
       if (params[key] !== value) changed = true;
       params[key] = value;
-      if (built) {
-        grid.querySelectorAll(`input[data-key="${CSS.escape(key)}"]`).forEach((input) => {
+      for (const root of [built ? grid : null, constantsBuilt ? constantsGrid : null]) {
+        root?.querySelectorAll(`input[data-key="${CSS.escape(key)}"]`).forEach((input) => {
           if (document.activeElement !== input) input.value = value;
         });
       }

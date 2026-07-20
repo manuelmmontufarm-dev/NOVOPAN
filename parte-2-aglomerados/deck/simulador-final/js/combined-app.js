@@ -753,7 +753,7 @@ function initSimulation() {
   function recordLanding(ch) {
     if (ch.landed || !ch.layerName) return false;
     ch.landed = true;
-    const now = new Date();
+    const now = wallNow();
     ch.arrivals.push({ label: `${ch.layerName} · caída al colchón (fin τ esparcidora)`, m: ch.dropM, wallTime: now });
     const g = groups.get(ch.seq);
     if (!g) return true;
@@ -1023,7 +1023,7 @@ function initSimulation() {
     for (const wp of namedWaypoints()) {
       if (wp.m > prevM + 1e-6 && wp.m <= ch.posM + 1e-6 && !ch.passed.has(wp.label)) {
         ch.passed.add(wp.label);
-        ch.arrivals.push({ label: wp.label, m: wp.m, wallTime: new Date() });
+        ch.arrivals.push({ label: wp.label, m: wp.m, wallTime: wallNow() });
         if (wp.label.startsWith('Sensor de calidad')) sound.sensor();
         added = true;
       }
@@ -1033,7 +1033,7 @@ function initSimulation() {
 
   function finishChange(ch) {
     if (!ch.passed.has(finishLabel())) {
-      ch.arrivals.push({ label: finishLabel(), m: processEndM(), wallTime: new Date() });
+      ch.arrivals.push({ label: finishLabel(), m: processEndM(), wallTime: wallNow() });
       sound.sensor();
     }
     ch.el?.remove();
@@ -1049,6 +1049,7 @@ function initSimulation() {
     if (selectedId === ch.id) selectedId = changes.length ? changes[changes.length - 1].id : null;
     renderReportsList();
     syncMoverEnabled();
+    saveSim();
   }
 
   // El cambio se inyecta en el equipo donde se hace clic, al INICIO real de ese
@@ -1080,6 +1081,7 @@ function initSimulation() {
     renderReportsList(); // el reporte nace con el cambio, no solo al completarse
     sound.inject();
     ensureRunning();
+    saveSim();
   }
 
   function injectDownstreamFromPre(parent, m, label) {
@@ -1103,7 +1105,7 @@ function initSimulation() {
       dropDur,
       layerName,
       dropAge: 0,
-      arrivals: alreadyHasLaunch ? inherited : [...inherited, { label, m, wallTime: new Date() }],
+      arrivals: alreadyHasLaunch ? inherited : [...inherited, { label, m, wallTime: wallNow() }],
       passed: new Set([label, ...inherited.map((a) => a.label)]),
     };
     ch.el = createTracerEl(ch);
@@ -1160,6 +1162,7 @@ function initSimulation() {
     renderReportsList();
     sound.inject();
     ensureRunning();
+    saveSim();
   }
 
   // Bucle auto-suspendible: solo corre cuando hay cambios activos (idle = 0 CPU).
@@ -1174,12 +1177,16 @@ function initSimulation() {
     cdAccum = 999;
     rafId = requestAnimationFrame(frame);
   }
-  function frame(now) {
-    // Tiempo REAL transcurrido (sin recorte): si el navegador retrasa un frame
-    // (pestaña oculta, GC, etc.) la simulación avanza lo que de verdad pasó —
-    // no deriva por intervalos de JavaScript demorados.
-    const dt = Math.max(0, (now - last) / 1000);
-    last = now;
+  /* Reloj de pared para los sellos de hora: en vivo es "ahora", pero durante
+     la REPETICIÓN OFFLINE (el tab estuvo cerrado y al reabrir se avanza lo que
+     de verdad pasó) es un cursor interpolado — así cada equipo queda con la
+     hora real a la que el cambio lo cruzó, no con la hora de reapertura. */
+  let wallNowOverride = null;
+  const wallNow = () => wallNowOverride ?? new Date();
+
+  /* Un paso de simulación de `dt` segundos REALES. Es el cuerpo del frame,
+     extraído para poder repetirlo al restaurar el estado tras cerrar el tab. */
+  function stepSim(dt) {
     const advanceM = (vPrensa / 60) * dt * Math.min(timeScale, 300);
     let crossed = false;
     for (const ch of preChanges.slice()) {
@@ -1188,7 +1195,7 @@ function initSimulation() {
       for (const m of ch.miles) {
         if (m.t > prevElapsed + 1e-6 && m.t <= ch.elapsed + 1e-6 && !ch.passed.has(m.label)) {
           ch.passed.add(m.label);
-          ch.arrivals.push({ label: m.label, m: m.t, wallTime: new Date() });
+          ch.arrivals.push({ label: m.label, m: m.t, wallTime: wallNow() });
           crossed = true;
         }
       }
@@ -1239,11 +1246,21 @@ function initSimulation() {
       else updateTracerEl(ch);
     }
     if (crossed) renderReportsList(); // llena en vivo el reporte de cada cambio activo
+  }
+
+  function frame(now) {
+    // Tiempo REAL transcurrido (sin recorte): si el navegador retrasa un frame
+    // (pestaña oculta, GC, etc.) la simulación avanza lo que de verdad pasó —
+    // no deriva por intervalos de JavaScript demorados.
+    const dt = Math.max(0, (now - last) / 1000);
+    last = now;
+    stepSim(dt);
     // Countdowns solo ~3 veces/s (no 60 fps): recorta el churn de querySelector/Intl.
     cdAccum += dt;
     if ((changes.length || preChanges.length) && cdAccum >= 0.33) {
       cdAccum = 0;
       updateReportCountdowns();
+      saveSim();   // el estado sobrevive a cerrar el tab (~3 Hz es barato: JSON pequeño)
     }
     if (selectedId && moverRange && document.activeElement !== moverRange) {
       const sel = changes.find((c) => c.id === selectedId);
@@ -1254,6 +1271,7 @@ function initSimulation() {
       rafId = requestAnimationFrame(frame);
     } else {
       running = false;
+      saveSim();
     }
   }
 
@@ -1297,6 +1315,7 @@ function initSimulation() {
     }
     renderReportsList();       // refresca los chips EN CURSO ↔ EN PAUSA
     updateReportCountdowns();
+    saveSim();
   }
   pauseBtn?.addEventListener('click', () => setPaused(!paused));
 
@@ -1437,6 +1456,7 @@ function initSimulation() {
     running = false;   // el bucle se reanuda solo al inyectar el próximo cambio
     syncMoverEnabled();
     renderReportsList();
+    saveSim();   // sin cambios ni reportes ⇒ borra el estado persistido
   }
   resetChangesBtn?.addEventListener('click', resetAll);
 
@@ -1510,6 +1530,135 @@ function initSimulation() {
   const recomputeRouteModel = () => routeModelDiagnostic(paramsApi.getParams(), vPrensa);
   window.__NOVOPAN_ROUTE_MODEL__ = { recompute: recomputeRouteModel, computeRoute, formatSec, STATUS_LABEL, last: null };
   recomputeRouteModel();
+
+  /* ══ Persistencia de la simulación (R3) ══════════════════════════════
+     Los cambios NO dependen de que el tab esté abierto: el estado completo
+     (cambios activos, upstream, grupos, reportes, pausa, escala) se guarda
+     en localStorage (~3 Hz mientras corre + al ocultar/cerrar el tab). Al
+     reabrir, se restaura y se AVANZA por el tiempo real transcurrido, con
+     la hora real interpolada para cada equipo cruzado mientras estuvo
+     cerrado. */
+  const SIM_STORE_KEY = 'novopan.simState';
+  const serDate = (d) => (d instanceof Date ? +d : d ?? null);
+  const serArrivals = (arr) => arr.map((a) => ({ label: a.label, m: a.m, wallTime: serDate(a.wallTime) }));
+  const deArrivals = (arr) => (arr ?? []).map((a) => ({ label: a.label, m: a.m, wallTime: new Date(a.wallTime) }));
+
+  function saveSim() {
+    try {
+      if (!changes.length && !preChanges.length && !reports.length) {
+        localStorage.removeItem(SIM_STORE_KEY);
+        return;
+      }
+      localStorage.setItem(SIM_STORE_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        changeSeq, selectedId, paused, timeScale,
+        changes: changes.map((ch) => ({
+          id: ch.id, seq: ch.seq, color: ch.color, posM: ch.posM,
+          dropM: ch.dropM, dropDur: ch.dropDur, dropAge: ch.dropAge,
+          layerName: ch.layerName ?? null, landed: ch.landed ?? false,
+          branchLabel: ch.branchLabel ?? null,
+          arrivals: serArrivals(ch.arrivals), passed: [...ch.passed],
+        })),
+        preChanges: preChanges.map((ch) => ({
+          id: ch.id, seq: ch.seq, color: ch.color, branch: ch.branch,
+          startAt: ch.startAt, branchLabel: ch.branchLabel,
+          elapsed: ch.elapsed, launched: ch.launched,
+          arrivals: serArrivals(ch.arrivals), passed: [...ch.passed],
+        })),
+        reports: reports.map((r) => ({
+          id: r.id, seq: r.seq, color: r.color, layerName: r.layerName ?? null,
+          arrivals: serArrivals(r.arrivals),
+        })),
+        groups: [...groups.values()].map((g) => ({
+          seq: g.seq, origin: g.origin, wallStart: serDate(g.wallStart),
+          expected: [...g.expected],
+          landed: [...g.landed.entries()].map(([L, d]) => [L, serDate(d)]),
+          registeredAt: g.registeredAt ? serDate(g.registeredAt) : null,
+          predictions: g.predictions, tracersLeft: g.tracersLeft, state: g.state,
+        })),
+      }));
+    } catch { /* sin localStorage o lleno: la sim sigue igual */ }
+  }
+
+  function restoreSim() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(SIM_STORE_KEY) || 'null'); }
+    catch { return; }
+    if (!saved || !Number.isFinite(saved.savedAt)) return;
+    try {
+      changeSeq = saved.changeSeq ?? 0;
+      if (Number.isFinite(saved.timeScale) && timeScaleInput) {
+        timeScale = clamp(saved.timeScale, 1, 100000);
+        timeScaleInput.value = timeScale;
+      }
+      for (const gs of saved.groups ?? []) {
+        groups.set(gs.seq, {
+          seq: gs.seq, origin: gs.origin, wallStart: new Date(gs.wallStart),
+          expected: new Set(gs.expected ?? []),
+          landed: new Map((gs.landed ?? []).map(([L, d]) => [L, new Date(d)])),
+          registeredAt: gs.registeredAt ? new Date(gs.registeredAt) : null,
+          predictions: gs.predictions ?? null,
+          tracersLeft: gs.tracersLeft ?? 0, state: gs.state ?? 'EN CURSO',
+        });
+      }
+      for (const rs of saved.reports ?? []) {
+        reports.push({ id: rs.id, seq: rs.seq, color: rs.color, layerName: rs.layerName, arrivals: deArrivals(rs.arrivals), group: groups.get(rs.seq) ?? null });
+      }
+      for (const cs of saved.preChanges ?? []) {
+        const miles = preMilestonesFor(cs.startAt, cs.branch, modelParams);
+        const ch = {
+          id: cs.id, seq: cs.seq, color: cs.color, branch: cs.branch,
+          startAt: cs.startAt, branchLabel: cs.branchLabel,
+          elapsed: Math.min(cs.elapsed ?? 0, miles[miles.length - 1].t),
+          total: miles[miles.length - 1].t, miles, launched: cs.launched ?? false,
+          arrivals: deArrivals(cs.arrivals), passed: new Set(cs.passed ?? []),
+        };
+        ch.el = createPreTracerEl(ch);
+        updatePreTracerEl(ch);
+        preChanges.push(ch);
+      }
+      for (const cs of saved.changes ?? []) {
+        const ch = {
+          id: cs.id, seq: cs.seq, color: cs.color, posM: cs.posM,
+          dropM: cs.dropM ?? null, dropDur: cs.dropDur ?? 0, dropAge: cs.dropAge ?? 0,
+          layerName: cs.layerName, landed: cs.landed ?? false,
+          branchLabel: cs.branchLabel ?? undefined,
+          arrivals: deArrivals(cs.arrivals), passed: new Set(cs.passed ?? []),
+        };
+        ch.el = createTracerEl(ch);
+        updateTracerEl(ch);
+        changes.push(ch);
+      }
+      selectedId = saved.selectedId && changes.some((c) => c.id === saved.selectedId) ? saved.selectedId : (changes[changes.length - 1]?.id ?? null);
+      if (saved.paused) setPaused(true);
+
+      // Avance offline: lo que de verdad pasó mientras el tab estuvo cerrado,
+      // en pasos de ~1 s real con el cursor de hora interpolado (máx 600 pasos).
+      const dtReal = Math.max(0, (Date.now() - saved.savedAt) / 1000);
+      if (!saved.paused && dtReal > 0.25 && (changes.length || preChanges.length)) {
+        const steps = Math.max(1, Math.min(600, Math.ceil(dtReal)));
+        const stepDt = dtReal / steps;
+        for (let i = 1; i <= steps && (changes.length || preChanges.length); i++) {
+          wallNowOverride = new Date(saved.savedAt + stepDt * i * 1000);
+          stepSim(stepDt);
+        }
+        wallNowOverride = null;
+      }
+      syncMoverEnabled();
+      renderReportsList();
+      if (changes.length || preChanges.length) ensureRunning();
+      saveSim();
+      console.info(`[sim-store] restaurado: ${changes.length} cambios activos · ${preChanges.length} upstream · ${reports.length} reportes · +${Math.round((Date.now() - saved.savedAt) / 1000)} s offline`);
+    } catch (e) {
+      console.error('[sim-store] no se pudo restaurar; se arranca limpio', e);
+      try { localStorage.removeItem(SIM_STORE_KEY); } catch { /* sin localStorage */ }
+    }
+  }
+
+  // Guardar también al ocultar/cerrar el tab y al pausar.
+  window.addEventListener('pagehide', saveSim);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSim(); });
+  restoreSim();
 }
 
 /* Diagnóstico en consola: valida que las ecuaciones y los puntos de inyección
