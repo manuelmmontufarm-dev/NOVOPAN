@@ -573,6 +573,15 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     });
   }
 
+  /* El dropdown de parámetros de la Sección 1 sigue al switch: apagada =
+     colapsado · encendida = expandido. Después el usuario puede abrirlo o
+     cerrarlo a mano cuando quiera. */
+  function syncP1WrapOpen() {
+    const wrap = document.getElementById('p1ParamsWrap');
+    if (wrap) wrap.open = !document.documentElement.classList.contains('sec1-off');
+  }
+  document.getElementById('sec1Toggle')?.addEventListener('change', () => setTimeout(syncP1WrapOpen, 0));
+
   function build() {
     const v = speed();
     grid.innerHTML = '';
@@ -580,16 +589,29 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     grid.appendChild(renderGlobals(params, v));
     grid.appendChild(renderGeometryCalibration(params));
 
+    /* Los grupos 01–06 son la Sección 1 (preparación). Viven dentro de un
+       <details>: con la Sección 1 apagada arranca COLAPSADO para que las
+       ecuaciones activas de la Sección 2 se lean limpias — pero siempre se
+       puede abrir a mano. Con la Sección 1 encendida arranca expandido. */
+    const p1Wrap = document.createElement('details');
+    p1Wrap.className = 's2-p1-params';
+    p1Wrap.id = 'p1ParamsWrap';
+    const p1Summary = document.createElement('summary');
+    p1Summary.innerHTML = '<span class="ms">factory</span> Sección 1 · Preparación (grupos 01–06) — parámetros y ecuaciones';
+    p1Wrap.appendChild(p1Summary);
+    grid.appendChild(p1Wrap);
+    syncP1WrapOpen();
+
     let currentGroup = '';
     for (const step of P1_STEPS) {
       if (step.group !== currentGroup) {
         const title = document.createElement('h3');
         title.className = 'parameter-section-title';
         title.textContent = step.group;
-        grid.appendChild(title);
+        p1Wrap.appendChild(title);
         currentGroup = step.group;
       }
-      grid.appendChild(renderP1Step(step, params));
+      p1Wrap.appendChild(renderP1Step(step, params));
     }
 
     const schema = getParameterSchema();

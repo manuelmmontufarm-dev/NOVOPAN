@@ -71,11 +71,6 @@
         <span class="s2-speed__unit">m/min</span>
       </span>
     </div>
-    <label class="s2-sec1-toggle" title="Enciende/apaga la Sección 1 (preparación) para concentrarte en la Sección 2">
-      <input type="checkbox" id="sec1Toggle" autocomplete="off" />
-      <span class="s2-sec1-toggle__track"><span class="s2-sec1-toggle__thumb"></span></span>
-      <span class="s2-sec1-toggle__lbl">Sección 1</span>
-    </label>
     <span class="s2-toolbar__label s2-toolbar__label--p1">Inyectar P1</span>
     <div class="s2-preinject">
       <button type="button" class="s2-preinject__btn" data-pre-trigger="patios" data-label="Patios · cambio receta">
@@ -1008,6 +1003,17 @@
         <button type="button" class="btn btn--secondary" id="resetParamsBtn"><span class="ms">restart_alt</span> Recargar CSV del servidor</button>
         <button type="button" class="btn btn--secondary" id="lockParamsBtn"><span class="ms">lock</span> Bloquear</button>
         <span class="param-save-feedback" id="saveFeedback" aria-live="polite"></span>
+      </div>
+      <!-- Parámetros bloqueados: viven dentro de la pestaña protegida por la
+           clave de calibración (params-auth). El switch de la Sección 1 se
+           movió aquí desde la toolbar para que nadie la prenda/apague sin clave. -->
+      <div class="s2-locked-params" id="lockedParams">
+        <span class="s2-locked-params__title"><span class="ms">lock</span> Parámetros bloqueados</span>
+        <label class="s2-sec1-toggle" title="Enciende/apaga la Sección 1 (preparación). Protegido por la clave de calibración.">
+          <input type="checkbox" id="sec1Toggle" autocomplete="off" />
+          <span class="s2-sec1-toggle__track"><span class="s2-sec1-toggle__thumb"></span></span>
+          <span class="s2-sec1-toggle__lbl">Sección 1 (preparación) visible en la vista Línea</span>
+        </label>
       </div>
       <details class="s2-csv-view" id="csvViewWrap">
         <summary><span class="ms">description</span> Ver CSV crudo del HMI (<span id="csvTagCount">0</span> tags)</summary>

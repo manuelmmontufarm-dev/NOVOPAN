@@ -278,6 +278,67 @@ body {
 }
 
 /* Con la Sección 1 apagada, se ocultan sus controles (inyección P1 + zonas de preparación). */
+/* Bloque "Parámetros bloqueados" dentro de la pestaña Parámetros (protegida
+   por la clave de calibración). Aquí vive el switch de la Sección 1. */
+.s2-locked-params {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin: 10px 0 4px;
+  padding: 10px 14px;
+  border: 1.5px dashed #B8C4BD;
+  border-radius: 10px;
+  background: #F4F7F5;
+}
+.s2-locked-params__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #004E38;
+}
+.s2-locked-params__title .ms { font-size: 16px; }
+
+/* Dropdown de parámetros de la Sección 1 (grupos 01–06) en la pestaña
+   Parámetros: colapsado cuando la Sección 1 está apagada. */
+.s2-p1-params {
+  border: 1.5px solid #D9DDD9;
+  border-radius: 12px;
+  background: #FBFCFB;
+  padding: 0 14px 6px;
+  margin: 14px 0 6px;
+}
+.s2-p1-params > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 2px;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: #004E38;
+  user-select: none;
+}
+.s2-p1-params > summary::-webkit-details-marker { display: none; }
+.s2-p1-params > summary::after {
+  content: 'expand_more';
+  font-family: 'Material Symbols Rounded';
+  font-size: 20px;
+  margin-left: auto;
+  transition: transform .18s ease;
+}
+.s2-p1-params[open] > summary::after { transform: rotate(180deg); }
+.s2-p1-params > summary .ms { font-size: 18px; }
+
 /* La clase sec1-off vive en <html>: un script inline en <head> la aplica ANTES
    del primer paint (sin flash de los controles P1 ni del wireframe al cargar). */
 .sec1-off .s2-preinject,
