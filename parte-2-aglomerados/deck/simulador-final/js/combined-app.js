@@ -245,6 +245,11 @@ function buildPreDurations(params) {
     silo1, silo2a, silo2b, silo3,
     bunker,
     secado,
+    // Átomos para separar RESIDENCIA vs TRANSPORTE por arista (lógica maestra):
+    tDS: fixed(params, 'p1:tDS'), tr1: fixed(params, 'p1:tr1'),
+    esperaDesv: fixed(params, 'p1:esperaDesv'), tr2: fixed(params, 'p1:tr2'),
+    bunkerTau: tauSiloH(params, 'bk'), trSec: fixed(params, 'p1:trSec'),
+    tClasSL: fixed(params, 'p1:tClasSL'), tReingresoSL: fixed(params, 'p1:tReingresoSL'),
     tamices: fixed(params, 'p1:tCriba'), zarandas: fixed(params, 'p1:tZar'),
     collectCL: fixed(params, 'p1:tColectCL'), collectSL: fixed(params, 'p1:tColectSL'),
     collectPG: fixed(params, 'p1:tColectOver'), collectPolvo: fixed(params, 'p1:tPolvo'),
@@ -264,57 +269,99 @@ function buildPreDurations(params) {
   };
 }
 
-/* Duración de la arista from→to (s), tomada del modelo (τ=M/F, ρ·V·L%/F, L/v).
-   Las residencias grandes viven en el nodo silo; los saltos visuales son ~1-2 s. */
-function edgeDt(from, to, d) {
-  const T = {
-    'patios>bunker': d.reduction,
-    'pm1>ds': d.aserrinPila, 'ds>silo1': d.aserrinTransfer, 'silo1>bunker': d.silo1,
-    'pm2>flex': d.chipsPila, 'flex>silo2a': d.flakesTransfer,
-    'silo2a>bunker': d.silo2a, 'silo2b>bunker': d.silo2b,
-    'hb>silo3': d.hombakTransfer, 'silo3>bunker': d.silo3,
-    'bunker>secadero1': d.bunker, 'secadero1>cribaF': d.secado, 'secadero2>cribaG': d.secado,
-    'cribaF>zaranda2': d.tamices, 'cribaG>zaranda2': d.tamices,
-    // La retención de la encoladora (τ=40 s) vive en la arista de SALIDA del
-    // nodo encolador: así un cambio inyectado EN la encoladora también cumple
-    // sus 40 s dentro de la máquina (el total silo→gate no cambia).
-    'zaranda1>zaranda2': d.zarandas, 'zaranda3>zaranda2': d.zarandas,
-    'zaranda2>colectCL': d.zarandas, 'colectCL>silo5': d.collectCL,
-    'silo5>activeSilo5': 1, 'activeSilo5>activeDosingCL': d.clSilo,
-    'activeDosingCL>activeEncCI': d.clDosing, 'activeEncCI>clGate': d.clEnc + d.clIncl,
-    'zaranda2>colectSL': d.zarandas, 'colectSL>ws1': d.collectSL, 'ws1>ws2': d.ws1, 'ws2>silo6': d.ws2 + d.neumaticoSL,
-    'colectPG>partG': d.collectPG, 'partG>w3': d.imanFe, 'colectPolvo>silo4': d.collectPolvo,
-    'silo6>activeSilo6': 1, 'activeSilo6>activeDosingSL': d.slSilo,
-    'activeDosingSL>activeEncCE': d.slDosing, 'activeEncCE>sl1Gate': d.slEnc + d.slIncl, 'activeEncCE>sl2Gate': d.slEnc + d.slIncl,
-    'w3>r1': d.ws3, 'w3>r2': d.ws3, 'r1>cy': d.ref1, 'r2>cy': d.ref2,
-    'cy>clasSL': d.ciclon, 'clasSL>ws1': d.clasReingreso,
-    'silo4>silo8': d.polvoSilo4, 'silo8>quemador': d.polvoSilo8,
+/* ══ LÓGICA MAESTRA: las ecuaciones mandan sobre el dibujo ══════════════
+   Cada arista from→to se separa en DOS tiempos independientes:
+     · dwell  = RESIDENCIA en el equipo de origen (su ecuación: τ=M/F,
+       ρ·V·L%/F, retención fija). El trazador se queda QUIETO dentro del
+       equipo exactamente ese tiempo.
+     · travel = TRANSPORTE puro hasta el siguiente (L/v de la banda o el
+       tiempo estimado del tramo). El trazador cruza el dibujo exactamente
+       en ese tiempo — una banda de 0 m se cruza al instante, una de
+       1 000 000 m tarda lo que dice L/v, sin mezclarse con la residencia.
+   Antes ambos iban SUMADOS en la arista y el dibujo se cruzaba con la suma
+   (p.ej. encoladora 40 s + banda inclinada iban juntos sobre la banda). */
+function edgeSplit(from, to, d) {
+  const S = {
+    'patios>bunker': [0, d.reduction],   // ruta agregada de receta (compuesto)
+    'pm1>ds': [d.aserrinPila, 1],
+    'ds>silo1': [d.tDS, d.tr1],
+    'silo1>bunker': [d.silo1, 1],
+    'pm2>flex': [d.chipsPila, 1],
+    'flex>silo2a': [d.esperaDesv, d.tr2],
+    'silo2a>bunker': [d.silo2a, 1],
+    'silo2b>bunker': [d.silo2b, 1],
+    'hb>silo3': [0, d.hombakTransfer],
+    'silo3>bunker': [d.silo3, 1],
+    'bunker>secadero1': [d.bunkerTau, d.trSec],
+    'secadero1>cribaF': [d.secado, 1],
+    'secadero2>cribaG': [d.secado, 1],
+    'cribaF>zaranda2': [d.tamices, 1],
+    'cribaG>zaranda2': [d.tamices, 1],
+    'zaranda1>zaranda2': [d.zarandas, 1],
+    'zaranda3>zaranda2': [d.zarandas, 1],
+    'zaranda2>colectCL': [d.zarandas, 1],
+    'zaranda2>colectSL': [d.zarandas, 1],
+    'colectCL>silo5': [d.collectCL, 1],
+    'silo5>activeSilo5': [0, 1],
+    'activeSilo5>activeDosingCL': [d.clSilo, 1],
+    'activeDosingCL>activeEncCI': [d.clDosing, 1],
+    // La retención de la encoladora se cumple DENTRO de la encoladora; la
+    // banda inclinada solo lleva su propio L/v.
+    'activeEncCI>clGate': [d.clEnc, d.clIncl],
+    'colectSL>ws1': [d.collectSL, 1],
+    'ws1>ws2': [d.ws1, 1],
+    'ws2>silo6': [d.ws2, d.neumaticoSL],
+    'silo6>activeSilo6': [0, 1],
+    'activeSilo6>activeDosingSL': [d.slSilo, 1],
+    'activeDosingSL>activeEncCE': [d.slDosing, 1],
+    'activeEncCE>sl1Gate': [d.slEnc, d.slIncl],
+    'activeEncCE>sl2Gate': [d.slEnc, d.slIncl],
+    'colectPG>partG': [d.collectPG, 1],
+    'partG>w3': [d.imanFe, 1],
+    'w3>r1': [d.ws3, 1],
+    'w3>r2': [d.ws3, 1],
+    'r1>cy': [d.ref1, 1],
+    'r2>cy': [d.ref2, 1],
+    'cy>clasSL': [d.ciclon, 1],
+    'clasSL>ws1': [d.tClasSL, d.tReingresoSL],
+    'colectPolvo>silo4': [d.collectPolvo, 1],
+    'silo4>silo8': [d.polvoSilo4, 1],
+    'silo8>quemador': [d.polvoSilo8, 1],
   };
-  return Math.max(1, T[`${from}>${to}`] ?? 2);
+  const [dwell, travel] = S[`${from}>${to}`] ?? [0, 2];
+  return [Math.max(0, dwell), Math.max(0.5, travel)];
 }
 
 /* Recorre el grafo desde `startAt` siguiendo succ() hasta la entrada a la
-   Sección 2 (o el quemador, para la ruta de polvo). Cada hito lleva key/label/
-   posición/via/t acumulado, y el último la marca launchM para nacer en P2. */
+   Sección 2 (o el quemador, para la ruta de polvo). Cada hito lleva:
+     t      = llegada al equipo (aquí se sella la hora del reporte)
+     tLeave = salida del equipo (t + residencia de su ecuación)
+   Entre tLeave de un hito y t del siguiente, el trazador CRUZA el dibujo
+   en el tiempo de transporte puro. El último hito marca launchM. */
 function preMilestonesFor(startAt, branch, params) {
   const d = buildPreDurations(params);
   const at = (key, extra) => ({ key, label: NODE_LABEL[key] ?? key, x: NODE_POS[key][0], y: NODE_POS[key][1], ...extra });
-  const miles = [at(startAt, { t: 0 })];
+  let curM = at(startAt, { t: 0, tLeave: 0 });
+  const miles = [curM];
   let cur = startAt;
-  let t = 0;
   for (let guard = 0; guard < 40; guard++) {
     const nxt = succ(cur, branch);
     if (!nxt || !NODE_POS[nxt]) break;
-    t += edgeDt(cur, nxt, d);
+    const [dwell, travel] = edgeSplit(cur, nxt, d);
+    curM.tLeave = curM.t + dwell;
+    const t = curM.tLeave + travel;
     const via = EDGE_VIA[`${cur}>${nxt}`];
-    miles.push(at(nxt, { t, ...(via ? { via } : {}), ...(gateLaunch(nxt) ?? {}) }));
+    curM = at(nxt, { t, tLeave: t, ...(via ? { via } : {}), ...(gateLaunch(nxt) ?? {}) });
+    miles.push(curM);
     cur = nxt;
   }
   return miles;
 }
 
-/* El tramo a→b puede llevar `via` (polilínea que sigue la tubería dibujada):
-   el tiempo del tramo se reparte proporcional a la LONGITUD de cada segmento. */
+/* Posición del trazador: QUIETO dentro del equipo durante su residencia
+   (elapsed < a.tLeave) y cruzando el tramo dibujado SOLO durante el tiempo
+   de transporte (a.tLeave → b.t). El tramo a→b puede llevar `via` (polilínea
+   que sigue la tubería): el avance se reparte proporcional a la LONGITUD. */
 function posOnPreRoute(miles, elapsed) {
   if (elapsed <= 0) return miles[0];
   const last = miles[miles.length - 1];
@@ -323,7 +370,9 @@ function posOnPreRoute(miles, elapsed) {
     const a = miles[i - 1];
     const b = miles[i];
     if (elapsed <= b.t) {
-      const f = (elapsed - a.t) / Math.max(1, b.t - a.t);
+      const leave = a.tLeave ?? a.t;
+      if (elapsed <= leave) return a;   // residencia: sigue dentro del equipo
+      const f = (elapsed - leave) / Math.max(1e-6, b.t - leave);
       const pts = [[a.x, a.y], ...(b.via ?? []), [b.x, b.y]];
       const lens = [];
       let L = 0;
@@ -1470,6 +1519,10 @@ function initSimulation() {
     onCsvReset: () => hmiCsvApi?.reloadServer(),
     onCsvDownload: () => hmiCsvApi?.downloadCsv() ?? false,
   });
+  // Desde el arranque el motor usa los params CON las constantes locales
+  // (antes quedaba en defaults hasta el primer poll del CSV — la restauración
+  // de la simulación construía las líneas de tiempo sin las constantes).
+  modelParams = paramsApi.getParams();
 
   /* Recalcula la línea de tiempo de los cambios upstream ACTIVOS cuando cambian
      los parámetros (CSV o edición): conserva el tiempo transcurrido y re-mapea

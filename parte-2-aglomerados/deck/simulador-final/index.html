@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" />
 <link rel="stylesheet" href="vendor/katex/katex.min.css?v=0.17.0" />
-<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260720e" />
+<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260720f" />
 <link rel="stylesheet" href="css/params.css?v=20260714a" />
 <script defer src="vendor/katex/katex.min.js?v=0.17.0"></script>
 </head>
@@ -767,6 +767,10 @@
 
       <!-- PRE PRENSA (cabezal/centro visual en 31.4 m; el clic inyecta al inicio de zona, 29.06 m) -->
       <g class="s2-machine" data-inject-m="47" data-label="Pre-prensa" transform="translate(835 0)">
+        <!-- Cuerpo estrechado 0.8× alrededor de su centro (x=1443): a 49.7 m la
+             máquina real llena el tramo vapor→prensa; el dibujo respira ~0.6 m
+             a cada lado. La POSICIÓN física (inyección/tiempos) no cambia. -->
+        <g transform="translate(1443 0) scale(0.8 1) translate(-1443 0)">
         <rect x="1246" y="150" width="8" height="252" fill="#4A5560"/><rect x="1632" y="150" width="8" height="252" fill="#4A5560"/>
         <rect x="1240" y="150" width="406" height="15" rx="3" fill="url(#steelBlue)" stroke="#6B7886"/>
         <!-- cylinders pushing down -->
@@ -781,6 +785,7 @@
         </g>
         <!-- upper band line following rollers -->
         <path d="M1268 372 L1320 360 L1584 377 L1622 380" fill="none" stroke="#6B7886" stroke-width="3" opacity="0.7"/>
+        </g>
         <!-- placa subida a y=56: a 47 m la pre-prensa convive con vapor y nariz;
              cada etiqueta tiene su franja para que las tres se lean. -->
         <rect x="1360" y="56" width="166" height="30" rx="6" fill="#FFFFFF" stroke="#1565C0" stroke-width="1.5"/>
@@ -1100,7 +1105,7 @@
   });
 })();
 </script>
-<script type="module" src="js/combined-app.js?v=20260720e"></script>
-<script defer src="js/onepage-layout.js?v=20260720e"></script>
+<script type="module" src="js/combined-app.js?v=20260720f"></script>
+<script defer src="js/onepage-layout.js?v=20260720f"></script>
 </body>
 </html>

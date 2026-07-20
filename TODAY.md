@@ -90,6 +90,14 @@
 
 ## Historial
 
+### 2026-07-20 (6) — LÓGICA MAESTRA: las ecuaciones mandan sobre el dibujo (ruta P1 completa)
+
+- **Bug confirmado por Manuel:** con banda inclinada de 0.000001 m el trazador igual "tardaba" — la residencia de la encoladora (40 s) y el L/v de la banda iban SUMADOS en una sola arista y el dibujo se cruzaba con la suma. Mismo patrón en varios tramos (tDS+tr1, espera+tr2, bunker+trSec, ws2+neumático, clasificadores+reingreso).
+- **Fix estructural (`edgeSplit`):** cada arista se separa en RESIDENCIA (quieto dentro del equipo, su ecuación) + TRANSPORTE puro (cruza el dibujo exactamente en L/v o el tiempo estimado del tramo). `preMilestonesFor` ahora lleva `t` (llegada) y `tLeave` (salida) por equipo y `posOnPreRoute` respeta ambos.
+- Además `modelParams` arranca con las constantes locales desde el inicio (antes quedaba en defaults hasta el primer poll del CSV).
+- **Verificado con extremos:** banda 0.000001 m → encoladora→gate 41 s (40 residencia + 0.5 cruce mínimo; antes 82.6). Banda 1 000 000 m → el trazador se queda en la banda y el gate no llega. WS2→Silo 6 = 19 s (10 retención + 8 neumático + redondeo). Totales por defecto invariantes.
+- Visual: cuerpo de la pre-prensa estrechado 0.8× alrededor de su centro — aire a ambos lados (vapor ← · → prensa) sin mover la posición física (49.7 m, calibrable).
+
 ### 2026-07-20 (5) — SIMULADOR FINAL · pre-prensa reubicada + fuera el cubo TABLERO ACTUAL
 
 - La pre-prensa NO puede estar en el mismo lugar que el inyector de vapor: se movió al tramo libre entre el fin del vapor (49.1 m) y la entrada de la prensa (55 m). Default `geom:prepress` 47 → **49.7 m** (line-bridge, Constantes y hmi.csv); su cuerpo ocupa ~49.1–54.9 m, pegado a la prensa. Sigue calibrable en Constantes cuando se mida la posición real. (No se movió la prensa: 55→71.6 m es un ancla medida de la regla y los tiempos.)
