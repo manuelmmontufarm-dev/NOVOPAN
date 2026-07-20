@@ -818,6 +818,54 @@ function initSimulation() {
   // al completarse pasa a "completado" y queda fijo en la lista.
   const fmtT = (s) => (s == null || !Number.isFinite(s) ? '—' : `T+${fmtCountdown(s)}`);
 
+  // Dropdowns "Detalle por equipo" que el usuario dejó abiertos: sobreviven a
+  // los re-render del panel (la lista se reconstruye en cada cruce de equipo).
+  const openCards = new Set();
+
+  // Chip flotante en la vista Línea: próximo evento del cambio seleccionado.
+  const nextChip = document.createElement('div');
+  nextChip.className = 's2-next-chip is-hidden';
+  nextChip.id = 'nextChip';
+  document.body.appendChild(nextChip);
+
+  /* Estado "en vivo" de un cambio downstream: dónde está, qué viene, cuánto
+     falta (en segundos VISUALES, ya divididos por la escala de tiempo) y el
+     total hasta el último sensor. */
+  function downstreamSnapshot(ch) {
+    const inDrop = ch.dropM != null && ch.dropDur > 0 && ch.dropAge < ch.dropDur;
+    const here = inDrop
+      ? `Esparcidor ${ch.layerName ?? ''} (descenso τ)`
+      : ([...namedWaypoints()].reverse().find((wp) => wp.m <= ch.posM + 1e-6)?.label ?? 'Inicio del colchón');
+    const wp = nextWaypoint(ch.posM);
+    const nextLabel = inDrop ? 'caída al colchón' : (wp?.label ?? null);
+    const scale = Math.min(timeScale, 300);
+    const nextDisp = inDrop
+      ? (ch.dropDur - ch.dropAge) / scale
+      : (wp ? ((Math.max(0, wp.m - ch.posM) / vPrensa) * 60) / scale : null);
+    const remProc = (inDrop ? ch.dropDur - ch.dropAge : 0) + (Math.max(0, processEndM() - ch.posM) / vPrensa) * 60;
+    return { here, nextLabel, nextDisp, totalDisp: remProc / scale };
+  }
+
+  /* Estado "en vivo" de un cambio upstream (Parte 1): total = lo que falta en
+     la ruta P1 + τ de su esparcidora + transporte hasta el último sensor
+     (la ruta 'sl' llega dos veces: manda la capa más lenta). La ruta de
+     polvo/biomasa no llega a sensores → total null. */
+  function preSnapshot(ch) {
+    const here = [...ch.miles].reverse().find((m) => m.t <= ch.elapsed + 1e-6)?.label ?? ch.miles[0]?.label ?? '—';
+    const next = ch.miles.find((m) => m.t > ch.elapsed + 1e-6);
+    const nextLabel = next?.label ?? 'entrada a Parte 2';
+    const nextDisp = Math.max(0, (next?.t ?? ch.total) - ch.elapsed) / timeScale;
+    const upstreamRem = Math.max(0, ch.total - ch.elapsed);
+    let totalDisp = null;
+    if (ch.branch === 'cl' || ch.branch === 'sl') {
+      const dep = { SL1: activeGeometry.esp1M, CL: activeGeometry.esp2M, SL2: activeGeometry.esp3M };
+      const layers = ch.branch === 'cl' ? ['CL'] : ['SL1', 'SL2'];
+      const downstream = Math.max(...layers.map((L) => tauEsp(L) + (Math.max(0, processEndM() - dep[L]) / vPrensa) * 60));
+      totalDisp = upstreamRem / timeScale + downstream / Math.min(timeScale, 300);
+    }
+    return { here, nextLabel, nextDisp, totalDisp };
+  }
+
   /* Fila predicha: valor T+ (segundos de proceso desde la inyección) + etiqueta
      de calidad del parámetro según el route-model (OK · estimado · sin calibrar). */
   function predRow(label, seconds, quality) {
@@ -849,6 +897,16 @@ function initSimulation() {
         ${predRow('Sensor 1', p.sensors.sensor1, p.quality.sensor1)}
         ${predRow('Sensor 2', p.sensors.sensor2, p.quality.sensor2)}
         ${predRow('Sensor 3', p.sensors.sensor3, p.quality.sensor3)}` : '';
+    /* Fila de TOTAL: countdown al último sensor + hora real (Quito) estimada
+       de llegada. Se actualiza en vivo en updateReportCountdowns. */
+    const totalRow = isActive ? `
+        <li class="report-card__total">
+          <span>Total a Sensores finales</span>
+          <span class="report-card__total-vals">
+            <strong data-total-for="${item.id}">--:--</strong>
+            <em data-eta-for="${item.id}">llega ≈ —</em>
+          </span>
+        </li>` : '';
     card.innerHTML = `
       <div class="report-card__hd">
         <i style="background:${item.color}"></i>
@@ -864,46 +922,71 @@ function initSimulation() {
       </div>
       <ul class="report-card__list">
         ${countdownRow}
-        ${predBlock}
-        <li class="report-card__sub">Observado · simulación (hora Quito)</li>
-        ${item.arrivals.map((a) => `<li><span>${a.label}</span><strong>${fmtWallTime(a.wallTime)}</strong></li>`).join('')}
+        ${totalRow}
       </ul>
+      <details class="report-card__more"${openCards.has(item.id) ? ' open' : ''}>
+        <summary>Detalle por equipo · predicho y horas reales</summary>
+        <ul class="report-card__list">
+          ${predBlock}
+          <li class="report-card__sub">Observado · simulación (hora Quito)</li>
+          ${item.arrivals.map((a) => `<li><span>${a.label}</span><strong>${fmtWallTime(a.wallTime)}</strong></li>`).join('')}
+        </ul>
+      </details>
     `;
+    const more = card.querySelector('.report-card__more');
+    more?.addEventListener('toggle', () => {
+      if (more.open) openCards.add(item.id); else openCards.delete(item.id);
+    });
     return card;
+  }
+
+  /* Escribe countdown de próxima etapa + total a Sensores + hora estimada de
+     llegada en la tarjeta del cambio `ch` a partir de su snapshot en vivo. */
+  function paintCardCountdown(ch, snap) {
+    const strong = reportsList.querySelector(`[data-countdown-for="${ch.id}"]`);
+    const labelEl = reportsList.querySelector(`[data-countdown-label-for="${ch.id}"]`);
+    const totalEl = reportsList.querySelector(`[data-total-for="${ch.id}"]`);
+    const etaEl = reportsList.querySelector(`[data-eta-for="${ch.id}"]`);
+    if (labelEl) {
+      labelEl.textContent = snap.nextLabel ? `En: ${snap.here} · Próximo: ${snap.nextLabel}` : `En: ${snap.here}`;
+    }
+    if (strong) {
+      strong.textContent = paused ? 'PAUSA' : (snap.nextDisp == null ? '—' : fmtCountdown(snap.nextDisp));
+    }
+    if (totalEl) {
+      totalEl.textContent = paused ? 'PAUSA' : (snap.totalDisp == null ? '—' : fmtCountdown(snap.totalDisp));
+    }
+    if (etaEl) {
+      etaEl.textContent = paused || snap.totalDisp == null
+        ? (snap.totalDisp == null ? 'no pasa por sensores' : 'llega ≈ —')
+        : `llega ≈ ${fmtWallTime(new Date(Date.now() + snap.totalDisp * 1000))}`;
+    }
+  }
+
+  /* Chip flotante de la vista Línea: sigue al cambio seleccionado (o al más
+     reciente). Se oculta en la pestaña Parámetros y sin cambios activos. */
+  function updateNextChip() {
+    const enParams = !canvas || canvas.classList.contains('is-hidden');
+    const sel = changes.find((c) => c.id === selectedId) ?? changes[changes.length - 1] ?? null;
+    const target = sel ?? preChanges[preChanges.length - 1] ?? null;
+    if (!target || enParams) { nextChip.classList.add('is-hidden'); return; }
+    const snap = sel ? downstreamSnapshot(sel) : preSnapshot(target);
+    const cuenta = paused ? 'PAUSA' : (snap.nextDisp == null ? '—' : fmtCountdown(snap.nextDisp));
+    const total = paused || snap.totalDisp == null ? '—' : fmtCountdown(snap.totalDisp);
+    const eta = paused || snap.totalDisp == null ? '—' : fmtWallTime(new Date(Date.now() + snap.totalDisp * 1000));
+    nextChip.innerHTML = `
+      <i style="background:${target.color}"></i>
+      <strong>Cambio ${target.seq}</strong>
+      <span>Próximo: ${snap.nextLabel ?? '—'} · <b>${cuenta}</b></span>
+      <span>Sensores: <b>${total}</b> · llega ≈ <b>${eta}</b></span>`;
+    nextChip.classList.remove('is-hidden');
   }
 
   function updateReportCountdowns() {
     if (!reportsList) return;
-    for (const ch of changes) {
-      const strong = reportsList.querySelector(`[data-countdown-for="${ch.id}"]`);
-      const labelEl = reportsList.querySelector(`[data-countdown-label-for="${ch.id}"]`);
-      if (!strong) continue;
-      const inDrop = ch.dropM != null && ch.dropDur > 0 && ch.dropAge < ch.dropDur;
-      const here = inDrop
-        ? `Esparcidor ${ch.layerName ?? ''} (descenso τ)`
-        : ([...namedWaypoints()].reverse().find((wp) => wp.m <= ch.posM + 1e-6)?.label ?? 'Inicio del colchón');
-      const wp = nextWaypoint(ch.posM);
-      if (!wp && !inDrop) {
-        if (labelEl) labelEl.textContent = `En: ${here}`;
-        strong.textContent = '—';
-        continue;
-      }
-      if (labelEl) labelEl.textContent = `En: ${here} · Próximo: ${inDrop ? 'caída al colchón' : wp.label}`;
-      if (paused) { strong.textContent = 'PAUSA'; continue; }
-      const remaining = inDrop
-        ? (ch.dropDur - ch.dropAge)
-        : ((Math.max(0, wp.m - ch.posM) / vPrensa) * 60);
-      strong.textContent = fmtCountdown(remaining / Math.min(timeScale, 300));
-    }
-    for (const ch of preChanges) {
-      const strong = reportsList.querySelector(`[data-countdown-for="${ch.id}"]`);
-      const labelEl = reportsList.querySelector(`[data-countdown-label-for="${ch.id}"]`);
-      if (!strong) continue;
-      const here = [...ch.miles].reverse().find((m) => m.t <= ch.elapsed + 1e-6)?.label ?? ch.miles[0]?.label ?? '—';
-      const next = ch.miles.find((m) => m.t > ch.elapsed + 1e-6);
-      if (labelEl) labelEl.textContent = `En: ${here} · Próximo: ${next?.label ?? 'entrada a Parte 2'}`;
-      strong.textContent = paused ? 'PAUSA' : fmtCountdown(Math.max(0, (next?.t ?? ch.total) - ch.elapsed) / timeScale);
-    }
+    for (const ch of changes) paintCardCountdown(ch, downstreamSnapshot(ch));
+    for (const ch of preChanges) paintCardCountdown(ch, preSnapshot(ch));
+    updateNextChip();
   }
 
   function renderReportsList() {
@@ -922,6 +1005,9 @@ function initSimulation() {
       for (const rep of reports) reportsList.appendChild(renderCard(rep, false));
     }
     if (reportsCount) reportsCount.textContent = String(upstreamList.length + activeList.length + reports.length);
+    // Pinta countdowns/total/chip de inmediato: sin esperar el tick de ~3 Hz
+    // (si no, cada re-render dejaría "--:--" un instante).
+    updateReportCountdowns();
   }
 
   function syncMoverEnabled() {

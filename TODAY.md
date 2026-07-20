@@ -90,6 +90,13 @@
 
 ## Historial
 
+### 2026-07-20 (2) — SIMULADOR FINAL: F2 switch con candado · F3 params S1 colapsables · F7 reportes con countdown
+
+- **F2:** el switch de la Sección 1 salió de la toolbar y vive en «Parámetros bloqueados» dentro de la pestaña Parámetros (protegida por la clave de calibración, sesión 15 min).
+- **F3:** los grupos 01–06 (preparación) van dentro de un dropdown: colapsado con S1 apagada, expandido al encenderla, siempre abrible a mano.
+- **F7:** cada cambio muestra en su cabecera el countdown a la SIGUIENTE etapa (nombre verificado contra el orden físico) y una fila nueva «Total a Sensores finales» con countdown y hora real (Quito) estimada de llegada. Los tiempos reales por máquina + predicciones pasaron a un dropdown «Detalle por equipo» (persiste abierto entre re-renders). Chip flotante en la vista Línea con el próximo evento del cambio seleccionado.
+- Fix de paso: los countdowns se pintan inmediatamente tras cada re-render de la lista (antes quedaba «--:--» un instante en cada cruce).
+
 ### 2026-07-20 — SIMULADOR FINAL: rescatada la versión de planta y publicada como ruta propia
 
 - **Qué pasó:** lo que corría en planta (`/simulador-seccion-2`) venía de la rama `agent/novopan-hmi-simulator` (commit `5c1f7a3`, 17-jul) — NO de main. El deploy de main de hoy lo pisó. Esa versión tiene: Sección 2 completa en una pantalla (dos filas, `onepage-layout.js`), candado de Parámetros con clave (`params-auth.js`, acceso 15 min) y 103 tags con calibración física.
