@@ -90,6 +90,14 @@
 
 ## Historial
 
+### 2026-07-20 (11) — CORRECCIÓN DE DATO: la pre-prensa vive en la BANDA BLANCA (29.06→33.75 m)
+
+- **Manuel confirmó la física real:** la pre-prensa va DESPUÉS del imán y ANTES del desmoldante #2 (sprays), sobre la banda blanca — como siempre dijo la cadena de segmentos medidos (`WHITE_SEGMENTS`: imán→pre-prensa 2.40 m · zona 4.69 m · →sprays 2.22 m; esa cadena reproduce todos los demás waypoints con error ≤3 cm).
+- **Origen del error:** el commit del 14-jul ("prueba de papel") movió el marcador a 47 m con la nota "va justo antes de la prensa" — interpretación equivocada que hoy se arrastró. Ambas fuentes convivían en el repo; se eligió mal la del 14-jul por ser "la más reciente".
+- **Fix:** `geom:prepress` default → **29.06 m** (line-bridge, Constantes, hmi.csv); validación nueva: entrada+largo dentro del tramo imán→desmoldante #2. Waypoints reordenados solos (imán 26.68 → entrada 29.06 → fin 33.75 → sprays 35.99 → … → nariz → vapor → prensa); la rampa de compresión del colchón ocurre en 29.06→33.75; el dibujo volvió a su lugar original en la fila 1 (placa a y118). La banda roja quedó limpia: nariz → vapor → prensa.
+- **Verificado con stepSim determinista** (inyección en SL2, τ esparcidora 11.5 s + Δm/v): imán 31≈29.8 · entrada 41≈39.7 · fin 60≈59.1 · sprays 69≈68.4 s. Orden de waypoints y validación de geometría OK; mapa visual cae a lineal (ya no hay clúster que despegar).
+
+
 ### 2026-07-20 (10) — auditoría total: llegadas Y salidas correctas en todas las etapas, con constantes y ecuaciones cambiadas
 
 - **Ganchos de verificación permanentes** (`window.__NOVOPAN_SIM_DEBUG__`): exponen preMilestonesFor/buildPreDurations/geometría y un `stepSim(dt, atMs)` determinista (mismo mecanismo que la recuperación offline) — los tests de página auditan el motor sin depender del requestAnimationFrame.

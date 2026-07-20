@@ -114,7 +114,7 @@ export const P1_PARAMS = [
   { key: 'geom:cutters', label: 'Posición · Cortadores de filo', unit: 'm', default: 39.56 },
   { key: 'geom:nose', label: 'Posición · Nariz/rechazo', unit: 'm', default: 44.9 },
   { key: 'geom:vapor', label: 'Posición · Vapor', unit: 'm', default: 46.86 },
-  { key: 'geom:prepress', label: 'Posición · Pre-prensa (entrada)', unit: 'm', default: 47 },
+  { key: 'geom:prepress', label: 'Posición · Pre-prensa (entrada)', unit: 'm', default: 29.06 },
   { key: 'geom:prepressLen', label: 'Largo · Pre-prensa', unit: 'm', default: 4.69 },
   { key: 'geom:refilaStart', label: 'Inicio · Cuchillos de refila', unit: 'm', default: 81.7 },
   { key: 'geom:refilaEnd', label: 'Fin · Cuchillos de refila', unit: 'm', default: 83 },

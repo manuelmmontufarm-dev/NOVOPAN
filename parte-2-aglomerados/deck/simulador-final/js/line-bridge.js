@@ -38,7 +38,7 @@ export const DEFAULT_GEOMETRY = Object.freeze({
   cuttersM: 39.56,
   noseM: 44.9,
   vaporM: 46.86,
-  prepressM: 47,
+  prepressM: 29.06,
   prepressLenM: 4.69,
   refilaStartM: 81.7,
   refilaEndM: 83,
@@ -79,8 +79,9 @@ export function validateGeometry(g) {
   if (g.esp3M >= g.whiteM) errors.push('El esparcidor 3 debe caer antes del fin de la banda blanca.');
   if (g.noseM > g.whiteM) errors.push('La nariz no puede quedar después del fin de la banda blanca.');
   if (g.vaporM < g.redStartM || g.vaporM > g.pressStartM) errors.push('El vapor debe quedar dentro de la banda roja.');
-  if (g.prepressM < g.redStartM || g.prepressM > g.pressStartM) errors.push('La pre-prensa debe quedar antes de la prensa continua.');
-  if (g.prepressM + g.prepressLenM > g.pressStartM) errors.push('El FIN de la pre-prensa (entrada + largo) debe quedar antes de la prensa continua.');
+  // La pre-prensa vive en la BANDA BLANCA: después del imán y antes del
+  // desmoldante #2 (sprays) — cadena de segmentos medidos jul-2026.
+  if (g.prepressM < g.magnetM || g.prepressM + g.prepressLenM > g.sprays2M) errors.push('La pre-prensa va en la banda blanca: después del imán y antes del desmoldante #2 (entrada + largo dentro de ese tramo).');
   return errors;
 }
 
