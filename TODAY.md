@@ -90,6 +90,13 @@
 
 ## Historial
 
+### 2026-07-20 (8) — pre-prensa: física restaurada de las medidas + verificación tramo-por-tramo de TODO el recorrido
+
+- **Se revirtió el error de ayer:** la posición de la pre-prensa había sido movida 47 → 49.7 m para arreglar un solape del DIBUJO — violaba la lógica maestra (el diseño jamás cambia la física). Vuelve a **47 m** (prueba de papel 14-jul) en line-bridge, Constantes y hmi.csv.
+- **Nueva constante calibrable `M_PREPRENSA_LEN_M` (largo real 4.69 m,** de la cadena de segmentos medidos) → la pre-prensa deja de ser un punto: waypoints **«Pre-prensa · entrada» (47 m)** y **«Fin pre-prensa» (51.69 m)**. La rampa de compresión del colchón ahora ocurre a lo largo del cuerpo real. Validación: entrada+largo < prensa.
+- **Respuesta a la pregunta de Manuel:** fin pre-prensa → prensa continua = 3.31 m = **13.7 s @ 14.5 m/min** (visible ahora en reportes/countdown; recalcula solo si cambian las constantes o la velocidad).
+- **Verificación tramo-por-tramo (replay 420 s, TIEMPO 1×):** los 20 tramos del recorrido 0.7 → 88.4 m dieron |obs − ecuación| ≤ 1 s (SL1→CL 35/34.6 · CL→SL2 30/30 · … · entrada→fin pre-prensa 19/19.4 · fin→prensa 14/13.7 · prensa 69/68.7 · … · S2→S3 1/0.8). El dibujo quedó espaciado (cuerpo real 47→51.7, aire hasta la prensa) SIN tocar un solo número físico.
+
 ### 2026-07-20 (7) — fix: el simulador "saltaba" tramos enteros tras un atasco del navegador (Pre-prensa → Prensa sin tiempo)
 
 - **Reporte de Manuel:** según las ecuaciones hay tiempo de banda entre pre-prensa y prensa, pero en pantalla se veía ir directo de una a la otra, sin tiempo.

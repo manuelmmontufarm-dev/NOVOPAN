@@ -114,7 +114,8 @@ export const P1_PARAMS = [
   { key: 'geom:cutters', label: 'Posición · Cortadores de filo', unit: 'm', default: 39.56 },
   { key: 'geom:nose', label: 'Posición · Nariz/rechazo', unit: 'm', default: 44.9 },
   { key: 'geom:vapor', label: 'Posición · Vapor', unit: 'm', default: 46.86 },
-  { key: 'geom:prepress', label: 'Posición · Pre-prensa', unit: 'm', default: 49.7 },
+  { key: 'geom:prepress', label: 'Posición · Pre-prensa (entrada)', unit: 'm', default: 47 },
+  { key: 'geom:prepressLen', label: 'Largo · Pre-prensa', unit: 'm', default: 4.69 },
   { key: 'geom:refilaStart', label: 'Inicio · Cuchillos de refila', unit: 'm', default: 81.7 },
   { key: 'geom:refilaEnd', label: 'Fin · Cuchillos de refila', unit: 'm', default: 83 },
   { key: 'geom:sawStart', label: 'Inicio · Sierra transversal', unit: 'm', default: 84.1 },
@@ -508,7 +509,7 @@ function renderGlobals(params, speed) {
 const GEOMETRY_KEYS = [
   'p1:postPress_L', 'geom:sensor2Offset', 'geom:sensor3Offset',
   'geom:esp1', 'geom:esp2', 'geom:esp3', 'geom:magnet', 'geom:sprays2',
-  'geom:detector', 'geom:cutters', 'geom:nose', 'geom:vapor', 'geom:prepress',
+  'geom:detector', 'geom:cutters', 'geom:nose', 'geom:vapor', 'geom:prepress', 'geom:prepressLen',
   'geom:refilaStart', 'geom:refilaEnd', 'geom:sawStart', 'geom:sawEnd',
 ];
 

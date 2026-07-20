@@ -38,7 +38,8 @@ export const DEFAULT_GEOMETRY = Object.freeze({
   cuttersM: 39.56,
   noseM: 44.9,
   vaporM: 46.86,
-  prepressM: 49.7,
+  prepressM: 47,
+  prepressLenM: 4.69,
   refilaStartM: 81.7,
   refilaEndM: 83,
   sawStartM: 84.1,
@@ -54,7 +55,7 @@ export function geometryFromParams(params = {}) {
     sensor2OffsetM: finiteNonNegative(params['geom:sensor2Offset'], DEFAULT_GEOMETRY.sensor2OffsetM),
     sensor3OffsetM: finiteNonNegative(params['geom:sensor3Offset'], DEFAULT_GEOMETRY.sensor3OffsetM),
   };
-  for (const key of ['esp1M', 'esp2M', 'esp3M', 'magnetM', 'sprays2M', 'detectorM', 'cuttersM', 'noseM', 'vaporM', 'prepressM', 'refilaStartM', 'refilaEndM', 'sawStartM', 'sawEndM']) {
+  for (const key of ['esp1M', 'esp2M', 'esp3M', 'magnetM', 'sprays2M', 'detectorM', 'cuttersM', 'noseM', 'vaporM', 'prepressM', 'prepressLenM', 'refilaStartM', 'refilaEndM', 'sawStartM', 'sawEndM']) {
     const paramKey = `geom:${key.replace(/M$/, '')}`;
     g[key] = finiteNonNegative(params[paramKey], DEFAULT_GEOMETRY[key]);
   }
@@ -79,6 +80,7 @@ export function validateGeometry(g) {
   if (g.noseM > g.whiteM) errors.push('La nariz no puede quedar después del fin de la banda blanca.');
   if (g.vaporM < g.redStartM || g.vaporM > g.pressStartM) errors.push('El vapor debe quedar dentro de la banda roja.');
   if (g.prepressM < g.redStartM || g.prepressM > g.pressStartM) errors.push('La pre-prensa debe quedar antes de la prensa continua.');
+  if (g.prepressM + g.prepressLenM > g.pressStartM) errors.push('El FIN de la pre-prensa (entrada + largo) debe quedar antes de la prensa continua.');
   return errors;
 }
 

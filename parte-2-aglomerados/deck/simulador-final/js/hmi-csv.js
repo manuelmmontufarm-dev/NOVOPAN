@@ -136,6 +136,7 @@ export const TAG_MAP = {
   M_NARIZ_M:           entry('geom:nose', 'measured', 'm'),
   M_VAPOR_M:           entry('geom:vapor', 'measured', 'm'),
   M_PREPRENSA_M:       entry('geom:prepress', 'measured', 'm'),
+  M_PREPRENSA_LEN_M:   entry('geom:prepressLen', 'measured', 'm'),
   M_REFILA_INICIO_M:   entry('geom:refilaStart', 'measured', 'm'),
   M_REFILA_FIN_M:      entry('geom:refilaEnd', 'measured', 'm'),
   M_SIERRA_INICIO_M:   entry('geom:sawStart', 'measured', 'm'),

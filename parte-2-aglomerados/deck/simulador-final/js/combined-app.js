@@ -58,7 +58,8 @@ function namedWaypoints() { return [
   { m: activeGeometry.cuttersM, label: 'Cortadores de filo' },
   { m: activeGeometry.noseM, label: 'Nariz · rechazo' },
   { m: activeGeometry.vaporM, label: 'Vapor EVOsteam' },
-  { m: activeGeometry.prepressM, label: 'Pre-prensa' },
+  { m: activeGeometry.prepressM, label: 'Pre-prensa · entrada' },
+  { m: activeGeometry.prepressM + activeGeometry.prepressLenM, label: 'Fin pre-prensa' },
   { m: activeGeometry.pressStartM, label: 'Prensa continua' },
   { m: activeGeometry.pressEndM, label: 'Fin prensa' },
   { m: activeGeometry.refilaStartM, label: 'Cuchillos de refila · inicio' },
@@ -428,7 +429,7 @@ const lerp = (a, b, t) => a + (b - a) * clamp(t, 0, 1);
 // multiplicador de compresión global a lo largo de x (anclado a metros)
 function comp(x) {
   const preIn = xm(activeGeometry.prepressM);
-  const preOut = xm(Math.min(activeGeometry.pressStartM, activeGeometry.prepressM + 2.46));
+  const preOut = xm(Math.min(activeGeometry.pressStartM, activeGeometry.prepressM + activeGeometry.prepressLenM));
   const pressStartX = xm(activeGeometry.pressStartM);
   const pressEndX = xm(activeGeometry.pressEndM);
   if (x < preIn) return 1;
