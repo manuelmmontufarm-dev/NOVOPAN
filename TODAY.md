@@ -90,6 +90,13 @@
 
 ## Historial
 
+### 2026-07-20 (10) — auditoría total: llegadas Y salidas correctas en todas las etapas, con constantes y ecuaciones cambiadas
+
+- **Ganchos de verificación permanentes** (`window.__NOVOPAN_SIM_DEBUG__`): exponen preMilestonesFor/buildPreDurations/geometría y un `stepSim(dt, atMs)` determinista (mismo mecanismo que la recuperación offline) — los tests de página auditan el motor sin depender del requestAnimationFrame.
+- **Barrido estructural: 12 312 chequeos, 0 fallos.** 12 juegos de constantes mutadas al azar (×0.2–×3 en 42 constantes: tiempos, volúmenes, niveles, flujos, bandas) × TODAS las rutas/etapas: para cada equipo, llegada y salida (residencia = su ecuación; transporte = su ecuación) comparadas contra fórmulas recalculadas de forma INDEPENDIENTE en el test (τ=M/F, ρ·V·L%/F, L/v). También geometría: sensores = blanca+roja+prensa+postL(+offsets), fin pre-prensa = entrada+largo.
+- **Conductual con ecuaciones cambiadas:** v_prensa 14.5→10 ⇒ nariz→vapor 12/11.8 · →entrada 13/12.6 · →fin pre-prensa 41/40.7 · →prensa 61/60.6 (obs/eq, s). Masa esparcidora CL 40→80 kg ⇒ salida al colchón 41 s vs τ=80/118·60=40.7, registro sellado al caer.
+- Restaurado todo (v 14.5, masa 40, CSV del servidor); 104 tags en vivo.
+
 ### 2026-07-20 (9) — MAPA VISUAL: la estética desacoplada de la física (definitivo)
 
 - **Regla de Manuel:** «deja que la estética sea la estética, y después a base de tiempos el cambio se mueve como debe». Al restaurar la pre-prensa a 47 m el dibujo volvía a montarse con el vapor (46.86) porque los píxeles eran esclavos de los metros (70 px/m fijo).

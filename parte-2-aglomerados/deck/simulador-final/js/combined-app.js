@@ -1611,6 +1611,29 @@ function initSimulation() {
   window.__NOVOPAN_ROUTE_MODEL__ = { recompute: recomputeRouteModel, computeRoute, formatSec, STATUS_LABEL, last: null };
   recomputeRouteModel();
 
+  /* Ganchos de VERIFICACIÓN (solo lectura + paso determinista): permiten a los
+     tests de página auditar llegada/salida de cada etapa contra las ecuaciones
+     con CUALQUIER juego de constantes, sin depender del requestAnimationFrame.
+     stepSim(dt, atMs) avanza la simulación dt segundos con la hora de pared
+     fijada en atMs (mismo mecanismo que la recuperación offline). */
+  window.__NOVOPAN_SIM_DEBUG__ = {
+    preMilestonesFor, buildPreDurations, namedWaypoints, geometryFromParams,
+    STAGE_CONFIG,
+    stepSim: (dt, atMs) => {
+      if (Number.isFinite(atMs)) wallNowOverride = new Date(atMs);
+      stepSim(dt);
+      wallNowOverride = null;
+    },
+    getState: () => ({
+      vPrensa,
+      timeScale,
+      changes: changes.map((c) => ({ id: c.id, seq: c.seq, posM: c.posM, layerName: c.layerName, dropDur: c.dropDur, dropAge: c.dropAge, arrivals: c.arrivals.map((a) => ({ label: a.label, wallTime: +a.wallTime })) })),
+      preChanges: preChanges.map((c) => ({ id: c.id, seq: c.seq, branch: c.branch, elapsed: c.elapsed, total: c.total, arrivals: c.arrivals.map((a) => ({ label: a.label, wallTime: +a.wallTime })) })),
+      reports: reports.map((c) => ({ id: c.id, seq: c.seq, arrivals: c.arrivals.map((a) => ({ label: a.label, wallTime: +a.wallTime })) })),
+    }),
+    getParams: () => paramsApi.getParams(),
+  };
+
   /* ══ Persistencia de la simulación (R3) ══════════════════════════════
      Los cambios NO dependen de que el tab esté abierto: el estado completo
      (cambios activos, upstream, grupos, reportes, pausa, escala) se guarda
