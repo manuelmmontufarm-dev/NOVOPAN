@@ -527,10 +527,28 @@ function renderGeometryCalibration(params) {
   return card;
 }
 
+/* ── Tiempos estimados de la Sección 1: almacén LOCAL, no CSV ────────────
+   La Sección 1 NO se lee del HMI. Sus tiempos estimados (kind 'est', claves
+   p1:) se guardan en localStorage y se aplican ENCIMA del CSV: editarlos no
+   toca el documento CSV ni detiene el polling en vivo. Cuando planta mida un
+   tramo A→B, se escribe aquí y queda enchufado. */
+const P1_LOCAL_KEY = 'novopan.p1Overrides';
+const isP1Local = (key) => typeof key === 'string' && key.startsWith('p1:') && KIND_BY_KEY[key] === 'est';
+
+function loadP1Overrides() {
+  try { return JSON.parse(localStorage.getItem(P1_LOCAL_KEY) || '{}') || {}; }
+  catch { return {}; }
+}
+
 export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsvDownload }) {
   const speed = speedGetter ?? (() => 14.5);
-  let params = { ...defaultParams(), ...defaultPart1Params(), v_prensa: speed() };
+  const p1Overrides = loadP1Overrides();
+  let params = { ...defaultParams(), ...defaultPart1Params(), v_prensa: speed(), ...p1Overrides };
   let built = false;
+
+  function saveP1Overrides() {
+    try { localStorage.setItem(P1_LOCAL_KEY, JSON.stringify(p1Overrides)); } catch { /* sin localStorage */ }
+  }
 
   const grid = document.getElementById('paramsGridTab');
   const feedbackEl = document.getElementById('saveFeedback');
@@ -562,6 +580,17 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
           showFeedback('Valor inválido; el CSV no cambió.');
           return;
         }
+        // Tiempos estimados de la Sección 1: se guardan en el almacén local
+        // (la S1 no viene del HMI) sin tocar el CSV ni frenar su polling.
+        if (isP1Local(key)) {
+          p1Overrides[key] = value;
+          saveP1Overrides();
+          params[key] = value;
+          refreshEquations();
+          onChange?.(params);
+          showFeedback('Sección 1 · guardado local (no viene del HMI).');
+          return;
+        }
         const ok = onCsvEdit?.(key, value);
         if (!ok) input.value = params[key] ?? '';
         showFeedback(ok ? `CSV actualizado · ${input.dataset.csvTag}` : 'Este valor no tiene un tag CSV editable.');
@@ -581,6 +610,16 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     if (wrap) wrap.open = !document.documentElement.classList.contains('sec1-off');
   }
   document.getElementById('sec1Toggle')?.addEventListener('change', () => setTimeout(syncP1WrapOpen, 0));
+
+  // Borra los tiempos locales de la Sección 1 (vuelven los defaults del modelo).
+  document.getElementById('resetP1LocalBtn')?.addEventListener('click', () => {
+    const defs = defaultPart1Params();
+    for (const k of Object.keys(p1Overrides)) { params[k] = defs[k]; delete p1Overrides[k]; }
+    saveP1Overrides();
+    if (built) build();
+    onChange?.(params);
+    showFeedback('Tiempos de la Sección 1 restablecidos a los valores por defecto.');
+  });
 
   function build() {
     const v = speed();
@@ -732,6 +771,9 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
   function applyExternal({ updates, rawText, count } = {}) {
     let changed = false;
     for (const [key, value] of Object.entries(updates ?? {})) {
+      // Un tiempo S1 enchufado localmente manda sobre lo que traiga el CSV
+      // (la Sección 1 no se lee del HMI).
+      if (Object.prototype.hasOwnProperty.call(p1Overrides, key)) continue;
       if (params[key] !== value) changed = true;
       params[key] = value;
       if (built) {
