@@ -90,6 +90,14 @@
 
 ## Historial
 
+### 2026-07-20 — SIMULADOR FINAL: rescatada la versión de planta y publicada como ruta propia
+
+- **Qué pasó:** lo que corría en planta (`/simulador-seccion-2`) venía de la rama `agent/novopan-hmi-simulator` (commit `5c1f7a3`, 17-jul) — NO de main. El deploy de main de hoy lo pisó. Esa versión tiene: Sección 2 completa en una pantalla (dos filas, `onepage-layout.js`), candado de Parámetros con clave (`params-auth.js`, acceso 15 min) y 103 tags con calibración física.
+- **Solución:** esa versión ahora vive como fuente propia en `parte-2-aglomerados/deck/simulador-final/` y se publica en **`/simulador-final`**, con tarjeta «SIMULADOR FINAL · Línea 1» arriba de todo en el hub. `/trazabilidad-total` y `/simulador-seccion-2` quedan como estaban en main.
+- Se le re-aplicaron los fixes de hoy: F1 (estado Sección 1 persistido y aplicado pre-paint, sin flash; aquí S1 arranca APAGADA por defecto y el lienzo no se pinta hasta que onepage-layout compone las filas) y F8 (intervalo de polling configurable `?poll=`, y el error de formato del CSV ya no es pisado por el pill "en vivo" — conserva el último CSV válido y muestra el aviso).
+- La pantalla de planta debe navegar a `novopan.vercel.app/simulador-final` (la URL vieja quedó con la versión horizontal de main).
+- Siguen sobre esta ruta: switch S1 dentro de la zona con candado (F2), colapso de parámetros S1 (F3), reportes con countdown (F7), S1 enchufable (F4), flecha S1⇄S2 (F5), sonidos (F6).
+
 ### 2026-07-20 — Instalación Sección 2 · F1: fix del flash de Sección 1 al cargar
 
 - `/trazabilidad-total`: el estado del switch Sección 1 ahora persiste en `localStorage` (`novopan.sec1On`).

@@ -124,6 +124,22 @@ export const TAG_MAP = {
   L_BANDA_ROJA_M:      entry('len:red', 'measured', 'm'),
   L_PRENSA_M:          entry('len:press', 'measured', 'm'),
   L_POSTPRENSA_M:      entry('p1:postPress_L', 'measured', 'm'),
+  OFFSET_SENSOR2_M:    entry('geom:sensor2Offset', 'measured', 'm'),
+  OFFSET_SENSOR3_M:    entry('geom:sensor3Offset', 'measured', 'm'),
+  M_ESP1_CAIDA_M:      entry('geom:esp1', 'measured', 'm'),
+  M_ESP2_CAIDA_M:      entry('geom:esp2', 'measured', 'm'),
+  M_ESP3_CAIDA_M:      entry('geom:esp3', 'measured', 'm'),
+  M_IMAN_M:            entry('geom:magnet', 'measured', 'm'),
+  M_SPRAYS2_M:         entry('geom:sprays2', 'measured', 'm'),
+  M_DETECTOR_M:        entry('geom:detector', 'measured', 'm'),
+  M_CORTADORES_M:      entry('geom:cutters', 'measured', 'm'),
+  M_NARIZ_M:           entry('geom:nose', 'measured', 'm'),
+  M_VAPOR_M:           entry('geom:vapor', 'measured', 'm'),
+  M_PREPRENSA_M:       entry('geom:prepress', 'measured', 'm'),
+  M_REFILA_INICIO_M:   entry('geom:refilaStart', 'measured', 'm'),
+  M_REFILA_FIN_M:      entry('geom:refilaEnd', 'measured', 'm'),
+  M_SIERRA_INICIO_M:   entry('geom:sawStart', 'measured', 'm'),
+  M_SIERRA_FIN_M:      entry('geom:sawEnd', 'measured', 'm'),
 };
 
 export const KIND_BY_KEY = (() => {

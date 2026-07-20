@@ -19,6 +19,7 @@
     { "source": "/trazabilidad-preparacion", "destination": "/trazabilidad-preparacion/index.html" },
     { "source": "/trazabilidad-total", "destination": "/trazabilidad-total/index.html" },
     { "source": "/simulador-seccion-2", "destination": "/simulador-seccion-2/index.html" },
+    { "source": "/simulador-final", "destination": "/simulador-final/index.html" },
     { "source": "/patios", "destination": "/patios/index.html" },
     { "source": "/patios-interactivo", "destination": "/patios-interactivo/index.html" }
   ]

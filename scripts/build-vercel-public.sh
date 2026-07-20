@@ -45,6 +45,14 @@ mkdir -p "$PUBLIC/simulador-seccion-2"
 cp -R "$DECK/trazabilidad-total/." "$PUBLIC/simulador-seccion-2/"
 find "$PUBLIC/simulador-seccion-2" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
 
+# SIMULADOR FINAL — versión de planta: Sección 2 completa en una pantalla
+# (onepage-layout, dos filas), candado de parámetros de calibración
+# (params-auth) y tags de calibración física. Fuente propia en
+# deck/simulador-final (rescatada de agent/novopan-hmi-simulator, 17-jul).
+mkdir -p "$PUBLIC/simulador-final"
+cp -R "$DECK/simulador-final/." "$PUBLIC/simulador-final/"
+find "$PUBLIC/simulador-final" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
+
 # Design system tokens — CSS imports ../../_ds/... from trazabilidad/css/
 mkdir -p "$PUBLIC/_ds"
 cp -R "$DECK/_ds/." "$PUBLIC/_ds/"
@@ -88,6 +96,7 @@ for html_path, base in [
     (public / "trazabilidad-preparacion" / "index.html", "/trazabilidad-preparacion/"),
     (public / "trazabilidad-total" / "index.html", "/trazabilidad-total/"),
     (public / "simulador-seccion-2" / "index.html", "/simulador-seccion-2/"),
+    (public / "simulador-final" / "index.html", "/simulador-final/"),
 ]:
     inject_base(html_path, base)
 PY
