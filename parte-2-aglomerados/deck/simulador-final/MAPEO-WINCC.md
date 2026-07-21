@@ -1,14 +1,15 @@
 # Mapeo de tags reales de WinCC → simulador de trazabilidad L1
 
-**Fuentes:** dos servidores WinCC distintos, fotografiados el **2026-07-21**, ambos
+**Fuentes:** tres servidores WinCC distintos, fotografiados el **2026-07-21**, todos
 en vista de tabla (`Tag Type` · `Access Name` · `Alarm Group` · `Comment`):
 
 | # | Servidor | Items | Alcance | Cobertura del inventario |
 |---|---|---|---|---|
 | **A** | `HMI-METSO` (monitor AOC) | 700 | formación · pre-prensa · prensa · calidad | completa: `<none>` → `variation` |
 | **B** | `HMI` (monitor OMNI) | 420 | encolado · cocina de cola · EVOjet · **dosificación** | completa: `<none>` → `winch_overload_m05` |
+| **C** | HMI de preparación (monitor AOC) | 586 | **silos húmedos · bunker · secadero · quemador · molino Hombak · clasificación** | leído 8/16 fotos — bloque numérico `0xx_*` incompleto |
 
-Ambos con `Filter: <none>`. Todos los mapeos salen del campo `Comment` del propio
+Todos con `Filter: <none>`. Todos los mapeos salen del campo `Comment` del propio
 HMI, no de parecido de nombres.
 
 > ⚠️ **Colisión de nombres entre servidores.** `H_PressSpeed_PV` y `H_SL_FlakeDens_SP`
@@ -49,11 +50,67 @@ del PLC** (`DB402.DBX2.0`, `DB413.DBX1.3`, `"F_CL_GI_HMI_DB".Swivel_in_time`) y
 números de equipo (`07660M12` bomba de resina, `06670M02`, `07610M01`, `07620M01`).
 Eso es exactamente lo que IT necesita para el volcado — no hay que adivinar nada.
 
-**Los dos servidores juntos siguen sin cubrir el upstream:** cero tags de silos
-verdes, bunker, secadero, tambor, tamices, zarandas, ciclón o silos 4/5/6/8. Los
-únicos `Nivel_*` del servidor B son **tanques de resina y parafina**
+Los únicos `Nivel_*` del servidor B son **tanques de resina y parafina**
 (`Nivel_CL` = "Nivel tanque diario resina CL", `Nivel_SL`, `Nivel_Parafina`), no
-silos de material. Los 31 parámetros upstream siguen sin fuente.
+silos de material. El upstream vive en el servidor C.
+
+---
+
+## 1c. Servidor C: el upstream (silos húmedos, secadero, quemador)
+
+Es el HMI que faltaba. `Access Name` = una conexión por área de proceso:
+
+| Access Name | Área |
+|---|---|
+| **`WETS`** | silos húmedos — extracción (`Wet-silos-ext…`) |
+| **`WETB`** | bunker dosificador húmedo (`Wet-dosing-…`) |
+| **`DRYR`** | secadero (`Dryer`, `General_DRYR`) |
+| **`BRNR`** | quemador (`Burner`) |
+| **`SCRN`** / `SCRN_AB` | clasificación · windsifter WS3 |
+| **`PLCU112`** | molino Hombak U112 (alimentador, cuchillas, rotor) |
+| `PLC_015` / `PLC_041` / `Prensa` / `Forming` | generadores CAT, medidores de energía, cruces con Sección 2 |
+
+Los prefijos numéricos son **códigos de área**: `051` = silos húmedos + bunker,
+`066` = clasificación, `071` = secadero, `072`, `015` = generación.
+
+### Tags upstream encontrados (nombre completo legible)
+
+| Tag | Comment | Sirve para |
+|---|---|---|
+| `051_D_Bunker_Level` | "Bunker dosificador, **nivel calculado**" | `BUNKER_L_PCT` ⚠️ unidad no declarada |
+| `051_D_Bunker_Level_L` | "nivel mínimo llenado" | límites |
+| `051_60_A1_3_OUTxEU` | "900A1.3, Bin medidor **peso**" | masa del bunker |
+| `051_60_A1_1/A1_2_OUTxEU` | "900A1.1 / 900A1.2, Bin medidor **caudal** 1 y 2" | `BUNKER_FHUM_KGH` |
+| `051_60_B1_OUTxEU` | "902T2, Bin medidor **humedad**" | humedad de entrada |
+| `051_08_SL7_OUTxEU` | "897T4, Extractor **Silo Flak.2 transmisor nivel**" | nivel de un silo verde |
+| `051_08_SP1_OUTxEU` | "897T3, Extractor Silo Flak.2 transmisor presión" | — |
+| `D_Bunker_Calc_03 / _04 / _05` | "Bunker dosificador, fact.vel.dos. **silo aserrín / silo flakes 2 / silo hombak**" | identifica los tres silos que alimentan el bunker |
+| `051_D_Bunker_Weight` | "Material seco desde secador 2 calculado" | — |
+| `Wet_Mat_CALC_T…` (nombre truncado) | "Total wet material **kg/h** to 051.60 dosing bunker" · "Total wet material %" · "Total **dry** material kg/h" | `BUNKER_FHUM_KGH` |
+| `071_DRY_Hum_out` | humedad de salida del secadero | validación |
+| `071_DRYR_Reg_T_l…` / `_T_…` | "Secador, reg.temp.**ent**. PV/SP" y "reg.temp.**sal**. PV/SP" | perfil del tambor |
+| `Delta_T_in`, `Delta_T_out`, `Delta_T_inFlash` | "Delta T entrada – salida Tambor", "Delta T precámara – entrada tambor" | `TAU_TAMBOR_S` indirecto |
+| `Rendimiento_sec`, `capacidad_sec`, `capacidad_Sec2` | rendimiento y capacidad del secadero | — |
+| `nivel_silo8`, `densidad_silo8`, `humedad_silo8` | "nivel del **silo de polvo 8**" | ⚠️ ¿es nuestro SILO8? |
+| `Silo3_DescargaTotal` | "Cálculo consumo silo 3 x día" · `WETS` | consumo de silo 3 |
+| `Clap_Silo2B_open` | "Clapeta bajo **silo 2B** abierta" | confirma que existe silo 2B |
+| `DB13_REAL52_PLC041` | "041.11M01 **TSF SILO3**" | transporte desde silo 3 |
+| `Corriente_WS3`, `Potencia_WS3_M06`, `Temp1/2_M06_WS3`, `Level_ciclon_WS3` | windsifter 3 (clasificación) | `T_WS3_S` indirecto |
+| `Grecon_Z2…Z27_chispa/fuego` | detección de chispa y fuego por zona | eventos de línea |
+| `Prensa_metal_detector` | **"Metal en material Prensa"** | el detector de metales (37.69 m) que faltaba |
+
+### ⚠️ El problema que queda: la numeración no coincide
+
+El HMI nombra los silos **por material** (`silo aserrín`, `silo flakes 2`,
+`silo hombak`, `silo de polvo 8`, `Silo3`, `silo 2B`); el modelo los nombra
+**por número** (`SILO1`, `SILO2A`, `SILO2B`, `SILO3`, `SILO8`). Correspondencia
+probable pero **sin confirmar**: aserrín→SILO1, flakes→SILO2A/2B, hombak→SILO3.
+Hasta que eso se confirme en planta no se puede aliasear ningún silo sin riesgo
+de cruzar dos silos distintos.
+
+Tampoco aparece un `%` de nivel por silo verde: solo hay **un** transmisor de
+nivel (`051_08_SL7_OUTxEU`, silo Flakes 2), la clapeta de 2B y el consumo diario
+de silo 3. Los `L_PCT` de SILO1 / 2A / 3 siguen sin fuente directa.
 
 ---
 
@@ -216,10 +273,12 @@ Verificado: `datos/hmi.csv` sigue parseando 104 tags con 0 warnings.
 
 ## 8. Lo que sigue pendiente
 
-1. **HMI de preparación / secado / clasificación** — no es ninguno de los dos
-   revisados. 31 parámetros upstream dependen de que exista.
-2. **Capacidad de las tolvas** de SL1 / CC / SL2 (kg) — para convertir el
-   "Filling degree (%)" a los kg que el modelo necesita. Sale de los planos.
+1. ✅ **HMI de preparación / secado / clasificación** — ENCONTRADO (servidor C).
+   Falta terminar de leer 8 de sus 16 fotos (bloque `015_*`, `051_DRYR_*`, `066_*`,
+   `071_*`) y **confirmar la correspondencia silo-material ↔ silo-número**.
+2. **Capacidad de las tolvas** de SL1 / CC / SL2 (kg) — ya NO hace falta de los
+   planos: se calibra integrando el caudal durante un vaciado (`H_Empty_ON`)
+   mientras `Filling_PV` cae. Ver §9.
 3. **Unidad de `F_SL_FlakeFlow_PV`** y `F_CL_FlakeFlow_PV` — el único alias
    aplicado sin unidad declarada.
 4. **Polaridad de `OK_BOMBAS_GLUING_*`** — ¿1 = OK o 1 = falla?
@@ -229,3 +288,31 @@ Verificado: `datos/hmi.csv` sigue parseando 104 tags con 0 warnings.
    colisión, o dos archivos (`hmi-formacion.csv` + `hmi-encolado.csv`) que el
    simulador lea y combine. Recomendado lo segundo: elimina la colisión y cada
    servidor puede escribir a su propio ritmo.
+
+---
+
+## 9. Capacidad de las tolvas de los esparcidores — se calibra, no se busca en planos
+
+El modelo calcula el retardo del esparcidor como `τ = M / F × 60`
+([combined-app.js:1780](js/combined-app.js)). `F` ya está; falta `M`, la masa
+retenida. Ningún HMI expone masa del esparcidor — solo `Filling degree (%)`.
+
+No hace falta el plano. El servidor A tiene `H_Empty_ON` ("Empty ON -signal from
+HMI (Run formers empty)"), la rutina que vacía los esparcidores. Durante un
+vaciado:
+
+```
+kg por punto de %  =  ∫ caudal dt  /  Δ(Filling_PV)
+```
+
+Se integra `F_SL_FlakeFlow_PV` (kg/min) mientras `H_SL1_Filling_PV` cae de X% a
+Y%. Una corrida calibra los tres. Ocurre sola en cada cambio de producto y en
+cada parada — no hay que provocarla.
+
+Ventaja extra: con la capacidad calibrada, `M` deja de ser constante
+(hoy 12.5 / 40 / 15 kg fijos) y pasa a `M = % × Cap`, con `Filling_PV` en vivo.
+El retardo del esparcidor se mueve solo según qué tan llena esté la tolva — más
+real que cualquier número de plano.
+
+**Por verificar:** si `H_SL1_Heigth` ("SL1, heigth") resulta ser el nivel de la
+tolva en mm y no la altura de la capa formada, hay un camino más directo.
