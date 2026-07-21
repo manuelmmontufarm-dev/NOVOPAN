@@ -117,13 +117,27 @@ de colocación ajusta a **8.32 m** — exactamente el inicio del hueco SL1→CL 
 | Vapor (banda roja) | 46.86 | 14:43:54 | 14:43:55 | +0.4 s |
 | Marco 1 prensa | 55.10 | 14:44:28 | 14:44:29 | +1.0 s |
 | Fin prensa (tambor salida) | 71.60 | 14:45:35 | 14:45:37 | +1.9 s |
-| Sierras transversales | 85.57 | 14:46:31 | ~14:46:22 (ya cortado 14:46:25) | ≈ −7 s |
+| Sierras transversales | 85.57 | 14:46:31 | (dato no concluyente, ver nota) | — |
 | Sensores (SI-PZ1060 / EQUIPO 1) | ≈88.0 | 14:46:41 | 14:46:37–48 | ±6 s |
 
 Tránsito marco 1 → fin prensa: 68 s (fotos) vs 67.0 s (modelo).
 Total colocación → sensores: 319 s vs 323.7 s (−1.5 %).
 
-**Conclusión:** banda blanca, corrección de prensa (52.67/55.10/71.60), sierras
-transversales (85.57) y sensores (~88) quedan VALIDADOS con residuales ≤ ±7 s
-(≤ ±1.7 m) en un recorrido de 80 m. La prueba NO cubre las bandas de alimentación
-(el papel se colocó ya sobre el colchón) — esas siguen con sus pendientes.
+**Notas de interpretación (21-jul, corrección):**
+- La foto del corte (14:46:25) NO rastrea el papel: la sierra corta el tablero
+  continuamente y cualquier foto aguas abajo muestra cortes — ese punto no
+  valida ni refuta el 85.57. La posición de la sierra queda respaldada por el
+  plano + el 32 m del operador (85.57 − 32 = 53.6 = entrada a prensa), dos
+  fuentes independientes que cierran a centímetros.
+- Tras la sierra los rodillos ACELERAN (separan tableros): la predicción a
+  v constante sobreestima la llegada a sensores ~5 s. Esperado, no error.
+- Velocidad real observada imán→fin prensa: 44.92 m / 187 s = **14.41 m/min**
+  vs 14.77 nominal HMI (−2.4 %) — dentro de la variación admitida.
+
+**Conclusión:** banda blanca y corrección de prensa (52.67 / 55.10 / 71.60)
+VALIDADAS con residuales ≤ ±3 s (≤ 0.75 m) en 63 m de recorrido; sensores (~88)
+consistentes (±6 s, con aceleración post-sierra). La prueba NO cubre las bandas
+de alimentación (el papel se colocó ya sobre el colchón) ni discrimina la
+posición exacta de la sierra (corte periódico). Para clavar la sierra: fotografiar
+el corte del tablero CON la raya del papel, o cronometrar fin prensa → corte de
+ese tablero específico.
