@@ -116,10 +116,10 @@ export const P1_PARAMS = [
   { key: 'geom:vapor', label: 'Posición · Vapor', unit: 'm', default: 46.86 },
   { key: 'geom:prepress', label: 'Posición · Pre-prensa (entrada)', unit: 'm', default: 29.06 },
   { key: 'geom:prepressLen', label: 'Largo · Pre-prensa', unit: 'm', default: 4.69 },
-  { key: 'geom:refilaStart', label: 'Inicio · Cuchillos de refila', unit: 'm', default: 81.7 },
-  { key: 'geom:refilaEnd', label: 'Fin · Cuchillos de refila', unit: 'm', default: 83 },
-  { key: 'geom:sawStart', label: 'Inicio · Sierra transversal', unit: 'm', default: 84.1 },
-  { key: 'geom:sawEnd', label: 'Fin · Sierra transversal', unit: 'm', default: 86.4 },
+  { key: 'geom:refilaStart', label: 'Inicio · Cuchillos de refila', unit: 'm', default: 78.3 },
+  { key: 'geom:refilaEnd', label: 'Fin · Cuchillos de refila', unit: 'm', default: 79.65 },
+  { key: 'geom:sawStart', label: 'Inicio · Sierra transversal', unit: 'm', default: 84.42 },
+  { key: 'geom:sawEnd', label: 'Fin · Sierra transversal', unit: 'm', default: 86.72 },
 ];
 
 const PARAM_BY_KEY = Object.fromEntries(P1_PARAMS.map((p) => [p.key, p]));
@@ -513,6 +513,58 @@ const GEOMETRY_KEYS = [
   'geom:refilaStart', 'geom:refilaEnd', 'geom:sawStart', 'geom:sawEnd',
 ];
 
+/* ── Mediciones del plano (Dieffenbacher) · fuente de verdad ──
+   Valores extraídos del PlanoGeneral2022.dwg (bloque 000-Refernce-Point,
+   residual < 1 mm) + mediciones de campo validadas con la prueba de papel
+   del 21-jul-2026 (residuales ≤ ±3 s). Editar cualquiera de estas claves
+   pide confirmación explícita. Detalle: deck/_mediciones-plano/. */
+const PLANO_PROTECTED = new Set([
+  ...GEOMETRY_KEYS,
+  'len:white', 'len:red', 'len:press',
+  'p1:inclF_L', 'p1:inclG_L', 'p1:inclF_v', 'p1:inclG_v',
+]);
+const PLANO_ALERT = '⚠️ MEDICIÓN DE LOS PLANOS\n\nEste valor proviene de los planos Dieffenbacher o de mediciones validadas en campo (prueba de papel 21-jul-2026).\n\n¿Seguro que quieres cambiarlo?';
+const PLANO_MEDS = [
+  ['Eje · báscula de manta (matscale)', '26.20 m', 'plano'],
+  ['Eje · salida pre-prensa (CL Pre-Press)', '33.81 m', 'plano (modelo: 33.75)'],
+  ['Eje · tolva de rechazo / nariz', '44.64 m', 'plano (modelo: 44.90)'],
+  ['Tambor de ENTRADA de prensa', '52.67 m', 'plano'],
+  ['Banda roja (nariz → tambor)', '7.67 m', 'plano (antes 10 m)'],
+  ['Prensa tambor a tambor', '18.93 m', 'plano'],
+  ['Marco 1 (2.43 m tras el tambor)', '55.10 m abs', 'plano + flexómetro'],
+  ['Fin de prensa (tambor salida) · ANCLA', '71.60 m', 'plano = campo'],
+  ['Grupo de sierras (cuerpo)', '78.3 – 85.6 m', 'plano = campo jul'],
+  ['Sierras transversales (eje cuchilla)', '85.57 m', 'plano + operador (32 m)'],
+  ['Sensor 1 de calidad', '≈ 88.00 m', 'calibración campo · validado 21-jul'],
+  ['Inclinada fina 31.170 (proy. horizontal)', '38.35 m', 'plano'],
+  ['Banda distribución SL2 (poleas 30hp)', '16.42 m', 'plano'],
+  ['Brazo oscilatorio (E1 = E2 = E3)', '6.0 m', 'campo 21-jul'],
+  ['Ruta fina total hasta brazo E3 (SL2)', '64.57 m', 'campo = suma plano'],
+  ['Ruta fina hasta brazo E1 (SL1, sin distribución)', '48.15 m', 'derivada — pendiente en modelo'],
+  ['Inclinada gruesa 31.270 (proy. horizontal)', '38.35 m', 'plano'],
+  ['Ruta gruesa total hasta brazo E2 (CL)', '68.5 m', 'campo'],
+];
+
+function renderPlanoMeds() {
+  const wrap = document.createElement('details');
+  wrap.className = 's2-p1-params plano-meds';
+  wrap.innerHTML = `
+    <summary><span class="ms">architecture</span> Mediciones del plano (Dieffenbacher) — fuente de verdad</summary>
+    <section class="globals-card globals-card--csv">
+      <header class="globals-card__hd"><h4>Valores extraídos del PlanoGeneral2022.dwg + campo validado</h4>
+        <p class="globals-card__sub">Sistema de estaciones del fabricante (residual &lt; 1 mm) anclado en fin de prensa = 71.60 m.
+        Validado con la prueba de papel del 21-jul-2026 (residuales ≤ ±3 s en 63 m).
+        Estos valores alimentan la calibración física; cambiarlos pide confirmación.</p></header>
+      <table class="plano-meds__table" style="width:100%;border-collapse:collapse;font-size:.86rem">
+        ${PLANO_MEDS.map(([l, v, f]) => `<tr style="border-bottom:1px solid rgba(128,128,128,.25)">
+          <td style="padding:.28rem .4rem">${l}</td>
+          <td style="padding:.28rem .4rem;text-align:right;font-weight:700;white-space:nowrap">${v}</td>
+          <td style="padding:.28rem .4rem;opacity:.75;white-space:nowrap">${f}</td></tr>`).join('')}
+      </table>
+    </section>`;
+  return wrap;
+}
+
 function renderGeometryCalibration(params) {
   const geometry = geometryFromParams(params);
   const errors = validateGeometry(geometry);
@@ -590,6 +642,17 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
           showFeedback('Valor inválido; el CSV no cambió.');
           return;
         }
+        // Claves del plano: pedir confirmación explícita antes de cambiar.
+        if (PLANO_PROTECTED.has(key)) {
+          const prev = Number(params[key]);
+          if (Number.isFinite(prev) && Math.abs(prev - value) > 1e-9) {
+            if (!window.confirm(PLANO_ALERT)) {
+              input.value = params[key] ?? '';
+              showFeedback('Cambio cancelado — medición de los planos.');
+              return;
+            }
+          }
+        }
         // Constantes (longitudes, volúmenes, geometría, tiempos estimados):
         // almacén local persistente, sin tocar el CSV ni frenar su polling.
         // Se guardan TODOS los alias del tag.
@@ -611,7 +674,8 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
         if (!ok) input.value = params[key] ?? '';
         showFeedback(ok ? `CSV actualizado · ${input.dataset.csvTag}` : 'Este valor no tiene un tag CSV editable.');
       };
-      input.addEventListener('input', commitToCsv);
+      // Claves del plano confirman en 'change' (no por tecla); el resto en vivo.
+      input.addEventListener(PLANO_PROTECTED.has(key) ? 'change' : 'input', commitToCsv);
       input.addEventListener('change', () => {
         if (input.value.trim() === '') input.value = params[key] ?? '';
       });
@@ -701,7 +765,7 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
       kind: 'measured',
       stepId: postStep.id,
       fields: [fieldHtml(PARAM_BY_KEY['p1:postPress_L']), fieldHtml({ key: 'v_prensa', label: 'Velocidad de prensa', unit: 'm/min', kind: 'hmi-live' })],
-      note: '16,40 m efectivos desde fin de prensa (71,60 m) hasta Sensor 1 (≈88,00 m), según prueba de papel del 14-jul-2026; confirmar con flexómetro.',
+      note: '16,40 m efectivos desde fin de prensa (71,60 m) hasta Sensor 1 (≈88,00 m). Validado con pruebas de papel del 14-jul y 21-jul-2026 (residual ±6 s).',
     });
     const length = n(params, 'p1:postPress_L', 16.4);
     const postSpeed = n(params, 'v_prensa', v);
@@ -735,6 +799,7 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     intro.className = 's2-params__hint';
     intro.innerHTML = 'Constantes del modelo: <strong>no vienen del CSV del HMI</strong>. Al editarlas se guardan en este equipo de forma permanente (sobreviven recargas y reinicios) y mandan sobre cualquier valor del CSV.';
     constantsGrid.appendChild(intro);
+    constantsGrid.appendChild(renderPlanoMeds());
     constantsGrid.appendChild(renderGeometryCalibration(params));
 
     const fields = [];

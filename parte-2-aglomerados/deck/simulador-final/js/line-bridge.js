@@ -24,8 +24,8 @@ export const PX_PER_M = 70;
 
 export const DEFAULT_GEOMETRY = Object.freeze({
   whiteM: 45,
-  redM: 10,
-  pressM: 16.6,
+  redM: 7.67,   // plano DXF: tambor entrada prensa en 52.67 m
+  pressM: 18.93, // tambor a tambor (marcos 16.6 m desde 55.10 abs)
   postToSensor1M: 16.4,
   sensor2OffsetM: 0.2,
   sensor3OffsetM: 0.4,
@@ -40,10 +40,10 @@ export const DEFAULT_GEOMETRY = Object.freeze({
   vaporM: 46.86,
   prepressM: 29.06,
   prepressLenM: 4.69,
-  refilaStartM: 81.7,
-  refilaEndM: 83,
-  sawStartM: 84.1,
-  sawEndM: 86.4,
+  refilaStartM: 78.3,   // campo jul + plano: inicio grupo de sierras
+  refilaEndM: 79.65,
+  sawStartM: 84.42,     // eje cuchilla transversal 85.57 (plano + operador 32 m)
+  sawEndM: 86.72,
 });
 
 export function geometryFromParams(params = {}) {
