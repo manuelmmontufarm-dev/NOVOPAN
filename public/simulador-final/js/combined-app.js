@@ -1666,6 +1666,9 @@ function initSimulation() {
           id: ch.id, seq: ch.seq, color: ch.color, branch: ch.branch,
           startAt: ch.startAt, branchLabel: ch.branchLabel,
           elapsed: ch.elapsed, launched: ch.launched,
+          // Se persisten los hitos calculados: al restaurar, el primer CSV aún
+          // no llegó y recalcularlos con defaults desfasaría el replay offline.
+          miles: ch.miles,
           arrivals: serArrivals(ch.arrivals), passed: [...ch.passed],
         })),
         reports: reports.map((r) => ({
@@ -1708,7 +1711,12 @@ function initSimulation() {
         reports.push({ id: rs.id, seq: rs.seq, color: rs.color, layerName: rs.layerName, arrivals: deArrivals(rs.arrivals), group: groups.get(rs.seq) ?? null });
       }
       for (const cs of saved.preChanges ?? []) {
-        const miles = preMilestonesFor(cs.startAt, cs.branch, modelParams);
+        // Hitos guardados = los vigentes al guardar (con los params del CSV en
+        // vivo). Recalcular aquí usaría defaults (el CSV llega después del boot);
+        // recomputeActivePre() los refresca cuando los params cambien de verdad.
+        const miles = (Array.isArray(cs.miles) && cs.miles.length >= 2)
+          ? cs.miles
+          : preMilestonesFor(cs.startAt, cs.branch, modelParams);
         const ch = {
           id: cs.id, seq: cs.seq, color: cs.color, branch: cs.branch,
           startAt: cs.startAt, branchLabel: cs.branchLabel,
