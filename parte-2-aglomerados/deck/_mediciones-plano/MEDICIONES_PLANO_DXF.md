@@ -89,7 +89,8 @@ Deltas plano−modelo: SL1 +0.39 · imán −0.48 · pre-prensa inicio +0.15 / f
 | Punto | Valor | Fuente |
 |---|---|---|
 | Grupo de sierras: cuerpo | sim 78.3 – 85.6 | plano — inicio 78.3 = campo julio (refila) |
-| **Sierras transversales (eje)** | **85.57** | plano (`CL Edge Trim Saw`) + operador 21-jul |
+| Sierra transversal · carro (empieza ~30 cm tras la refila, largo hasta la salida) | 79.95 – 86.72 | campo 21-jul |
+| **Sierras transversales (eje de la cuchilla)** | **85.57** | plano (`CL Edge Trim Saw`) + operador 21-jul |
 | Sensores de calidad (Sensor 1) | ≈ 88.00 | campo/HMI — después de las sierras ✓ |
 | Maquinaria sim 99–105 (entre dos máquinas idénticas 91.5–100.3 / 107.4–115) | transferencia/enfriadores | plano |
 | Otra sierra («saw blade under the line», zona apilado) | ≈ 125.2 | plano |

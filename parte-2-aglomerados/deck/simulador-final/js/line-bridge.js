@@ -42,8 +42,8 @@ export const DEFAULT_GEOMETRY = Object.freeze({
   prepressLenM: 4.69,
   refilaStartM: 78.3,   // campo jul + plano: inicio grupo de sierras
   refilaEndM: 79.65,
-  sawStartM: 84.42,     // eje cuchilla transversal 85.57 (plano + operador 32 m)
-  sawEndM: 86.72,
+  sawStartM: 79.95,     // el carro de la sierra empieza ~30 cm tras la refila y es largo
+  sawEndM: 86.72,       // hasta la salida; la cuchilla corta en 85.57 (plano + operador 32 m)
 });
 
 export function geometryFromParams(params = {}) {

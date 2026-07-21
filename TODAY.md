@@ -28,6 +28,8 @@
 - simulador-final: defaults del plano + dropdown «Mediciones del plano» en
   Constantes (candado) + alerta al editar claves protegidas. 56/56 tests.
 - OJO planta: si hay constantes viejas guardadas, usar «Restablecer constantes».
+- Ajuste: el carro de la sierra transversal empieza 30 cm tras la refila (79.95)
+  y es largo hasta la salida (86.72); la cuchilla corta en 85.57.
 
 ## Estado actual
 

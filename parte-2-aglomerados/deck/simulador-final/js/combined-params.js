@@ -118,8 +118,8 @@ export const P1_PARAMS = [
   { key: 'geom:prepressLen', label: 'Largo · Pre-prensa', unit: 'm', default: 4.69 },
   { key: 'geom:refilaStart', label: 'Inicio · Cuchillos de refila', unit: 'm', default: 78.3 },
   { key: 'geom:refilaEnd', label: 'Fin · Cuchillos de refila', unit: 'm', default: 79.65 },
-  { key: 'geom:sawStart', label: 'Inicio · Sierra transversal', unit: 'm', default: 84.42 },
-  { key: 'geom:sawEnd', label: 'Fin · Sierra transversal', unit: 'm', default: 86.72 },
+  { key: 'geom:sawStart', label: 'Inicio · Sierra transversal (carro)', unit: 'm', default: 79.95 },
+  { key: 'geom:sawEnd', label: 'Fin · Sierra transversal (salida)', unit: 'm', default: 86.72 },
 ];
 
 const PARAM_BY_KEY = Object.fromEntries(P1_PARAMS.map((p) => [p.key, p]));
@@ -534,7 +534,8 @@ const PLANO_MEDS = [
   ['Marco 1 (2.43 m tras el tambor)', '55.10 m abs', 'plano + flexómetro'],
   ['Fin de prensa (tambor salida) · ANCLA', '71.60 m', 'plano = campo'],
   ['Grupo de sierras (cuerpo)', '78.3 – 85.6 m', 'plano = campo jul'],
-  ['Sierras transversales (eje cuchilla)', '85.57 m', 'plano + operador (32 m)'],
+  ['Sierra transversal · carro (30 cm tras refila)', '79.95 – 86.72 m', 'campo 21-jul'],
+  ['Sierra transversal · eje de la cuchilla', '85.57 m', 'plano + operador (32 m)'],
   ['Sensor 1 de calidad', '≈ 88.00 m', 'calibración campo · validado 21-jul'],
   ['Inclinada fina 31.170 (proy. horizontal)', '38.35 m', 'plano'],
   ['Banda distribución SL2 (poleas 30hp)', '16.42 m', 'plano'],
