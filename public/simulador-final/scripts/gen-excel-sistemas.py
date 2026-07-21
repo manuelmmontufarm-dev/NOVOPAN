@@ -181,8 +181,11 @@ rows = [
     (B, FB, "F_SL_DosBin_Weight", "Gluing", "Peso en la tolva dosificadora fina", "kg", P1, "Confirmado."),
     (B, FB, "F_CL_Filling_PV", "Gluing", "Nivel de la tolva dosificadora gruesa", "%", P2, ""),
     (B, FB, "F_SL_Filling_PV", "Gluing", "Nivel de la tolva dosificadora fina", "%", P2, ""),
-    (B, FB, "OK_BOMBAS_GLUING_CL", "Gluing", "Bombas de encolado grueso", "0/1 ⚠", P2, "CONFIRMAR POLARIDAD: el nombre dice OK pero el comentario dice \"FALLA BOMBAS ENCOLADO CL\"."),
-    (B, FB, "OK_BOMBAS_GLUING_SL", "Gluing", "Bombas de encolado fino", "0/1 ⚠", P2, "CONFIRMAR POLARIDAD (igual que el anterior)."),
+    # OK_BOMBAS_GLUING_CL / _SL: DESCARTADOS a propósito (decisión 21-jul-2026).
+    # La línea se asume siempre corriendo; una parada se ve en los flujos y
+    # velocidades, que ya llegan. Pedirlos obligaba a resolver la contradicción
+    # entre el nombre ("OK") y el comentario del HMI ("FALLA"), y eso costaba
+    # más tiempo del que ahorraba. No re-agregar sin necesidad real.
     (B, FB, "F_CL_FlakeDens_PV", "Gluing", "Densidad de flakes en la dosificadora gruesa", "kg/m³", P1, "Se usa como densidad del silo 5 (core): el bin se llena directo del silo con el mismo material."),
     (B, FB, "F_SL_FlakeDens_PV", "Gluing", "Densidad de flakes en la dosificadora fina", "kg/m³", P1, "Se usa como densidad del silo 6 (capa fina)."),
     (B, FB, "F_CL_FlakeFlow_PV", "Gluing", "Flujo de capa gruesa", "kg/min", P3, "Redundante con H_CL_Total_Flakes. Sirve para contrastar."),
@@ -250,9 +253,6 @@ pend = [
      "Sistemas", "Son los silos 5 (core) y 6 (capa fina) — la entrada de Sección 2. Es lo más importante de esta lista."),
     ("Unidad", "¿En qué unidad está F_SL_FlakeFlow_PV? Su comentario dice solo \"SL flake flow\".",
      "Sistemas", "Lo estamos usando como kg/min. Si es kg/h, el modelo se equivoca por 60×."),
-    ("Polaridad", "OK_BOMBAS_GLUING_CL y _SL: ¿1 significa que están OK, o que hay falla? El nombre dice una cosa "
-     "y el comentario del HMI dice la contraria.",
-     "Sistemas", "Al revés, el simulador marcaría la línea parada justo cuando está corriendo."),
 ]
 
 for r, row in enumerate(pend, start=2):
