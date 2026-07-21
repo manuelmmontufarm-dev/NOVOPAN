@@ -1,0 +1,21 @@
+{
+  "_comentario": [
+    "PLANTILLA — copiar como `adaptador.json` SOLO si el sniffer no acierta con el",
+    "export real de IT. Sin este archivo, el simulador autodetecta el formato.",
+    "",
+    "Una entrada por archivo, con el nombre tal cual aparece en datos/.",
+    "  perfil     : kv | tabla | ancho",
+    "  colTag     : nombre de la columna del tag (o su índice 0-based)",
+    "  colValor   : nombre de la columna del valor (o su índice)",
+    "  colCalidad : columna de validez; las filas malas quedan PENDIENTES, no en cero",
+    "  calidadOk  : valor que cuenta como bueno (por defecto: 1/true/GOOD/OK/192)",
+    "  delim      : forzar separador (; | tab | , ) si el conteo automático falla"
+  ],
+  "hmi-formacion.csv": {
+    "perfil": "tabla",
+    "colTag": "VarName",
+    "colValor": "VarValue",
+    "colCalidad": "Validity",
+    "calidadOk": "1"
+  }
+}

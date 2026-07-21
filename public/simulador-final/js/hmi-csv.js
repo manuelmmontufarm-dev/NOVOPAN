@@ -367,6 +367,334 @@ export function parseHmiCsv(text) {
   return { updates, vPrensa, warnings, count };
 }
 
+/* ============================================================
+   ADAPTADOR DE FORMATOS · sniffer → perfil → normalizador
+   ------------------------------------------------------------
+   Nosotros nos adaptamos a IT, no al revés: cada ida y vuelta con
+   Sistemas cuesta días, así que el simulador acepta el archivo que su
+   export automático buenamente logre generar.
+
+   `parseHmiCsv` NO se toca. Todo formato raro se traduce al canónico
+   `TAG: valor;` y entra por la puerta de siempre — así el camino `kv`
+   (el de hoy) jamás pasa por código nuevo: se devuelve el texto tal cual.
+
+   Perfiles: kv · tabla · ancho · desconocido (ver PLAN-ADAPTADOR-CSV.md).
+   ============================================================ */
+
+/* Nombres de columna que reconocemos por encabezado. La comparación normaliza
+   mayúsculas, espacios, guiones y guiones bajos (`Var_Name` = `varname`). */
+const COL_TAG     = new Set(['tag', 'tagname', 'varname', 'variable', 'nombre', 'name', 'item', 'punto', 'senal', 'señal', 'signal']);
+const COL_VALOR   = new Set(['value', 'varvalue', 'valor', 'val', 'pv', 'medida', 'lectura', 'measurement', 'wert']);
+const COL_CALIDAD = new Set(['validity', 'quality', 'qc', 'calidad', 'validez', 'estado', 'status', 'flag']);
+const COL_TIEMPO  = new Set(['timestamp', 'timestring', 'time', 'datetime', 'date', 'fecha', 'hora', 'fechahora']);
+
+const DELIMS = [';', '\t', '|', ','];
+
+const norma = (s) => String(s ?? '').trim().replace(/^"|"$/g, '').toLowerCase().replace(/[\s_.\-]/g, '');
+
+/* Líneas con contenido: sin BOM, sin vacías, sin comentarios `#` / `//`. */
+function lineasUtiles(texto, max = 5000) {
+  const out = [];
+  for (const raw of String(texto ?? '').replace(/^﻿/, '').split(/\r?\n/)) {
+    const t = raw.trim();
+    if (!t || t.startsWith('#') || t.startsWith('//')) continue;
+    out.push(t);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/* Separador por conteo en las primeras 10 líneas, premiando la CONSISTENCIA
+   (mismo número de columnas en todas). Eso resuelve solo el caso peligroso:
+   en un export alemán `1,5;2,7;3,1` la coma aparece tanto como el `;`, pero
+   solo el `;` da el mismo conteo en todas las líneas… y cuando empatan, gana
+   el `;` por orden de DELIMS. */
+function detectarDelim(lineas) {
+  const muestra = lineas.slice(0, 10);
+  let mejor = null;
+  for (const d of DELIMS) {
+    const counts = muestra.map((l) => l.split(d).length - 1).filter((c) => c > 0);
+    if (!counts.length) continue;
+    const freq = new Map();
+    for (const c of counts) freq.set(c, (freq.get(c) ?? 0) + 1);
+    let moda = 0;
+    let vecesModa = 0;
+    for (const [c, n] of freq) if (n > vecesModa || (n === vecesModa && c > moda)) { moda = c; vecesModa = n; }
+    const score = vecesModa * 100 + moda;
+    if (!mejor || score > mejor.score) mejor = { delim: d, score };
+  }
+  return mejor?.delim ?? null;
+}
+
+/* Partición respetando comillas: `A,"1.234,56",B` son tres celdas. */
+function partirFila(linea, delim) {
+  const out = [];
+  let cur = '';
+  let q = false;
+  for (let i = 0; i < linea.length; i += 1) {
+    const ch = linea[i];
+    if (ch === '"') {
+      if (q && linea[i + 1] === '"') { cur += '"'; i += 1; } else q = !q;
+      continue;
+    }
+    if (ch === delim && !q) { out.push(cur); cur = ''; continue; }
+    cur += ch;
+  }
+  out.push(cur);
+  return out.map((c) => c.trim());
+}
+
+/* Número ESTRICTO: solo dígitos y separadores. `2026-07-21 08:00:00` no lo es
+   (tiene `-` y `:`), y por eso una columna de fecha nunca se confunde con la
+   de valor. */
+function esNumero(celda) {
+  return /^[-+]?\d[\d.,\s]*$/.test(unquote(celda));
+}
+
+const conocido = (celda) => LOOKUP.has(unquote(celda).toUpperCase());
+
+/* Agrupación de miles: `1.234` · `1,234` · `12.345.678`. Con UN solo separador
+   el formato es ambiguo (¿1234 o 1.234?); se resuelve por la forma del número
+   —tres dígitos exactos por grupo— en vez de adivinar el locale del servidor. */
+const MILES = /^[-+]?\d{1,3}([.,]\d{3})+$/;
+
+function celdaNumero(bruto) {
+  const t = unquote(bruto);
+  if (t === '') return { empty: true };
+  if (t.includes('.') && t.includes(',')) return toNumber(t, ':'); // el ÚLTIMO separador es el decimal
+  if (MILES.test(t)) return { val: parseFloat(t.replace(/[.,]/g, '')) };
+  return toNumber(t, ':');
+}
+
+const CAL_MALA  = new Set(['0', 'false', 'bad', 'malo', 'mala', 'no', 'off', 'uncertain', 'incierto', 'error', 'invalid', 'invalido', 'inválido']);
+const CAL_BUENA = new Set(['1', 'true', 'good', 'ok', 'bueno', 'buena', 'si', 'sí', 'yes', '192', 'valid', 'valido', 'válido', 'gut']);
+
+/* Un dato de mala calidad se trata como PENDIENTE, nunca como cero: un cero
+   falso es el peor resultado posible — número creíble y equivocado. */
+function calidadBuena(celda, esperado) {
+  const t = norma(celda);
+  if (esperado !== null && esperado !== undefined && esperado !== '') return t === norma(esperado);
+  if (!t) return true;
+  if (CAL_MALA.has(t)) return false;
+  if (CAL_BUENA.has(t)) return true;
+  const n = Number(t.replace(',', '.'));
+  if (Number.isFinite(n)) return n > 0;
+  return true; // etiqueta que no entendemos: no se descarta el dato por eso
+}
+
+function idxPorNombre(cab, set) {
+  for (let i = 0; i < cab.length; i += 1) if (set.has(norma(cab[i]))) return i;
+  return -1;
+}
+
+/* Columna de `adaptador.json`: acepta nombre de encabezado o índice 0-based. */
+function resolverCol(spec, cab) {
+  if (spec === null || spec === undefined || spec === '') return -1;
+  if (typeof spec === 'number') return spec;
+  const n = norma(spec);
+  for (let i = 0; i < cab.length; i += 1) if (norma(cab[i]) === n) return i;
+  const idx = Number(spec);
+  return Number.isInteger(idx) ? idx : -1;
+}
+
+/** Olfatea el formato. `cfg` (de `datos/adaptador.json`) manda sobre todo. */
+export function detectarPerfil(texto, cfg = null) {
+  const lineas = lineasUtiles(texto, 200);
+  /* Sin líneas de datos (p.ej. `hmi-preparacion.csv`, hoy todo comentarios):
+     no hay nada que adaptar, se deja pasar como siempre. */
+  if (!lineas.length) return { perfil: 'kv', confianza: 1, detalle: 'sin líneas de datos' };
+  const cabezaTxt = lineas.slice(0, 2).join(' ⏎ ').slice(0, 200);
+  if (cfg?.perfil === 'kv') return { perfil: 'kv', confianza: 1, detalle: 'adaptador.json' };
+  if (!cfg?.perfil && pareceKv(lineas)) return { perfil: 'kv', confianza: 1, detalle: 'TAG: valor;' };
+
+  const delim = cfg?.delim ?? detectarDelim(lineas);
+  if (!delim) return { perfil: 'desconocido', confianza: 0, detalle: cabezaTxt };
+
+  const filas = lineas.map((l) => partirFila(l, delim));
+  const cab = filas[0];
+  /* Encabezado = primera línea con ≥2 celdas y NINGUNA numérica. */
+  const encabezado = cab.length >= 2 && !cab.some(esNumero);
+  const datos = encabezado ? filas.slice(1) : filas;
+  if (!datos.length) return { perfil: 'desconocido', confianza: 0, detalle: cabezaTxt };
+
+  if (cfg?.perfil) {
+    return {
+      perfil: cfg.perfil, confianza: 1, detalle: 'adaptador.json', delim, encabezado,
+      colTag: resolverCol(cfg.colTag, cab), colValor: resolverCol(cfg.colValor, cab),
+      colCalidad: resolverCol(cfg.colCalidad, cab), calidadOk: cfg.calidadOk ?? null,
+    };
+  }
+
+  if (encabezado) {
+    // 2 · tabla: el encabezado dice cuál columna es el tag y cuál el valor.
+    const idxTag = idxPorNombre(cab, COL_TAG);
+    const idxVal = idxPorNombre(cab, COL_VALOR);
+    if (idxTag !== -1 && idxVal !== -1 && idxTag !== idxVal) {
+      const idxCal = idxPorNombre(cab, COL_CALIDAD);
+      return {
+        perfil: 'tabla', confianza: 1, delim, encabezado: true,
+        detalle: `columnas ${cab[idxTag]} → ${cab[idxVal]}${idxCal !== -1 ? ` · calidad ${cab[idxCal]}` : ''}`,
+        colTag: idxTag, colValor: idxVal, colCalidad: idxCal, calidadOk: null,
+      };
+    }
+    // 3 · ancho: el encabezado ES la lista de tags; cada fila, un instante.
+    const conocidas = cab.filter(conocido).length;
+    if (conocidas >= 2) {
+      return {
+        perfil: 'ancho', confianza: Math.min(1, conocidas / Math.max(1, cab.length - 1)), delim, encabezado: true,
+        detalle: `${conocidas} tags en columnas · se lee la última fila`,
+        colTag: -1, colValor: -1, colCalidad: -1, calidadOk: null,
+      };
+    }
+  }
+
+  // 4 · tabla por CONTENIDO: columna de tags reconocidos + columna numérica.
+  const nCols = Math.max(...datos.map((f) => f.length));
+  let idxTag = -1;
+  let mejorTag = 0;
+  let idxVal = -1;
+  let mejorVal = 0;
+  const textos = [];
+  for (let i = 0; i < nCols; i += 1) {
+    let known = 0;
+    let num = 0;
+    let txt = 0;
+    for (const f of datos) {
+      const c = f[i] ?? '';
+      if (conocido(c)) known += 1;
+      else if (esNumero(c)) num += 1;
+      else if (c) txt += 1;
+    }
+    textos[i] = txt;
+    if (known > mejorTag) { mejorTag = known; idxTag = i; }
+    if (num > mejorVal) { mejorVal = num; idxVal = i; }
+  }
+  let confianza = mejorTag / datos.length;
+  if (idxTag === -1) {
+    // Ningún tag reconocido: la columna de texto no-numérico es el candidato.
+    idxTag = textos.findIndex((t, i) => t > 0 && i !== idxVal && !esNumero(datos[0][i] ?? ''));
+    confianza = 0.4;
+  }
+  if (idxTag === -1 || idxVal === -1 || idxTag === idxVal) return { perfil: 'desconocido', confianza: 0, detalle: cabezaTxt };
+
+  /* `TAG,valor` clásico (dos columnas, sin encabezado): ya lo entiende el
+     parser de siempre, así que se devuelve intacto. */
+  if (!encabezado && nCols === 2 && idxTag === 0 && idxVal === 1 && confianza >= 0.5 && delim !== '|') {
+    return { perfil: 'kv', confianza, detalle: 'TAG,valor' };
+  }
+  return {
+    perfil: 'tabla', confianza, delim, encabezado,
+    detalle: `sin encabezado útil · columna ${idxTag + 1} = tag, columna ${idxVal + 1} = valor`,
+    colTag: idxTag, colValor: idxVal, colCalidad: -1, calidadOk: null,
+  };
+}
+
+/* `kv` = el nombre y sus dos puntos van ANTES que cualquier delimitador de
+   tabla. La condición del delimitador es la que evita el falso positivo obvio:
+   `2026-07-21 08:00:00;TAG;14,5` también tiene `:`, pero después del `;`. */
+const RE_KV = /^"?[A-Za-z_][A-Za-z0-9_. \-]*"?\s*:/;
+function pareceKv(lineas) {
+  const muestra = lineas.slice(0, 10);
+  let ok = 0;
+  for (const l of muestra) {
+    if (!RE_KV.test(l)) continue;
+    const idxDos = l.indexOf(':');
+    const idxDelim = Math.min(...DELIMS.map((d) => { const i = l.indexOf(d); return i === -1 ? Infinity : i; }));
+    if (idxDos < idxDelim) ok += 1;
+  }
+  return ok >= Math.ceil(muestra.length / 2);
+}
+
+function fmtNum(v) {
+  const s = String(v);
+  return s.includes('e') ? v.toFixed(9) : s;
+}
+
+/* Valor no numérico ("OFF", "N/A"): se pasa tal cual y `parseHmiCsv` avisa
+   `valor inválido en TAG`. Se limpia lo que rompería el formato canónico. */
+const limpiar = (v) => String(v ?? '').replace(/[;#\r\n]|\/\//g, ' ').trim().slice(0, 40);
+
+/** Traduce cualquier perfil al canónico `TAG: valor;`. `kv` sale intacto. */
+export function normalizar(texto, perfil) {
+  if (!perfil || perfil.perfil === 'kv') return { texto: String(texto ?? ''), avisos: [] };
+  if (perfil.perfil === 'desconocido') {
+    return { texto: '', error: true, avisos: [`formato no reconocido (ni TAG: valor;, ni tabla, ni ancho) — primeras líneas: ${perfil.detalle}`] };
+  }
+
+  const avisos = [];
+  const desconocidos = new Set();
+  const filas = lineasUtiles(texto).map((l) => partirFila(l, perfil.delim));
+  const cab = perfil.encabezado ? (filas[0] ?? []) : [];
+  const datos = perfil.encabezado ? filas.slice(1) : filas;
+  /* Map por tag: un export histórico repite el mismo tag en muchos instantes y
+     la fila más reciente (la última) es la que vale. Así no se dispara el aviso
+     de conflicto de `parseHmiCsv` por un archivo perfectamente normal. */
+  const salida = new Map();
+  let malas = 0;
+
+  const poner = (nombreRaw, bruto, calidad) => {
+    const nombre = unquote(nombreRaw);
+    if (!nombre) return;
+    const clave = nombre.toUpperCase();
+    /* Un tag que el modelo no conoce se junta en UN aviso, no en uno por fila:
+       un export de 800 tags dejaría el tooltip del pill ilegible justo cuando
+       más se lo necesita. */
+    if (!LOOKUP.has(clave)) { desconocidos.add(nombre); return; }
+    if (calidad !== undefined && !calidadBuena(calidad, perfil.calidadOk)) {
+      malas += 1;
+      salida.set(clave, `${nombre}:;`); // pendiente: conserva el último bueno
+      return;
+    }
+    const num = celdaNumero(bruto);
+    if (num.empty) salida.set(clave, `${nombre}:;`);
+    else if (num.nan) salida.set(clave, `${nombre}: ${limpiar(bruto)};`);
+    else salida.set(clave, `${nombre}: ${fmtNum(num.val)};`);
+  };
+
+  if (perfil.perfil === 'ancho') {
+    const fila = datos[datos.length - 1] ?? [];
+    for (let i = 0; i < cab.length; i += 1) {
+      const n = norma(cab[i]);
+      if (!n || COL_TIEMPO.has(n) || COL_CALIDAD.has(n)) continue;
+      poner(cab[i], fila[i] ?? '');
+    }
+  } else {
+    for (const f of datos) {
+      if (perfil.colTag < 0 || perfil.colTag >= f.length) continue;
+      poner(f[perfil.colTag], f[perfil.colValor] ?? '',
+        perfil.colCalidad >= 0 ? (f[perfil.colCalidad] ?? '') : undefined);
+    }
+  }
+
+  if (malas) avisos.push(`${malas} fila(s) descartadas por calidad → quedan pendientes`);
+  if (desconocidos.size) {
+    const ej = [...desconocidos].slice(0, 5).join(', ');
+    avisos.push(`${desconocidos.size} tag(s) del archivo no existen en el modelo: ${ej}${desconocidos.size > 5 ? '…' : ''}`);
+  }
+  /* Se leyó el archivo pero no salió NADA aprovechable. Es el caso que hay que
+     explicar sí o sí: dice qué perfil se creyó ver, qué columnas se usaron y
+     cómo forzar el mapeo, para poder resolverlo por teléfono con Sistemas. */
+  if (!salida.size) {
+    return {
+      texto: '',
+      error: true,
+      avisos: [...avisos, `no se pudo sacar ningún tag (perfil "${perfil.perfil}" · ${perfil.detalle}). Si el formato es correcto pero las columnas no, fíjalas en datos/adaptador.json`],
+    };
+  }
+  const cuerpo = [`# adaptado · perfil ${perfil.perfil} · ${salida.size} tags · ${perfil.detalle}`, ...salida.values()];
+  return { texto: `${cuerpo.join('\n')}\n`, avisos };
+}
+
+/** Punto de entrada: texto crudo de IT → texto canónico + perfil + avisos. */
+export function adaptarCsv(texto, cfg = null) {
+  const perfil = detectarPerfil(texto, cfg);
+  const { texto: salida, avisos, error = false } = normalizar(texto, perfil);
+  if (perfil.perfil !== 'desconocido' && perfil.confianza < 0.6) {
+    avisos.unshift(`perfil "${perfil.perfil}" detectado con confianza baja (${Math.round(perfil.confianza * 100)} %) — se puede fijar en datos/adaptador.json`);
+  }
+  return { texto: salida, perfil: perfil.perfil, confianza: perfil.confianza, detalle: perfil.detalle, avisos, error };
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -392,7 +720,18 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
   let failStreak = 0;
   let lastCount = 0;
   let lastWarnings = [];
+  let lastFallos = [];
   let writeTimer = 0;
+
+  /* El tooltip es para diagnosticar por teléfono: se muestran los primeros
+     avisos completos y se dice cuántos quedaron fuera, en vez de un muro. */
+  const TOOLTIP_MAX = 10;
+  function tooltip(avisos) {
+    if (!avisos.length) return '';
+    const cabeza = avisos.slice(0, TOOLTIP_MAX);
+    if (avisos.length > TOOLTIP_MAX) cabeza.push(`… y ${avisos.length - TOOLTIP_MAX} aviso(s) más`);
+    return cabeza.join('\n');
+  }
 
   function setStatus(cls, msg, title) {
     if (!statusEl) return;
@@ -403,13 +742,17 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
 
   /* Devuelve true = aplicado · false = sin cambios · 'error' = formato
      inválido (se conserva el último CSV bueno y el estado muestra el error;
-     pollServer NO debe pisar ese estado con el pill "en vivo"). */
-  function applyText(text, sourceLabel, force = false) {
+     pollServer NO debe pisar ese estado con el pill "en vivo").
+
+     `text` YA viene en canónico: la adaptación ocurre por archivo, antes de
+     combinar los servidores (cada uno puede venir en un formato distinto). */
+  function applyText(text, sourceLabel, force = false, avisosAdaptador = [], fallos = []) {
     if (!force && text === lastText) return false;
     const parsed = parseHmiCsv(text);
+    parsed.warnings = [...avisosAdaptador, ...parsed.warnings];
     if (parsed.count === 0 && parsed.warnings.length > 0) {
       const when = lastGood ? ` · último válido ${fmtTime(lastGood)}` : '';
-      setStatus('error', `● CSV · error de formato${when}`, parsed.warnings.join('\n'));
+      setStatus('error', `● CSV · error de formato${when}`, tooltip(parsed.warnings));
       return 'error';
     }
     lastText = text;
@@ -418,16 +761,50 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     failStreak = 0;
     lastCount = parsed.count;
     lastWarnings = parsed.warnings;
+    lastFallos = fallos;
     const warn = parsed.warnings.length ? ` · ⚠ ${parsed.warnings.length}` : '';
     const edited = mode === 'edited';
-    setStatus(edited || mode === 'manual-file' ? 'manual' : 'live',
-      `● ${sourceLabel} · ${fmtTime(lastGood)} · ${parsed.count} tags${warn}`,
-      parsed.warnings.join('\n'));
+    /* Un archivo ilegible NO puede quedar escondido detrás de los que sí
+       cargaron: el modelo sigue corriendo con lo bueno, pero el pill se pone
+       en rojo y nombra el archivo culpable. */
+    setStatus(fallos.length ? 'error' : (edited || mode === 'manual-file' ? 'manual' : 'live'),
+      fallos.length
+        ? `● ${sourceLabel} · ${fmtTime(lastGood)} · ${parsed.count} tags · ✖ ${fallos.join(', ')}`
+        : `● ${sourceLabel} · ${fmtTime(lastGood)} · ${parsed.count} tags${warn}`,
+      tooltip(parsed.warnings));
     applyData({ ...parsed, rawText: text, sourceLabel, edited });
     return true;
   }
 
   const SOURCE_LIST = CSV_SOURCES.map((s) => s.file).join(', ');
+
+  /* Mapeo manual de respaldo, por si el sniffer no acierta con el export real
+     de IT: `datos/adaptador.json` fija perfil y columnas sin tocar código.
+     Ausente el archivo (lo normal hoy) → todo funciona por autodetección. */
+  let adapterCfg = null;
+  let cfgPedida = false;
+  let cfgAviso = null; // JSON presente pero ilegible: hay que decirlo, no ignorarlo
+  async function loadAdapterCfg() {
+    if (cfgPedida) return adapterCfg;
+    cfgPedida = true;
+    try {
+      const res = await fetch(`datos/adaptador.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) return adapterCfg; // ausente = autodetección, el caso normal
+      adapterCfg = JSON.parse(await res.text());
+    } catch (e) {
+      adapterCfg = null;
+      cfgAviso = `datos/adaptador.json existe pero no se pudo leer (${e.message}) — se sigue por autodetección`;
+    }
+    return adapterCfg;
+  }
+
+  /* El perfil solo se nombra cuando NO es el de siempre: en operación normal el
+     pill no cambia, y el día que IT mande una tabla se lee `● HMI CSV · tabla`. */
+  function etiquetaPerfil(perfiles) {
+    // `desconocido` no se nombra aquí: ya sale como `✖ archivo` y su explicación.
+    const raros = [...new Set(perfiles.filter((p) => p && p !== 'kv' && p !== 'desconocido'))];
+    return raros.length ? ` · ${raros.join('+')}` : '';
+  }
 
   function markServerDown() {
     failStreak += 1;
@@ -444,6 +821,7 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
      queda avisada por `parseHmiCsv`. */
   async function pollServer() {
     const stamp = Date.now();
+    const cfgAll = await loadAdapterCfg();
     const fetched = await Promise.all(CSV_SOURCES.map(async (src) => {
       try {
         const res = await fetch(`${src.file}?t=${stamp}`, { cache: 'no-store' });
@@ -457,11 +835,23 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     const parts = fetched.filter(Boolean);
     if (parts.length === 0) { if (mode === 'server') markServerDown(); return false; }
     mode = 'server';
-    const combined = parts
-      .map(({ src, text }) => `# @origen: ${src.label}\n${text.replace(/\s*$/, '')}\n`)
-      .join('\n');
-    const label = parts.length > 1 ? `HMI CSV · ${parts.length} servidores` : 'HMI CSV';
-    const changed = applyText(combined, label);
+    /* Cada archivo se adapta POR SEPARADO: un servidor puede exportar tabla y
+       otro seguir en `TAG: valor;`, y el mapeo manual se declara por archivo. */
+    const avisos = cfgAviso ? [cfgAviso] : [];
+    const perfiles = [];
+    const bloques = [];
+    const fallos = [];
+    for (const { src, text } of parts) {
+      const base = src.file.split('/').pop();
+      const ad = adaptarCsv(text, cfgAll?.[base] ?? cfgAll?.[src.file] ?? null);
+      perfiles.push(ad.perfil);
+      for (const a of ad.avisos) avisos.push(`${base}: ${a}`);
+      if (ad.error) fallos.push(base);
+      if (ad.texto.trim()) bloques.push(`# @origen: ${src.label}\n${ad.texto.replace(/\s*$/, '')}\n`);
+    }
+    const combined = bloques.join('\n');
+    const label = `HMI CSV${parts.length > 1 ? ` · ${parts.length} servidores` : ''}${etiquetaPerfil(perfiles)}`;
+    const changed = applyText(combined, label, false, avisos, fallos);
     /* Solo el caso "sin cambios" refresca el pill en vivo; un 'error' de
        formato debe quedar visible hasta que llegue un CSV válido.
        Los warnings se re-emiten aquí a propósito: un conflicto entre servidores
@@ -469,20 +859,26 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
        pill en el siguiente sondeo. */
     if (changed === false && lastGood) {
       const warn = lastWarnings.length ? ` · ⚠ ${lastWarnings.length}` : '';
-      setStatus('live', `● ${label} · ${fmtTime(lastGood)} · ${lastCount} tags${warn}`,
-        lastWarnings.length ? lastWarnings.join('\n') : 'Contenido sin cambios; última lectura válida.');
+      setStatus(lastFallos.length ? 'error' : 'live',
+        lastFallos.length
+          ? `● ${label} · ${fmtTime(lastGood)} · ${lastCount} tags · ✖ ${lastFallos.join(', ')}`
+          : `● ${label} · ${fmtTime(lastGood)} · ${lastCount} tags${warn}`,
+        lastWarnings.length ? tooltip(lastWarnings) : 'Contenido sin cambios; última lectura válida.');
     }
     return true;
   }
 
   let lastModified = 0;
+  let livePerfil = 'kv'; // perfil del archivo local conectado (ver persistConnectedFile)
   async function pollFile() {
     if (!fileHandle) return;
     try {
       const file = await fileHandle.getFile();
       if (file.lastModified === lastModified) return;
       lastModified = file.lastModified;
-      applyText(await file.text(), 'CSV local', true);
+      const ad = adaptarCsv(await file.text(), adapterCfg?.[file.name] ?? null);
+      livePerfil = ad.perfil;
+      applyText(ad.texto, `CSV local${etiquetaPerfil([ad.perfil])}`, true, ad.avisos, ad.error ? [file.name] : []);
     } catch {
       setStatus('error', '● CSV local · no accesible', 'Vuelve a conectar el archivo.');
     }
@@ -507,6 +903,14 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
 
   async function persistConnectedFile() {
     if (!fileHandle?.createWritable || !currentText) return;
+    /* El documento en memoria está en canónico. Si el archivo conectado venía
+       en otro formato, sobrescribirlo le cambiaría el formato al archivo de IT
+       (y el próximo export lo pisaría igual): se edita en memoria y se descarga. */
+    if (livePerfil !== 'kv') {
+      setStatus('manual', `● CSV editado en memoria · descarga para guardar`,
+        `El archivo conectado viene en formato "${livePerfil}"; no se reescribe para no cambiarle el formato al archivo original. Usa Descargar para conservar la edición.`);
+      return;
+    }
     try {
       const writable = await fileHandle.createWritable();
       await writable.write(currentText);
@@ -583,7 +987,8 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     mode = 'manual-file';
     fileHandle = null;
     lastText = null;
-    applyText(await file.text(), 'CSV manual', true);
+    const ad = adaptarCsv(await file.text(), adapterCfg?.[file.name] ?? null);
+    applyText(ad.texto, `CSV manual${etiquetaPerfil([ad.perfil])}`, true, ad.avisos, ad.error ? [file.name] : []);
     fileInput.value = '';
   });
   connectBtn?.addEventListener('click', connectFile);

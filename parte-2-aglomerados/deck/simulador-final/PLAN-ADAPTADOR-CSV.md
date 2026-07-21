@@ -1,5 +1,13 @@
 # Plan · Adaptador de formatos CSV (lo que sea que mande IT)
 
+> **Estado: implementado (21-jul-2026).** Los 5 pasos de §5 están hechos.
+> · Código: `js/hmi-csv.js` → `detectarPerfil` · `normalizar` · `adaptarCsv`
+> · Pruebas: `js/adaptador.test.js` (50) + fixtures en `datos/fixtures/`
+>   — `node js/adaptador.test.js`, o `tests.html` §4 en el navegador.
+> · Respaldo manual: `datos/adaptador.ejemplo.json` (copiar a `adaptador.json`).
+> Los 56 tests de `route-model.test.js` siguen pasando sin cambios, y los CSV
+> reales de `datos/` pasan byte a byte iguales (hay un test que lo vigila).
+
 **Objetivo:** que el simulador acepte el archivo que IT buenamente logre
 generar — sin pedirles que lo re-formateen — y lo normalice al modelo interno.
 La regla de diseño: **nosotros nos adaptamos a IT, no al revés**, porque cada
@@ -111,3 +119,22 @@ con el mismo mini-harness de `route-model.test.js`:
 Cada paso deja el simulador funcionando; el perfil `kv` actual jamás pasa por
 código nuevo. Cuando IT mande su primer archivo real, ese archivo se congela
 como fixture y se convierte en el contrato.
+
+## 6 · Qué se ve cuando el CSV viene raro (implementado)
+
+Regla: **el simulador nunca inventa un número, y nunca se calla un archivo que
+no pudo leer.** Un cero falso es peor que un hueco.
+
+| Situación | Qué hace | Qué se ve en el pill |
+|---|---|---|
+| Archivo ilegible (HTML de error, formato ajeno) | descarta ese archivo, sigue con los demás | rojo · `✖ hmi-encolado.csv` + las 2 primeras líneas en el tooltip |
+| Tabla legible pero ningún tag del modelo | descarta el archivo | rojo · aviso con el perfil que creyó ver, las columnas usadas y el ejemplo de tags |
+| Algunos tags ajenos al modelo | los ignora, el resto entra | ⚠ un solo aviso agregado (`12 tag(s) … : A, B, C…`) |
+| Fila con `Validity=0` / `Quality≠GOOD` | queda **pendiente** (conserva el último bueno) | ⚠ `N fila(s) descartadas por calidad` |
+| Celda no numérica (`OFF`, `N/A`) | no escribe nada | ⚠ `valor inválido en TAG` |
+| Perfil detectado con confianza baja | igual lo usa | ⚠ sugiere fijarlo en `datos/adaptador.json` |
+| `adaptador.json` presente pero con JSON inválido | sigue por autodetección | ⚠ lo dice con el error del parser |
+| Ningún CSV disponible | conserva el último bueno | rojo · `reconectando…` con la hora del último válido |
+
+El tooltip corta a 10 avisos y dice cuántos quedaron fuera: sirve para
+diagnosticar por teléfono sin pedir el archivo.

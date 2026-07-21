@@ -59,6 +59,10 @@
 
     <h2>3 · Resultados de las pruebas</h2>
     <div id="tests"></div>
+
+    <h2>4 · Adaptador de formatos CSV</h2>
+    <p class="note">Cada formato de <code>datos/fixtures/</code> —tabla de WinCC, TagLogging con <code>Validity</code>, formato ancho, comillas y decimal alemán— debe producir el mismo modelo que el <code>TAG: valor;</code> de hoy. Ver <code>PLAN-ADAPTADOR-CSV.md</code>.</p>
+    <div id="adapter"></div>
   </main>
 
   <script type="module">
@@ -126,7 +130,26 @@
         <div class="t"><span class="mark ${t.ok ? 'pass' : 'fail'}">${t.ok ? '✓' : '✗'}</span>
           <span>${t.name}</span>${t.ok ? '' : `<span class="err">→ ${t.err}</span>`}</div>`).join('')}</div>`).join('');
 
-    document.title = `${okAll ? '✅' : '❌'} ${rep.passed}/${rep.total} · Modelo de ruta`;
+    // ── Adaptador de formatos (suite propia, fixtures por fetch) ──
+    const pinta = (el, byGroup) => { el.innerHTML = Object.entries(byGroup).map(([g, list]) => `
+      <div class="grp"><h3>${g}</h3>${list.map((t) => `
+        <div class="t"><span class="mark ${t.ok ? 'pass' : 'fail'}">${t.ok ? '✓' : '✗'}</span>
+          <span>${t.name}</span>${t.ok ? '' : `<span class="err">→ ${t.err}</span>`}</div>`).join('')}</div>`).join(''); };
+
+    let ad = null;
+    try {
+      ad = (await import('./js/adaptador.test.js')).runReport();
+      const adOk = ad.failed === 0;
+      pinta(document.getElementById('adapter'), ad.byGroup);
+      sum.innerHTML += `<div class="pill ${adOk ? 'pass' : 'fail'}">Adaptador CSV: <strong>${ad.passed}/${ad.total}</strong></div>`;
+    } catch (e) {
+      document.getElementById('adapter').innerHTML =
+        `<p class="note fail">No se pudo correr la suite del adaptador (${e.message}). Los fixtures se leen con fetch: abre esta página desde un servidor, no con file://.</p>`;
+    }
+
+    const total = rep.total + (ad?.total ?? 0);
+    const pass = rep.passed + (ad?.passed ?? 0);
+    document.title = `${pass === total ? '✅' : '❌'} ${pass}/${total} · Modelo de ruta`;
   </script>
 </body>
 </html>

@@ -1,0 +1,6 @@
+# Formato actual del simulador (regresión): VARIABLE:VALOR;
+# Debe detectarse como perfil `kv` y pasar al parser SIN modificarse.
+V_PRENSA_M_MIN: 14.5;   PESO_MANTA_KGM2: 6,8;
+// el alias de WinCC convive con el nombre canónico
+H_CL_Total_Flakes: 320.5;
+DOSING_CL_M_KG: 1234.56;
