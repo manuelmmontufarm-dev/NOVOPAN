@@ -206,8 +206,12 @@ export const WINCC_ALIAS = {
   'F_CL_DosBin_Weight':   'DOSING_CL_M_KG',
   // "SL dosing bin weight" · Access Name: Gluing · grupo SL_DosBin
   'F_SL_DosBin_Weight':   'DOSING_SL_M_KG',
-  // "SL flake flow" · unidad no declarada en el comentario; se asume kg/min por
-  // simetría con `H_CL_Total_Flakes` ("CL total flakes kg/min"). CONFIRMAR.
+  /* "SL flake flow" · el comentario del HMI no declara unidad. DECISIÓN
+     21-jul-2026: se asume kg/min, por simetría con su gemelo de Formación
+     `H_CL_Total_Flakes` ("CL total flakes kg/min") y con los tags hermanos del
+     mismo grupo SL_DosBin, que sí dicen kg/min (`F_SL_FillingRequest…`).
+     Si algún día el valor en vivo sale ~60× fuera de `H_CL_Total_Flakes`,
+     la unidad era kg/h: basta agregar `{ tag: 'F_SL_KGMIN', scale: 1 / 60 }`. */
   'F_SL_FlakeFlow_PV':    'F_SL_KGMIN',
 
   /* Densidad de los silos finales 5 y 6: no la publica ningún tag propio del

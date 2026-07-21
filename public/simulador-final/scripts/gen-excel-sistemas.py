@@ -245,12 +245,12 @@ ws.row_dimensions[1].height = 26
 # (nombres de descargas de silos húmedos, Wet_Mat_CALC, unidades de Cap/Level,
 # correspondencia aserrín↔Silo1, ambigüedad 041.11) queda documentado en
 # MAPEO-WINCC.md y se pedirá cuando se cablee ese tramo.
-pend = [
-    # Los 4 nombres de 066_C_Dry_Material_* quedaron confirmados en pantalla
-    # el 21-jul-2026 y ya están cableados en WINCC_ALIAS — pendiente resuelto.
-    ("Unidad", "¿En qué unidad está F_SL_FlakeFlow_PV? Su comentario dice solo \"SL flake flow\".",
-     "Sistemas", "Lo estamos usando como kg/min. Si es kg/h, el modelo se equivoca por 60×."),
-]
+# RESUELTOS — se dejan anotados para que quede constancia de la decisión:
+#  · Los 4 nombres de 066_C_Dry_Material_* se confirmaron en pantalla el
+#    21-jul-2026 y ya están cableados.
+#  · F_SL_FlakeFlow_PV: se ASUME kg/min (decisión 21-jul-2026), por simetría
+#    con H_CL_Total_Flakes y con los tags hermanos del grupo SL_DosBin.
+pend = []
 
 for r, row in enumerate(pend, start=2):
     for i, val in enumerate(row, start=1):
@@ -260,6 +260,16 @@ for r, row in enumerate(pend, start=2):
         c.border = box
         c.fill = PatternFill("solid", fgColor=AMARILLO if i == 2 else "FFFFFF")
     ws.row_dimensions[r].height = 52
+
+if not pend:
+    # Nada pendiente: se deja constancia en la columna A para no inflar el
+    # COUNTA de la hoja Instrucciones, que cuenta la columna B.
+    c = ws.cell(row=2, column=1, value="Nada pendiente. Todos los tags de esta lista están confirmados "
+                                       "y listos para volcar — ver la hoja «Tags».")
+    c.font = Font(name=F, size=10, bold=True, color="1B5E20")
+    c.alignment = Alignment(wrap_text=True, vertical="center")
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=4)
+    ws.row_dimensions[2].height = 34
 
 ws.freeze_panes = "A2"
 

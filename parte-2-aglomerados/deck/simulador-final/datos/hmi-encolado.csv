@@ -17,8 +17,9 @@
 F_CL_DosBin_Weight: 25;
 # "SL dosing bin weight"
 F_SL_DosBin_Weight: 20;
-# "SL flake flow"  ⚠️ unidad NO declarada en el Comment; se asume kg/min por
-# simetría con H_CL_Total_Flakes. CONFIRMAR en pantalla antes de dar por bueno.
+# "SL flake flow" · el Comment del HMI no declara unidad. DECISIÓN 21-jul-2026:
+# se asume kg/min, igual que su gemelo H_CL_Total_Flakes ("CL total flakes
+# kg/min") y que los tags hermanos del grupo SL_DosBin. Mandar el valor crudo.
 F_SL_FlakeFlow_PV: 147.6;
 
 # ── Densidad de flakes medida en las dosing bins (kg/m³) ──
