@@ -142,3 +142,51 @@ de alimentación (el papel se colocó ya sobre el colchón) ni discrimina la
 posición exacta de la sierra (corte periódico). Para clavar la sierra: fotografiar
 el corte del tablero CON la raya del papel, o cronometrar fin prensa → corte de
 ese tablero específico.
+
+## 9 · VERIFICACIÓN DEL MOTOR Y LO VISUAL (21-jul-2026, revisión final)
+
+Instrumentación directa del simulador en navegador (el panel corre la pestaña
+como oculta → rAF muerto; se parcheó `requestAnimationFrame` con `MessageChannel`,
+se bloqueó `Storage.setItem` de `novopan.simState` y se retro-fechó `savedAt`
+para forzar el replay offline).
+
+### 9.1 Escala visual
+
+| Zona | Escala | Resultado |
+|---|---|---|
+| Sección 2 (0 → 88.4 m) | `x = 80 + 70·m` | **70.0000 px/m exactos**, intercepto 80.00, **residuo máx 0.00 px** en barrido de 23 puntos con el movedor |
+| Parte 1 (silos → esparcidores) | sin escala (topológica) | Velocidad visual DISTINTA por arista **por diseño**: el motor avanza por τ de cada ecuación, no por píxeles |
+
+O sea: en Sección 2 el trazador se mueve a velocidad visual constante (si
+acelera, es bug). En Parte 1 la variación de velocidad es esperada y correcta.
+
+### 9.2 Tiempos por etapa vs ecuaciones
+
+| Verificación | Ecuación | Observado | Δ |
+|---|---|---|---|
+| SL1 → CL | 34.6 s | 34.8 s | +0.6 % |
+| CL → SL2 | 30.0 s | 29.8 s | −0.7 % |
+| Imán → pre-prensa | 9.8 s | 9.9 s | ~0 |
+| Prensa tambor a tambor (18.93 m) | 78.3 s | 79.5 s | +1.5 % |
+| Total 0 → 88.4 m @ 14.5 m/min | 365.8 s | 365.9 s | **exacto** |
+| Upstream gruesa (silo 1417.2 + dosing 5.9 + enc 40 + inclinada 42.59) | 1505.7 s | miles 1417.2 / 1423.1 / 1505.7 | **al decimal** |
+| Predicho vs observado · gruesa a colchón | T+25:27 | 25:00 | < 2 % |
+| Predicho vs observado · fina a sensores | T+1:12:05 | 1:12:00 | **0.1 %** |
+| Split ruta fina → SL1 + SL2 | 2 trazadores | 2 reportes ✓ | — |
+
+El predicho de la fina (T+1:06:29 = 3989 s) coincide con los **3987 s
+verificados a mano el 20-jul** — motor, route-model y cálculo manual cierran
+por tres vías independientes.
+
+### 9.3 Bug encontrado y corregido (commit `42e3c99`)
+
+Al restaurar un tab cerrado, los hitos (`miles`) de los cambios upstream se
+recalculaban ANTES de que llegara el primer CSV, o sea con los defaults del
+modelo. Con el CSV real de IT (que diferirá de los defaults) el replay offline
+habría usado tiempos desfasados y podría no detectar cruces. **Fix:** los
+`miles` vigentes se persisten en `novopan.simState` y el restore los reusa;
+`recomputeActivePre()` los sigue refrescando cuando los parámetros cambian.
+Verificado antes/después: la ruta que quedaba atascada ahora completa el replay
+y emite su reporte.
+
+**Veredicto:** motor ✓ · visual ✓ · ecuaciones ✓ · predicciones ✓ · persistencia ✓.
