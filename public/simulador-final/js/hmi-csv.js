@@ -165,6 +165,18 @@ export const WINCC_ALIAS = {
   'H_CL_Total_Flakes':    'F_CL_KGMIN',
   // "SL1 % Set value (%)" · Access Name: Forming
   'H_Act_SL1_SP':         'PCT_SL1',
+
+  /* HMI de encolado / cocina de cola (420 items, servidor `HMI`, 21-jul-2026).
+     Es un servidor DISTINTO al de formación: si IT junta ambos en un solo CSV,
+     revisar colisiones — `H_PressSpeed_PV` y `H_SL_FlakeDens_SP` existen en los
+     dos con Access Name distinto (`Forming` vs `Form`). */
+  // "CL dosing bin weight" · Access Name: Gluing · grupo CL_DosBin
+  'F_CL_DosBin_Weight':   'DOSING_CL_M_KG',
+  // "SL dosing bin weight" · Access Name: Gluing · grupo SL_DosBin
+  'F_SL_DosBin_Weight':   'DOSING_SL_M_KG',
+  // "SL flake flow" · unidad no declarada en el comentario; se asume kg/min por
+  // simetría con `H_CL_Total_Flakes` ("CL total flakes kg/min"). CONFIRMAR.
+  'F_SL_FlakeFlow_PV':    'F_SL_KGMIN',
 };
 
 /* Índice de búsqueda: NOMBRE_NORMALIZADO → metadatos. Cubre los nombres

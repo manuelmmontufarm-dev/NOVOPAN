@@ -213,3 +213,35 @@ predicciones desde los parámetros HMI en vivo (puente `P1_TO_MODEL`), las expon
 en `window.__NOVOPAN_ROUTE_MODEL__` y las registra en consola. No altera la
 simulación visual: la app «usa» exactamente las mismas ecuaciones que este
 documento y las pruebas.
+
+## Descomposición de las bandas transportadoras (plano DXF Dieffenbacher · 21-jul-2026)
+
+Fuente: `PlanoGeneral2022.dwg`, capas `02_31.170/31.270_TN1000VR`, `02_31.310_Flap-CL`,
+`02_31.330-TKK24`, bloque Formstation (capa `00_Dieffenbacher Lieferumfang`).
+Identificación confirmada en planta: mirando desde la prensa hacia los silos,
+FINA a la derecha (alimenta E1+E3), GRUESA a la izquierda (alimenta E2).
+
+**FINA (item 31.170 · carril paralelo a ~7.3 m del eje):**
+
+| Tramo | L (m) | Fuente |
+|---|---|---|
+| Banda inclinada (encoladora CE → cabeza del carril) | 39.22 | derivada: 64.57 − 16.42 − 8.93 (plan DXF 38.35 + subida ≈ 8.2 m) |
+| Banda distribución SL2 (polea 30hp "driven" sim 5.50 → "drive" sim 21.92) | 16.42 | plano DXF |
+| Brazo oscilatorio (dibujado 8.35–8.93 m) | 8.93 | plano DXF |
+| **Total rama SL2 (E3)** | **64.57** | = medición de campo 25-jun ✓ (coincidencia a 2 cm) |
+| **Total rama SL1 (E1)** = inclinada + brazo (SIN distribución) | **48.15** | ⇒ SL1 llega ≈ 9.9 s ANTES que SL2 a 99.5 m/min |
+
+**GRUESA (item 31.270 · sobre el eje de la línea):**
+
+| Tramo | L (m) | Fuente |
+|---|---|---|
+| Banda inclinada (encoladora CI → Flap-CL en sim −1) | ≈ 39.2 | plano DXF (plan 38.35 + subida) |
+| Banda flap → esparcidor 2 (descarga en sim 16.7, pasa sobre E1) | ≈ 17.7 | plano DXF (tramo −1→8.5 no dibujado en planta, inferido) |
+| Brazo oscilatorio E2 | ≈ 11.6 | derivada: 68.5 − 39.2 − 17.7 |
+| **Total ruta CL (E2)** | **68.5** | = medición de campo 25-jun ✓ |
+
+Los valores `inclSL.length` = 64.57 e `inclCL.length` = 68.5 del modelo se REINTERPRETAN
+como TOTAL de banda transportadora hasta el fin del brazo (no solo la inclinada) — los
+totales y por tanto todos los tiempos actuales NO cambian. Refinamiento pendiente:
+separar la rama SL1 (48.15 m) para que E1 reciba ≈ 9.9 s antes que E3.
+El flap 31.310 y el TKK24 31.330 (sim −2, cruce carril↔eje) quedan documentados sin τ propio.

@@ -1,15 +1,25 @@
 # Mapeo de tags reales de WinCC → simulador de trazabilidad L1
 
-**Fuente:** pantalla `Select Tag` del HMI Metso (`HMI-METSO`), **700 items**, fotografiada
-el **2026-07-21** en dos pasadas: vista de lista (nombres) y vista de tabla
-(`Tag Type` · `Access Name` · `Alarm Group` · `Comment`).
-**Cobertura:** completa de A a Z — de `<none>` / `Caudal_entrada_agua_spray` hasta
-`variation`, con `Filter: <none>`. Todos los mapeos de abajo salen del campo
-`Comment` del propio HMI, no de parecido de nombres.
+**Fuentes:** dos servidores WinCC distintos, fotografiados el **2026-07-21**, ambos
+en vista de tabla (`Tag Type` · `Access Name` · `Alarm Group` · `Comment`):
+
+| # | Servidor | Items | Alcance | Cobertura del inventario |
+|---|---|---|---|---|
+| **A** | `HMI-METSO` (monitor AOC) | 700 | formación · pre-prensa · prensa · calidad | completa: `<none>` → `variation` |
+| **B** | `HMI` (monitor OMNI) | 420 | encolado · cocina de cola · EVOjet · **dosificación** | completa: `<none>` → `winch_overload_m05` |
+
+Ambos con `Filter: <none>`. Todos los mapeos salen del campo `Comment` del propio
+HMI, no de parecido de nombres.
+
+> ⚠️ **Colisión de nombres entre servidores.** `H_PressSpeed_PV` y `H_SL_FlakeDens_SP`
+> existen en **los dos**, con `Access Name` distinto (`Forming` en A, `Form` en B) y
+> comentario distinto ("Press speed" vs "Press **Conveyor** Speed"). Si IT vuelca
+> ambos servidores a un solo `hmi.csv`, hay que decidir cuál gana o prefijar el
+> origen. Hoy el simulador se quedaría con el último que aparezca en el archivo.
 
 ---
 
-## 1. Este HMI son SIETE conexiones, no una
+## 1. Servidor A: siete conexiones, no una
 
 La columna `Access Name` revela que el servidor concentra varios PLC:
 
@@ -27,8 +37,23 @@ La columna `Access Name` revela que el servidor concentra varios PLC:
 Esto importa para IT: no es un solo origen. Y las `Memory *` no se pueden leer
 desde SQL del PLC — o las publica el HMI, o no existen para nosotros.
 
-**Sigue confirmado:** cero tags de silos verdes, bunker, secadero, tamices,
-zarandas, ciclón o silos 4/5/6/8. Los 31 parámetros upstream siguen sin fuente.
+## 1b. Servidor B: encolado, cocina de cola y dosificación
+
+`Access Name`: `Gluing` (mayoría) y **`PLC_GE`** = sistema EVOjet de encolado
+(boquillas de resina, winch de limpieza, swivel).
+`Alarm Group` útiles: **`CL_DosBin`** / **`SL_DosBin`** (las tolvas dosificadoras
+que alimentan Sección 2), `CL_Blender` / `SL_Blender`, `GlueKitchen`, `PumpAlarms`.
+
+Los comentarios de este servidor traen además **direcciones de bloque de datos
+del PLC** (`DB402.DBX2.0`, `DB413.DBX1.3`, `"F_CL_GI_HMI_DB".Swivel_in_time`) y
+números de equipo (`07660M12` bomba de resina, `06670M02`, `07610M01`, `07620M01`).
+Eso es exactamente lo que IT necesita para el volcado — no hay que adivinar nada.
+
+**Los dos servidores juntos siguen sin cubrir el upstream:** cero tags de silos
+verdes, bunker, secadero, tambor, tamices, zarandas, ciclón o silos 4/5/6/8. Los
+únicos `Nivel_*` del servidor B son **tanques de resina y parafina**
+(`Nivel_CL` = "Nivel tanque diario resina CL", `Nivel_SL`, `Nivel_Parafina`), no
+silos de material. Los 31 parámetros upstream siguen sin fuente.
 
 ---
 
@@ -49,15 +74,24 @@ que un mapeo "por nombre razonable" produce y que solo la descripción detecta.
 
 ## 3. Mapeo aplicado (confirmado por `Comment`)
 
-| Parámetro del simulador | Tag WinCC | Comment del HMI | Access |
+| Parámetro del simulador | Tag WinCC | Comment del HMI | Srv · Access |
 |---|---|---|---|
-| `V_PRENSA_M_MIN` | `H_PressSpeed_PV` | "Press speed (m/min)" | Forming |
-| `PESO_MANTA_KGM2` | `H_Act_MatWeight_SP` | "Mat weight after forming (kg/m2)" | Forming |
-| `F_CL_KGMIN` | `H_CL_Total_Flakes` | "CL total flakes kg/min" | Forming |
-| `PCT_SL1` | `H_Act_SL1_SP` | "SL1 % Set value (%)" | Forming |
+| `V_PRENSA_M_MIN` | `H_PressSpeed_PV` | "Press speed (m/min)" | A · Forming |
+| `PESO_MANTA_KGM2` | `H_Act_MatWeight_SP` | "Mat weight after forming (kg/m2)" | A · Forming |
+| `F_CL_KGMIN` | `H_CL_Total_Flakes` | "CL total flakes kg/min" | A · Forming |
+| `PCT_SL1` | `H_Act_SL1_SP` | "SL1 % Set value (%)" | A · Forming |
+| `DOSING_CL_M_KG` | `F_CL_DosBin_Weight` | "CL dosing bin weight" | B · Gluing |
+| `DOSING_SL_M_KG` | `F_SL_DosBin_Weight` | "SL dosing bin weight" | B · Gluing |
+| `F_SL_KGMIN` | `F_SL_FlakeFlow_PV` | "SL flake flow" ⚠️ unidad no declarada | B · Gluing |
 
 Están en `WINCC_ALIAS` (`js/hmi-csv.js`). El CSV puede traer el nombre de WinCC
-o el canónico, indistintamente.
+o el canónico, indistintamente. Verificado: los 7 alias parsean y `hmi.csv`
+sigue en 104 tags / 0 warnings.
+
+⚠️ `F_SL_FlakeFlow_PV` es el único alias cuya unidad **no** está declarada en el
+comentario. Se asume kg/min por simetría con `H_CL_Total_Flakes` ("CL total
+flakes kg/min") y con sus tags hermanos (`F_SL_FillingRequest…` sí dice kg/min).
+Confirmar en pantalla antes de dar el modelo por bueno.
 
 ---
 
@@ -67,14 +101,14 @@ Aquí es donde las descripciones ahorraron trabajo equivocado:
 
 | Parámetro | Lo que supuse | Lo que dice el HMI | Veredicto |
 |---|---|---|---|
-| `F_SL_KGMIN` | un tag | `H_SL1_Total_Flakes` "SL1 total flakes kg/min" + `H_SL2_Total_Flakes` "SL2 total flakes kg/min" | **suma de dos tags** — necesita tag derivado |
+| `F_SL_KGMIN` | un tag del servidor A | en A hay que sumar `H_SL1_Total_Flakes` + `H_SL2_Total_Flakes`; en **B existe `F_SL_FlakeFlow_PV` "SL flake flow"** directo | **resuelto por el servidor B** — ya no hace falta tag derivado |
 | `M_ESP1_KG` | `H_SL1_Filling_PV` en kg | "SL1 **Filling degree (%)**" | es %, no kg — falta capacidad de tolva |
 | `M_ESP2_KG` | `H_CC_Filling_PV` en kg | "CC **Filling degree (%)**" | idem |
 | `M_ESP3_KG` | `H_SL2_Filling_PV` en kg | "SL2 **Filling degree (%)**" | idem |
 | `INCL_CL_V_MMIN` | banda inclinada | `H_CC_Speed_SP` = "CC **Metering belt** speed Set value" | es la banda dosificadora, otra máquina |
 | `INCL_SL_V_MMIN` | banda inclinada | `H_SL_Speed_SP` = "SL Speed SP", **Memory Real** | ni es la banda inclinada ni viene del PLC |
 | `PCT_SL2` | tag propio | no existe | derivar: `100 − PCT_SL1`, o `SL2/(SL1+SL2)` |
-| `DOSING_*_F_KGMIN` | — | candidatos: `H_CL_RequestAmoutGluing` / `H_SL_RequestAmoutGluing` "Flake request amount from gluing kg/min" | verificar si es demanda o flujo real |
+| `DOSING_*_F_KGMIN` | — | servidor B: `F_CL_FlakeFlow_PV` "CL flake flow" / `F_SL_FlakeFlow_PV` — es el mismo caudal que `F_*_KGMIN`, no un segundo flujo | revisar si el modelo necesita los dos o son redundantes |
 
 **No hay ningún tag de velocidad de banda inclinada en este HMI.** Esos dos
 parámetros se quedan como medida fija (ya están medidos: 68.5 m y 64.57 m).
@@ -125,6 +159,25 @@ asume velocidad de prensa en todo el tramo; con esto puede usar la velocidad med
 | `Q_Act_PanelAmount` | "Order amount of boards" · Access `POF` |
 | `Q_Act_PanelLength` / `_PanelWidth` / `_FinalThickness` | tablero terminado · Access `POF` |
 
+### Servidor B — dosificación y encolado (todo nuevo)
+| Tag | Comment |
+|---|---|
+| `F_CL_DosBin_Speed` / `F_SL_DosBin_Speed` | "dosing bin, metering belt speed" |
+| `F_CL_Filling_PV` / `F_SL_Filling_PV` | "dosing bin filling level" |
+| `F_CL_Do_StopFilling` / `F_SL_Do_StopFilling` | **"Stop filling from silo limit"** — el único rastro de los silos finales |
+| `F_CL_FillingRequest…` | "Filling request amount when belt is stop **kg/min**" |
+| `F_CL_FlakeDens_PV` | densidad de flakes en dosificación |
+| `F_CL_FlakeTemp_PV` | "TEMP ENFRIAMIENTO" · grupo `CL_Blender` |
+| `F_CL_DropRoll_Speed` | "CL Drop roll speed present value" |
+| `GE10S_B441…B448_GEN_PV` | "EVOjet Flujo boquilla de resina 1…8 [l/min]" — 8 boquillas |
+| `GE10S_B401_GEN_PV` | "EVOjet Presión distribuidor resina B401" |
+| `GE10S_B431_GEN_PV` | "EVOjet Presión aire atomización B431" |
+| `Nivel_CL` / `Nivel_SL` / `Nivel_Parafina` | niveles de **tanque de resina/parafina** (no de silo) |
+| `AIR_HUMIDITY`, `Humedad_compresor` | humedad de aire |
+| `rendimiento_LF` | "Rendimiento %" |
+| `F_Alarm105/109/84/88` | alarmas de presión de bombas dosificadoras de resina y parafina |
+| `F_Alarm148/175` | "Resin C.E. / Resin CI consumption tank min limit" |
+
 ### Equipos identificados (amarran con los planos eléctricos)
 `F_CL_Motor_Speed_08115Mxx` / `F_CL_Motor_Current_08115Mxx`:
 - `M02` Dividing Conveyor Osc · `M03` Bottom Belt · `M05` Drop Roll · `M06` Oscillation
@@ -163,11 +216,16 @@ Verificado: `datos/hmi.csv` sigue parseando 104 tags con 0 warnings.
 
 ## 8. Lo que sigue pendiente
 
-1. **Segundo HMI** para silos/secadero/clasificación — 31 parámetros dependen de eso.
-2. **Tags derivados** — decidir si el simulador suma `H_SL1_Total_Flakes + H_SL2_Total_Flakes`
-   para `F_SL_KGMIN`, o si IT entrega la suma ya hecha.
-3. **Capacidad de las tolvas** de SL1 / CC / SL2 (kg) — para convertir el
+1. **HMI de preparación / secado / clasificación** — no es ninguno de los dos
+   revisados. 31 parámetros upstream dependen de que exista.
+2. **Capacidad de las tolvas** de SL1 / CC / SL2 (kg) — para convertir el
    "Filling degree (%)" a los kg que el modelo necesita. Sale de los planos.
+3. **Unidad de `F_SL_FlakeFlow_PV`** y `F_CL_FlakeFlow_PV` — el único alias
+   aplicado sin unidad declarada.
 4. **Polaridad de `OK_BOMBAS_GLUING_*`** — ¿1 = OK o 1 = falla?
 5. **Unidad de `H_MatWeight_PID_RV`** ("Mat weight PID regulator real value") — si
    está en kg/m² es mejor fuente que el `_SP` para el peso de manta medido.
+6. **Estrategia de volcado con dos servidores** — un solo `hmi.csv` con riesgo de
+   colisión, o dos archivos (`hmi-formacion.csv` + `hmi-encolado.csv`) que el
+   simulador lea y combine. Recomendado lo segundo: elimina la colisión y cada
+   servidor puede escribir a su propio ritmo.
