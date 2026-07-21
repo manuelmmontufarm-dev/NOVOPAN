@@ -8,8 +8,8 @@
 | Origen del dato | Cantidad | Qué significa |
 |---|---|---|
 | HMI · dato vivo | 44 | debería llegar del PLC vía CSV |
-| medido en planta | 25 | cinta métrica / plano — constante |
-| estimado | 35 | supuesto del modelo, pendiente de confirmar |
+| medido en planta | 27 | cinta métrica / plano — constante |
+| estimado | 33 | supuesto del modelo, pendiente de confirmar |
 
 ## Archivos CSV que se leen
 
@@ -71,10 +71,12 @@ En este orden; **el último gana** y toda colisión queda avisada en el pill de 
 | `M_ESP2_KG` | kg | — | — | `mass:esp2-zone` |
 | `M_ESP3_KG` | kg | — | — | `mass:esp3-zone` |
 
-## Medido en planta (constante) — 25
+## Medido en planta (constante) — 27
 
 | Tag del CSV | Unidad | Tag real de WinCC | Servidor | Clave(s) del modelo |
 |---|---|---|---|---|
+| `SILO5_V_M3` | m³ | — | — | `p1:s5_V` |
+| `SILO6_V_M3` | m³ | — | — | `p1:s6_V` |
 | `INCL_CL_L_M` | m | — | — | `p1:inclG_L`<br>`len:incl-thick` |
 | `INCL_CL_V_MMIN` | m/min | — | — | `p1:inclG_v`<br>`speed:incl-thick` |
 | `INCL_SL_L_M` | m | — | — | `p1:inclF_L`<br>`len:incl-fine` |
@@ -101,7 +103,7 @@ En este orden; **el último gana** y toda colisión queda avisada en el pill de 
 | `M_SIERRA_INICIO_M` | m | — | — | `geom:sawStart` |
 | `M_SIERRA_FIN_M` | m | — | — | `geom:sawEnd` |
 
-## Estimado (pendiente de confirmar) — 35
+## Estimado (pendiente de confirmar) — 33
 
 | Tag del CSV | Unidad | Tag real de WinCC | Servidor | Clave(s) del modelo |
 |---|---|---|---|---|
@@ -133,8 +135,6 @@ En este orden; **el último gana** y toda colisión queda avisada en el pill de 
 | `T_CICLON_S` | s | — | — | `p1:tCiclon` |
 | `T_CLAS_SL_S` | s | — | — | `p1:tClasSL` |
 | `T_REINGRESO_SL_S` | s | — | — | `p1:tReingresoSL` |
-| `SILO5_V_M3` | m³ | — | — | `p1:s5_V` |
-| `SILO6_V_M3` | m³ | — | — | `p1:s6_V` |
 | `SILO4_V_M3` | m³ | — | — | `p1:s4_V` |
 | `SILO8_V_M3` | m³ | — | — | `p1:s8_V` |
 | `T_ENC_CI_S` | s | — | — | `p1:tEncCI`<br>`ret:enc-thick` |

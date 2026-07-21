@@ -142,13 +142,13 @@ export const LAYER = {
 export const ROUTE_PARAMS = [
   /* ── Silo 5 (CL / core) · τ_silo = ρ·V·L / F × 60 ── */
   { key: 'silo5.rho', label: 'Silo 5 · densidad ρ', equipment: 'Silo 5 (CL/core)', layer: LAYER.COARSE, value: 135, unit: 'kg/m³', source: 'hmi', min: 0, max: null, editable: true, description: 'Densidad aparente del material core en Silo 5. HMI CSV SILO5_RHO_KGM3.' },
-  { key: 'silo5.capacity', label: 'Silo 5 · capacidad V', equipment: 'Silo 5 (CL/core)', layer: LAYER.COARSE, value: 120, unit: 'm³', source: 'estimated', min: 0, max: null, editable: true, description: 'Volumen del silo. «pendiente de confirmar» en HMI CSV → ESTIMADO; τ_silo hereda el flag hasta medir V.' },
+  { key: 'silo5.capacity', label: 'Silo 5 · capacidad V', equipment: 'Silo 5 (CL/core)', layer: LAYER.COARSE, value: 100, unit: 'm³', source: 'measured', min: 0, max: null, editable: true, description: 'Volumen del silo, CONFIRMADO en planta 21-jul-2026: 100 m³. Antes 120 estimado.' },
   { key: 'silo5.level', label: 'Silo 5 · nivel', equipment: 'Silo 5 (CL/core)', layer: LAYER.COARSE, value: 44, unit: '%', source: 'hmi', min: 0, max: 100, editable: true, description: 'Nivel de llenado. Se convierte a fracción (÷100) antes de usar en τ_silo.' },
   { key: 'silo5.flow', label: 'Silo 5 · flujo de salida F', equipment: 'Silo 5 (CL/core)', layer: LAYER.COARSE, value: 302, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'Flujo de descarga del silo hacia dosing gruesa. HMI CSV SILO5_FOUT_KGMIN (kg/min, NO kg/h).' },
 
   /* ── Silo 6 (SL / capas finas) ── */
   { key: 'silo6.rho', label: 'Silo 6 · densidad ρ', equipment: 'Silo 6 (SL/capas)', layer: LAYER.FINE, value: 188, unit: 'kg/m³', source: 'hmi', min: 0, max: null, editable: true, description: 'Densidad aparente del material fino en Silo 6. HMI CSV SILO6_RHO_KGM3.' },
-  { key: 'silo6.capacity', label: 'Silo 6 · capacidad V', equipment: 'Silo 6 (SL/capas)', layer: LAYER.FINE, value: 120, unit: 'm³', source: 'estimated', min: 0, max: null, editable: true, description: 'Volumen del silo. «pendiente de confirmar» → ESTIMADO.' },
+  { key: 'silo6.capacity', label: 'Silo 6 · capacidad V', equipment: 'Silo 6 (SL/capas)', layer: LAYER.FINE, value: 100, unit: 'm³', source: 'measured', min: 0, max: null, editable: true, description: 'Volumen del silo, CONFIRMADO en planta 21-jul-2026: 100 m³. Antes 120 estimado.' },
   { key: 'silo6.level', label: 'Silo 6 · nivel', equipment: 'Silo 6 (SL/capas)', layer: LAYER.FINE, value: 31, unit: '%', source: 'hmi', min: 0, max: 100, editable: true, description: 'Nivel de llenado. Se convierte a fracción antes de usar.' },
   { key: 'silo6.flow', label: 'Silo 6 · flujo de salida F', equipment: 'Silo 6 (SL/capas)', layer: LAYER.FINE, value: 108, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'Flujo de descarga hacia dosing fina. HMI CSV SILO6_FOUT_KGMIN (kg/min).' },
 

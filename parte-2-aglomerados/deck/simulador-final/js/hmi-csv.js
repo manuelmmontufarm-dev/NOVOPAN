@@ -112,11 +112,11 @@ export const TAG_MAP = {
   T_REINGRESO_SL_S:    entry('p1:tReingresoSL', 'est', 's'),
 
   SILO5_RHO_KGM3:      entry('p1:s5_rho', 'hmi', 'kg/m³'),
-  SILO5_V_M3:          entry('p1:s5_V', 'est', 'm³'),
+  SILO5_V_M3:          entry('p1:s5_V', 'measured', 'm³'),   // 100 m³ confirmado en planta 21-jul-2026
   SILO5_L_PCT:         entry('p1:s5_L', 'hmi', '%'),
   SILO5_FOUT_KGMIN:    entry('p1:s5_Fmin', 'hmi', 'kg/min'),
   SILO6_RHO_KGM3:      entry('p1:s6_rho', 'hmi', 'kg/m³'),
-  SILO6_V_M3:          entry('p1:s6_V', 'est', 'm³'),
+  SILO6_V_M3:          entry('p1:s6_V', 'measured', 'm³'),   // 100 m³ confirmado en planta 21-jul-2026
   SILO6_L_PCT:         entry('p1:s6_L', 'hmi', '%'),
   SILO6_FOUT_KGMIN:    entry('p1:s6_Fmin', 'hmi', 'kg/min'),
   SILO4_RHO_KGM3:      entry('p1:s4_rho', 'hmi', 'kg/m³'),

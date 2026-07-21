@@ -99,9 +99,13 @@ test('τ_silo6 correcto', () => approx(tauSilo(defaultParamValues(), 'silo6').va
 test('τ_dosingSL correcto', () => approx(tauDosing(defaultParamValues(), 'dosingSL').value, HAND.tauDosingSL, 'dosingSL'));
 test('t_inclSL correcto', () => approx(tInclined(defaultParamValues(), 'inclSL').value, HAND.tInclSL, 'inclSL'));
 test('fineUpstream = Σ pasos', () => approx(fineUpstream(defaultParamValues()).value, HAND.fine, 'fine'));
-test('fineUpstream lleva flag ESTIMADO (V silo sin confirmar)', () => {
+test('fineUpstream YA NO lleva flag ESTIMADO (V silo 6 confirmado 21-jul: 100 m³)', () => {
+  /* El volumen del silo 6 era el ÚLTIMO input estimado de esta cadena. Al
+     confirmarse en planta, la ruta fina upstream queda enteramente apoyada en
+     dato medido o de HMI. Si algún día vuelve a aparecer un estimado aguas
+     arriba, esta prueba lo delata. */
   const q = fineUpstream(defaultParamValues());
-  assert(q.flags.has(STATUS.ESTIMATED), 'debe propagar estimado desde silo6.capacity');
+  assert(!q.flags.has(STATUS.ESTIMATED), 'no debería quedar ningún estimado en la cadena fina');
 });
 
 /* ── Ruta gruesa ── */
@@ -121,8 +125,8 @@ test('registro lo gana la ruta fina (SL), no la gruesa', () => {
   const q = registration(defaultParamValues());
   assert(q.winner === 'SL1' || q.winner === 'SL2', `winner debe ser una capa fina, fue ${q.winner}`);
 });
-test('registro lleva flag ESTIMADO', () => {
-  assert(registration(defaultParamValues()).flags.has(STATUS.ESTIMATED), 'reg estimado');
+test('registro YA NO lleva flag ESTIMADO (hereda el volumen confirmado)', () => {
+  assert(!registration(defaultParamValues()).flags.has(STATUS.ESTIMATED), 'reg sin estimados');
 });
 
 /* ── Sensores ── */
@@ -212,10 +216,11 @@ test('kg/min ⇒ kg/h', () => approx(convert.kgminToKgh(100), 6000, 'kgmin'));
 test('% ⇒ fracción', () => { approx(convert.pctToFraction(44), 0.44, 'pct'); approx(convert.pctToFraction(31), 0.31, 'pct31'); });
 test('min ⇒ s y s ⇒ min', () => { approx(convert.minToSec(2), 120, 'minToSec'); approx(convert.secToMin(120), 2, 'secToMin'); });
 test('τ_silo sale en SEGUNDOS (×60 aplicado), no minutos', () => {
-  // mass = 135·120·0.44 = 7128 kg; /302 kg/min = 23.60 min; ×60 = 1416 s
+  // mass = 135·100·0.44 = 5940 kg; /302 kg/min = 19.67 min; ×60 = 1180 s
+  // (V = 100 m³ confirmado en planta 21-jul-2026; antes 120 estimado.)
   const q = tauSilo(defaultParamValues(), 'silo5');
-  approx(q.value, 1416.16, 'segundos', 0.05);
-  approx(q.value / 60, 23.60, 'minutos', 0.05);
+  approx(q.value, 1180.13, 'segundos', 0.05);
+  approx(q.value / 60, 19.67, 'minutos', 0.05);
 });
 test('flowToKgMin rechaza unidad desconocida (NaN, no 0)', () => {
   assert(Number.isNaN(flowToKgMin(100, 'kg/s')), 'unidad rara ⇒ NaN');

@@ -74,11 +74,11 @@ export const P1_PARAMS = [
   { key: 'p1:tReingresoSL', label: 'Transporte · reingreso SL', unit: 's', default: 10 },
 
   { key: 'p1:s5_rho', label: 'Densidad · Silo 5', unit: 'kg/m³', default: 135 },
-  { key: 'p1:s5_V', label: 'Volumen · Silo 5', unit: 'm³', default: 120, unknown: true },
+  { key: 'p1:s5_V', label: 'Volumen · Silo 5', unit: 'm³', default: 100 },
   { key: 'p1:s5_L', label: 'Nivel · Silo 5', unit: '%', default: 44 },
   { key: 'p1:s5_Fmin', label: 'Flujo de salida · Silo 5', unit: 'kg/min', default: 302 },
   { key: 'p1:s6_rho', label: 'Densidad · Silo 6', unit: 'kg/m³', default: 188 },
-  { key: 'p1:s6_V', label: 'Volumen · Silo 6', unit: 'm³', default: 120, unknown: true },
+  { key: 'p1:s6_V', label: 'Volumen · Silo 6', unit: 'm³', default: 100 },
   { key: 'p1:s6_L', label: 'Nivel · Silo 6', unit: '%', default: 31 },
   { key: 'p1:s6_Fmin', label: 'Flujo de salida · Silo 6', unit: 'kg/min', default: 108 },
   { key: 'p1:s4_rho', label: 'Densidad · Silo 4', unit: 'kg/m³', default: 238 },
@@ -414,11 +414,11 @@ function renderOverview(params, speed) {
    Cada símbolo se resuelve desde el mismo objeto params que llega del CSV. */
 function finalRouteEquation(params, speed) {
   const rho5 = n(params, 'p1:s5_rho', 135);
-  const v5 = n(params, 'p1:s5_V', 120);
+  const v5 = n(params, 'p1:s5_V', 100);
   const l5 = n(params, 'p1:s5_L', 44);
   const f5 = n(params, 'p1:s5_Fmin', 302);
   const rho6 = n(params, 'p1:s6_rho', 188);
-  const v6 = n(params, 'p1:s6_V', 120);
+  const v6 = n(params, 'p1:s6_V', 100);
   const l6 = n(params, 'p1:s6_L', 31);
   const f6 = n(params, 'p1:s6_Fmin', 108);
   const mDosCL = n(params, 'p1:dosG_M', 25);
