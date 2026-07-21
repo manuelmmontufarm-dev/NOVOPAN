@@ -5,79 +5,295 @@
     "fecha_extraccion": "2026-07-21",
     "protegido": true,
     "nota": "Valores del plano del fabricante. Editar SOLO con candado de parametros; cualquier cambio debe alertar que provienen de los planos.",
-    "excluido": "Post-prensa (rodillos hacia los sensores): el plano difiere +7.3 m del modelo (sierra refila en sim 85.57 vs 78.30) — RE-MEDIR EN CAMPO antes de adoptar."
+    "excluido": "Post-prensa: pendiente re-medicion de campo de rodillos/sensores. OJO hallazgo 21-jul: la maquina de refila en el plano EMPIEZA en sim 78.3-78.8 (coincide con el campo 78.30); el 'CL Edge Trim Saw' 85.57 es el eje de la cuchilla, no el inicio — la discrepancia de +7.3 m reportada antes era una mala comparacion."
   },
   "eje": {
     "descripcion": "sim_m: metros absolutos del simulador, 0 = inicio de banda blanca / formacion del colchon",
     "puntos_referencia_dxf": [
-      { "id": "cl_infeed", "label": "CL Infeed / Forming Station (eje marcado del fabricante)", "sim_m": 7.02 },
-      { "id": "cl_matscale", "label": "CL Matscale (bascula de manta)", "sim_m": 26.20 },
-      { "id": "cl_preprensa", "label": "CL Pre-Press (eje del cabezal de salida de la pre-prensa)", "sim_m": 33.81 },
-      { "id": "cl_reject", "label": "CL Reject Hopper (tolva de rechazo / nariz)", "sim_m": 44.64 },
-      { "id": "cl_tambor_in", "label": "CL Press Infeed Drum (tambor de entrada de prensa)", "sim_m": 52.67 },
-      { "id": "cl_tambor_out", "label": "CL Press Outfeed Drum (tambor de salida) = ANCLA", "sim_m": 71.60 }
+      {
+        "id": "cl_infeed",
+        "label": "CL Infeed / Forming Station (eje marcado del fabricante)",
+        "sim_m": 7.02
+      },
+      {
+        "id": "cl_matscale",
+        "label": "CL Matscale (bascula de manta)",
+        "sim_m": 26.2
+      },
+      {
+        "id": "cl_preprensa",
+        "label": "CL Pre-Press (eje del cabezal de salida de la pre-prensa)",
+        "sim_m": 33.81
+      },
+      {
+        "id": "cl_reject",
+        "label": "CL Reject Hopper (tolva de rechazo / nariz)",
+        "sim_m": 44.64
+      },
+      {
+        "id": "cl_tambor_in",
+        "label": "CL Press Infeed Drum (tambor de entrada de prensa)",
+        "sim_m": 52.67
+      },
+      {
+        "id": "cl_tambor_out",
+        "label": "CL Press Outfeed Drum (tambor de salida) = ANCLA",
+        "sim_m": 71.6
+      }
     ],
     "distancias_entre_equipos": [
-      { "id": "d_infeed_matscale", "de": "cl_infeed", "a": "cl_matscale", "m": 19.171 },
-      { "id": "d_matscale_preprensa", "de": "cl_matscale", "a": "cl_preprensa", "m": 7.611 },
-      { "id": "d_preprensa_reject", "de": "cl_preprensa", "a": "cl_reject", "m": 10.830 },
-      { "id": "d_reject_tamborin", "de": "cl_reject", "a": "cl_tambor_in", "m": 8.036 },
-      { "id": "d_tambor_tambor", "de": "cl_tambor_in", "a": "cl_tambor_out", "m": 18.927 },
-      { "id": "d_infeed_tamborout", "de": "cl_infeed", "a": "cl_tambor_out", "m": 64.575 }
+      {
+        "id": "d_infeed_matscale",
+        "de": "cl_infeed",
+        "a": "cl_matscale",
+        "m": 19.171
+      },
+      {
+        "id": "d_matscale_preprensa",
+        "de": "cl_matscale",
+        "a": "cl_preprensa",
+        "m": 7.611
+      },
+      {
+        "id": "d_preprensa_reject",
+        "de": "cl_preprensa",
+        "a": "cl_reject",
+        "m": 10.83
+      },
+      {
+        "id": "d_reject_tamborin",
+        "de": "cl_reject",
+        "a": "cl_tambor_in",
+        "m": 8.036
+      },
+      {
+        "id": "d_tambor_tambor",
+        "de": "cl_tambor_in",
+        "a": "cl_tambor_out",
+        "m": 18.927
+      },
+      {
+        "id": "d_infeed_tamborout",
+        "de": "cl_infeed",
+        "a": "cl_tambor_out",
+        "m": 64.575
+      }
     ]
   },
   "huellas_equipos": [
-    { "id": "diffensor", "label": "Diffensor", "inicio_m": 18.43, "fin_m": 20.88, "largo_m": 2.45, "capa": "01_35-Diffensor" },
-    { "id": "messeinheit", "label": "Unidad de medicion (Messeinheit, junto al detector)", "inicio_m": 27.48, "fin_m": 28.16, "largo_m": 0.68, "capa": "01_35-Messeinheit" },
-    { "id": "vorpresse", "label": "Pre-prensa (huella capa Vorpresse; incluye transferencia aguas abajo)", "inicio_m": 29.21, "fin_m": 45.87, "largo_m": 16.67, "capa": "01_35-Vorpresse", "nota": "El inicio 29.21 coincide con el modelo (29.06). CL Pre-Press 33.81 = fin del cuerpo de pre-prensa del modelo (33.75)." },
-    { "id": "uebergabeband", "label": "Banda de transferencia (Formstrang-Uebergabeband)", "inicio_m": 40.39, "fin_m": 48.02, "largo_m": 7.62, "capa": "01_35-Formstrang-Uebergabeband" },
-    { "id": "screw_reject", "label": "Tornillo de rechazo 35.540 (D600, transversal)", "sim_m": 39.58, "capa": "02_35.540_Screw-D600" }
+    {
+      "id": "diffensor",
+      "label": "Diffensor",
+      "inicio_m": 18.43,
+      "fin_m": 20.88,
+      "largo_m": 2.45,
+      "capa": "01_35-Diffensor"
+    },
+    {
+      "id": "messeinheit",
+      "label": "Unidad de medicion (Messeinheit, junto al detector)",
+      "inicio_m": 27.48,
+      "fin_m": 28.16,
+      "largo_m": 0.68,
+      "capa": "01_35-Messeinheit"
+    },
+    {
+      "id": "vorpresse",
+      "label": "Pre-prensa (huella capa Vorpresse; incluye transferencia aguas abajo)",
+      "inicio_m": 29.21,
+      "fin_m": 45.87,
+      "largo_m": 16.67,
+      "capa": "01_35-Vorpresse",
+      "nota": "El inicio 29.21 coincide con el modelo (29.06). CL Pre-Press 33.81 = fin del cuerpo de pre-prensa del modelo (33.75)."
+    },
+    {
+      "id": "uebergabeband",
+      "label": "Banda de transferencia (Formstrang-Uebergabeband)",
+      "inicio_m": 40.39,
+      "fin_m": 48.02,
+      "largo_m": 7.62,
+      "capa": "01_35-Formstrang-Uebergabeband"
+    },
+    {
+      "id": "screw_reject",
+      "label": "Tornillo de rechazo 35.540 (D600, transversal)",
+      "sim_m": 39.58,
+      "capa": "02_35.540_Screw-D600"
+    }
   ],
   "prensa": {
     "tambor_entrada_m": 52.67,
-    "tambor_salida_m": 71.60,
+    "tambor_salida_m": 71.6,
     "tambor_a_tambor_m": 18.93,
     "banda_roja_m": 7.67,
-    "marco1_abs_m": 55.10,
+    "marco1_abs_m": 55.1,
     "tambor_a_marco1_m": 2.43,
-    "marcos": { "n": 19, "pitch_denso_m": 0.75, "pitch_denso_n": 6, "pitch_std_m": 0.90, "pitch_std_n": 12, "zona_marcos_m": 16.60, "fuente_marcos": "campo (flexometro jul-2026), consistente con tambores DXF" }
+    "marcos": {
+      "n": 19,
+      "pitch_denso_m": 0.75,
+      "pitch_denso_n": 6,
+      "pitch_std_m": 0.9,
+      "pitch_std_n": 12,
+      "zona_marcos_m": 16.6,
+      "fuente_marcos": "campo (flexometro jul-2026), consistente con tambores DXF"
+    }
   },
   "bandas_alimentacion": {
     "identificacion": "Confirmada en planta 21-jul: desde la prensa mirando a los silos, FINA a la DERECHA (alimenta E1+E3, item 31.170, carril a 7.3 m del eje), GRUESA a la IZQUIERDA (alimenta E2, item 31.270, sobre el eje).",
     "fina": [
-      { "id": "incl_fina_plan", "label": "Inclinada fina 31.170 - proyeccion horizontal (marco del transportador)", "m": 38.35, "fuente": "dxf" },
-      { "id": "incl_fina_real", "label": "Inclinada fina - longitud real derivada (con subida ~8.2 m)", "m": 39.22, "fuente": "derivada: 64.57 - 16.42 - 8.93" },
-      { "id": "dist_sl2", "label": "Banda distribucion SL2 (polea 30hp driven sim 5.50 -> drive sim 21.92)", "m": 16.42, "fuente": "dxf" },
-      { "id": "brazo_e1_e3", "label": "Brazo oscilatorio E1/E3 (dibujado 8.35-8.93)", "m": 8.93, "fuente": "dxf" },
-      { "id": "total_sl2", "label": "TOTAL ruta fina hasta fin brazo E3", "m": 64.57, "fuente": "campo 25-jun = suma DXF (39.22+16.42+8.93)" },
-      { "id": "total_sl1", "label": "TOTAL ruta fina hasta fin brazo E1 (SIN distribucion SL2)", "m": 48.15, "fuente": "derivada: 39.22 + 8.93. SL1 llega ~9.9 s antes que SL2 a 99.5 m/min" }
+      {
+        "id": "incl_fina_plan",
+        "label": "Inclinada fina 31.170 - proyeccion horizontal",
+        "m": 38.35,
+        "fuente": "dxf"
+      },
+      {
+        "id": "dist_sl2",
+        "label": "Banda distribucion SL2 (poleas 30hp: sim 5.50 -> 21.92)",
+        "m": 16.42,
+        "fuente": "dxf"
+      },
+      {
+        "id": "brazo_e1",
+        "label": "Brazo oscilatorio E1",
+        "m": 6.0,
+        "fuente": "campo 21-jul (todos los brazos miden lo mismo; el diagonal dibujado de 8.35-8.93 incluye el puente de soporte)"
+      },
+      {
+        "id": "brazo_e3",
+        "label": "Brazo oscilatorio E3",
+        "m": 6.0,
+        "fuente": "campo 21-jul"
+      },
+      {
+        "id": "total_sl2",
+        "label": "TOTAL ruta fina hasta fin brazo E3 (SL2)",
+        "m": 64.57,
+        "fuente": "campo 25-jun (manda para tiempos). Suma plano con inclinada plana: 38.35+16.42+6 = 60.77 -> faltan ~3.8 m entre subida de la inclinada y transferencias (pendiente altura C2)"
+      },
+      {
+        "id": "total_sl1",
+        "label": "TOTAL ruta fina hasta fin brazo E1 (SL1, sin distribucion)",
+        "m": 48.15,
+        "fuente": "derivada: total_sl2 - dist_sl2 = 64.57 - 16.42. SL1 llega ~9.9 s antes que SL2 a 99.5 m/min"
+      }
     ],
     "gruesa": [
-      { "id": "incl_gruesa_plan", "label": "Inclinada gruesa 31.270 - proyeccion horizontal", "m": 38.35, "fuente": "dxf" },
-      { "id": "flap_cl", "label": "Flap-CL 31.310 (posicion en el eje)", "sim_m": -1.0, "fuente": "dxf" },
-      { "id": "tkk24", "label": "TKK24 31.330 (cruce carril-eje en sim -2)", "m": 2.05, "fuente": "dxf" },
-      { "id": "banda_flap_e2", "label": "Banda flap -> esparcidor 2 (descarga sim 16.7; dibujados 8.54-16.70)", "m": 17.7, "fuente": "dxf parcial (tramo -1 a 8.5 inferido)" },
-      { "id": "brazo_e2", "label": "Brazo oscilatorio E2", "m": 11.6, "fuente": "derivada: 68.5 - 39.2 - 17.7 — VERIFICAR" },
-      { "id": "total_cl", "label": "TOTAL ruta gruesa hasta fin brazo E2", "m": 68.5, "fuente": "campo 25-jun, consistente con suma DXF" }
+      {
+        "id": "incl_gruesa_plan",
+        "label": "Inclinada gruesa 31.270 - proyeccion horizontal",
+        "m": 38.35,
+        "fuente": "dxf"
+      },
+      {
+        "id": "flap_cl",
+        "label": "Flap-CL 31.310 (posicion en el eje)",
+        "sim_m": -1.0,
+        "fuente": "dxf"
+      },
+      {
+        "id": "tkk24",
+        "label": "TKK24 31.330 (cruce carril-eje en sim -2)",
+        "m": 2.05,
+        "fuente": "dxf"
+      },
+      {
+        "id": "banda_flap_e2",
+        "label": "Banda flap -> esparcidor 2 (dibujada parcial: 8.54-16.70)",
+        "m": 23.2,
+        "fuente": "derivada: 68.5 - 39.3 - 6 — VERIFICAR (el plano solo dibuja 8.17 m del tramo)"
+      },
+      {
+        "id": "brazo_e2",
+        "label": "Brazo oscilatorio E2",
+        "m": 6.0,
+        "fuente": "campo 21-jul (igual a E1/E3)"
+      },
+      {
+        "id": "total_cl",
+        "label": "TOTAL ruta gruesa hasta fin brazo E2 (CL)",
+        "m": 68.5,
+        "fuente": "campo 25-jun (manda para tiempos)"
+      }
     ]
   },
   "formers_sin_georreferencia": {
     "nota": "Bloque 'mat-former' definido pero NUNCA insertado en el plano (huerfano, sin posicion ni orientacion confirmada). Solo longitudes relativas — usar con cautela; los valores de campo mandan.",
     "zonas": [
-      { "id": "former_s1", "label": "FORMER_S_1 (esparcidor capa)", "largo_m": 9.085, "campo_zona_m": 6.94 },
-      { "id": "former_cc", "label": "FORMER_CC_1 (esparcidor core)", "largo_m": 8.285, "campo_zona_m": 4.38 },
-      { "id": "former_s2", "label": "FORMER_S_2 (esparcidor capa)", "largo_m": 9.25, "campo_zona_m": 6.39 }
+      {
+        "id": "former_s1",
+        "label": "FORMER_S_1 (esparcidor capa)",
+        "largo_m": 9.085,
+        "campo_zona_m": 6.94
+      },
+      {
+        "id": "former_cc",
+        "label": "FORMER_CC_1 (esparcidor core)",
+        "largo_m": 8.285,
+        "campo_zona_m": 4.38
+      },
+      {
+        "id": "former_s2",
+        "label": "FORMER_S_2 (esparcidor capa)",
+        "largo_m": 9.25,
+        "campo_zona_m": 6.39
+      }
     ],
-    "pitch_inicio_a_inicio_m": [8.715, 7.75]
+    "pitch_inicio_a_inicio_m": [
+      8.715,
+      7.75
+    ]
   },
   "verificacion_banda_blanca": {
     "nota": "El plano CONFIRMA las mediciones de campo de la banda blanca; no se cambian. Deltas plano-vs-modelo:",
     "deltas": [
-      { "punto": "SL1 (CL Infeed vs inyeccion 6.63)", "delta_m": 0.39 },
-      { "punto": "Iman (matscale 26.20 vs 26.68)", "delta_m": -0.48 },
-      { "punto": "Pre-prensa inicio (29.21 vs 29.06)", "delta_m": 0.15 },
-      { "punto": "Pre-prensa fin (33.81 vs 33.75)", "delta_m": 0.06 },
-      { "punto": "Nariz (44.64 vs 44.90)", "delta_m": -0.26 }
+      {
+        "punto": "SL1 (CL Infeed vs inyeccion 6.63)",
+        "delta_m": 0.39
+      },
+      {
+        "punto": "Iman (matscale 26.20 vs 26.68)",
+        "delta_m": -0.48
+      },
+      {
+        "punto": "Pre-prensa inicio (29.21 vs 29.06)",
+        "delta_m": 0.15
+      },
+      {
+        "punto": "Pre-prensa fin (33.81 vs 33.75)",
+        "delta_m": 0.06
+      },
+      {
+        "punto": "Nariz (44.64 vs 44.90)",
+        "delta_m": -0.26
+      }
+    ]
+  },
+  "post_prensa_preliminar": {
+    "nota": "NO adoptar aun — re-medir en campo. Anclas que el plano SI da:",
+    "puntos": [
+      {
+        "id": "refila_maquina",
+        "label": "Maquina de refila: cuerpo sim 78.3-85.6; eje de cuchilla (CL Edge Trim Saw) en 85.57",
+        "fuente": "dxf",
+        "nota": "CONFIRMA el inicio 78.30 medido en campo en julio"
+      },
+      {
+        "id": "sierra_transversal",
+        "label": "Cuchillas transversales: 32 m desde la prensa (campo 21-jul) -> sim ~103.6 si es desde el tambor de salida (71.6)",
+        "fuente": "campo",
+        "verificacion_dxf": "PLAUSIBLE: cluster de maquinaria en sim 99-105, entre dos maquinas identicas grandes (91.5-100.3 y 107.4-115, probables enfriadores/volteadores). El plano no etiqueta esta sierra con CL propio. PENDIENTE: confirmar el punto de partida de los 32 m (tambor 71.6 vs fin de estructura de prensa 76.2 -> 103.6 vs 108.2)"
+      },
+      {
+        "id": "saw_access",
+        "label": "'Access to the saw blade under the line' en sim 125.2 (otra sierra, zona de apilado)",
+        "fuente": "dxf"
+      },
+      {
+        "id": "sensores",
+        "label": "Sensores de calidad ~85-88 (calibrado simulador-final: Sensor 1 = 88.00) — quedan ANTES de la transversal: secuencia refila -> sensores -> transversal tiene sentido",
+        "fuente": "campo/hmi"
+      }
     ]
   }
 }
