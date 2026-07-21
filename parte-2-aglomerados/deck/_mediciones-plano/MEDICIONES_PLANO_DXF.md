@@ -98,3 +98,32 @@ Cierre del 32 m del operador: 85.57 − 32 = 53.6 = «un poco después del prime
 (tambor de entrada 52.67). Plano, operador y campo de julio coinciden.
 La máquina 78.3–85.6 es el grupo completo: refila al inicio, transversales al final.
 Pendiente de re-medir: rodillos hacia los sensores y posición exacta de sensores 1-2-3.
+
+## 8 · VALIDACIÓN — Prueba de papel (21-jul-2026, 09:41–09:47 Quito, v = 14.77 m/min)
+
+Papel colocado sobre el colchón en el hueco SL1→CL y fotografiado en cada etapa
+(22 fotos con hora EXIF). Con UNA sola ancla (nariz 45.0 m = 14:43:47) la posición
+de colocación ajusta a **8.32 m** — exactamente el inicio del hueco SL1→CL (8.36). 
+
+| Etapa | m | Predicho | Foto | Δ |
+|---|---|---|---|---|
+| Imán ERIEZ | 26.68 | 14:42:32 | 14:42:30 | −2.6 s |
+| Entrada pre-prensa | 29.06 | 14:42:42 | 14:42:40 | −2.2 s |
+| Salida pre-prensa | 33.75 | 14:43:01 | 14:43:00 | −1.3 s |
+| Sprays/desmoldante | 35.99 | 14:43:10 | 14:43:10 | −0.4 s |
+| Detector CASSEL | 37.69 | 14:43:17 | 14:43:16 | −1.3 s |
+| Cortadores de filo | 39.56 | 14:43:24 | 14:43:24 | −0.9 s |
+| Nariz → banda roja | 45.00 | ancla | 14:43:47 | 0 |
+| Vapor (banda roja) | 46.86 | 14:43:54 | 14:43:55 | +0.4 s |
+| Marco 1 prensa | 55.10 | 14:44:28 | 14:44:29 | +1.0 s |
+| Fin prensa (tambor salida) | 71.60 | 14:45:35 | 14:45:37 | +1.9 s |
+| Sierras transversales | 85.57 | 14:46:31 | ~14:46:22 (ya cortado 14:46:25) | ≈ −7 s |
+| Sensores (SI-PZ1060 / EQUIPO 1) | ≈88.0 | 14:46:41 | 14:46:37–48 | ±6 s |
+
+Tránsito marco 1 → fin prensa: 68 s (fotos) vs 67.0 s (modelo).
+Total colocación → sensores: 319 s vs 323.7 s (−1.5 %).
+
+**Conclusión:** banda blanca, corrección de prensa (52.67/55.10/71.60), sierras
+transversales (85.57) y sensores (~88) quedan VALIDADOS con residuales ≤ ±7 s
+(≤ ±1.7 m) en un recorrido de 80 m. La prueba NO cubre las bandas de alimentación
+(el papel se colocó ya sobre el colchón) — esas siguen con sus pendientes.
