@@ -13,6 +13,44 @@
 
 ---
 
+## Historial reciente
+
+### 2026-07-21 (tarde) · Revisión final de funcionamiento del simulador
+
+- **Escala visual verificada:** Sección 2 es 70.0000 px/m EXACTOS (residuo 0.00 px
+  en barrido 0–88 m) → velocidad visual constante. Parte 1 NO está a escala: el
+  motor avanza por τ de cada ecuación, así que la velocidad del widget cambia por
+  arista — es por diseño, no un bug.
+- **Tiempos por etapa contra ecuaciones:** total 0→88.4 m exacto; cadena upstream
+  gruesa calza al decimal (1417.2 / 1423.1 / 1505.7 s); predicho-vs-observado del
+  route-model cierra a 0.1 % en la ruta fina (T+1:12:05 vs 1:12:00). El predicho
+  de la fina (3989 s) coincide con los 3987 s verificados a mano el 20-jul.
+- **Bug encontrado y corregido (`42e3c99`):** al restaurar un tab cerrado, los
+  hitos upstream se recalculaban con defaults ANTES de que llegara el CSV — con
+  el CSV real de IT el replay offline se habría desfasado. Ahora se persisten en
+  `novopan.simState`. Sin este fix el problema aparecía recién al conectar el CSV real.
+- Sierra transversal remodelada como carro largo: 79.95 (30 cm tras la refila)
+  → 86.72 (salida); la cuchilla corta en 85.57 (`b74bc67`).
+- Detalle completo en `deck/_mediciones-plano/MEDICIONES_PLANO_DXF.md` §9.
+- Veredicto: motor ✓ · visual ✓ · ecuaciones ✓ · predicciones ✓ · persistencia ✓.
+
+
+### 2026-07-21 · Mediciones del plano DXF + validación con prueba de papel
+
+- Plano `PlanoGeneral2022.dwg` (Dieffenbacher) decodificado: sistema de estaciones
+  del fabricante, residual < 1 mm. Fuente de verdad en `deck/_mediciones-plano/`.
+- Corrección de prensa: tambor de entrada en 52.67 m (roja 7.67, prensa 18.93
+  tambor a tambor, marco 1 sigue en 55.10 abs, fin prensa 71.60 intacto).
+- Sierras: refila 78.3 (confirmada), transversales 85.57 (plano + 32 m del operador).
+- Bandas alimentación identificadas: fina 31.170 (E1+E3, distribución 16.42 m),
+  gruesa 31.270 (flap → E2); brazos oscilatorios 6 m.
+- Prueba de papel (14.77 m/min): VALIDA el modelo, residuales ≤ ±3 s hasta fin prensa.
+- simulador-final: defaults del plano + dropdown «Mediciones del plano» en
+  Constantes (candado) + alerta al editar claves protegidas. 56/56 tests.
+- OJO planta: si hay constantes viejas guardadas, usar «Restablecer constantes».
+- Ajuste: el carro de la sierra transversal empieza 30 cm tras la refila (79.95)
+  y es largo hasta la salida (86.72); la cuchilla corta en 85.57.
+
 ## Estado actual
 
 **Fecha:** 2026-06-22

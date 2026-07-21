@@ -483,16 +483,16 @@ function renderRollers() {
 
 // Posiciones reales de los 19 marcos (m desde inicio de prensa · MEDICIONES.md).
 const FRAME_POS_M = [
-  0.10, 0.85, 1.60, 2.35, 3.10, 3.85, 4.60,   // pitch 0.75 (marcos 1–7)
-  5.50, 6.40, 7.30, 8.20, 9.10, 10.00, 10.90, // pitch 0.90 (marcos 7–19)
-  11.80, 12.70, 13.60, 14.50, 15.40,
+  2.43, 3.18, 3.93, 4.68, 5.43, 6.18, 6.93,   // pitch 0.75 (marcos 1–7)
+  7.83, 8.73, 9.63, 10.53, 11.43, 12.33, 13.23, // pitch 0.90 (marcos 7–19)
+  14.13, 15.03, 15.93, 16.83, 17.73,
 ];
 
 function renderFrames() {
   const g = document.getElementById('pressFrames');
   g.textContent = '';
   for (const pos of FRAME_POS_M) {
-    const x = +xm(activeGeometry.pressStartM + (pos / 16.6) * activeGeometry.pressM).toFixed(1);
+    const x = +xm(activeGeometry.pressStartM + (pos / 18.93) * activeGeometry.pressM).toFixed(1);
     g.appendChild(el('line', { x1: x, y1: 188, x2: x, y2: 416 }));
   }
 }
@@ -1678,6 +1678,9 @@ function initSimulation() {
           id: ch.id, seq: ch.seq, color: ch.color, branch: ch.branch,
           startAt: ch.startAt, branchLabel: ch.branchLabel,
           elapsed: ch.elapsed, launched: ch.launched,
+          // Se persisten los hitos calculados: al restaurar, el primer CSV aún
+          // no llegó y recalcularlos con defaults desfasaría el replay offline.
+          miles: ch.miles,
           arrivals: serArrivals(ch.arrivals), passed: [...ch.passed],
         })),
         reports: reports.map((r) => ({
@@ -1720,7 +1723,12 @@ function initSimulation() {
         reports.push({ id: rs.id, seq: rs.seq, color: rs.color, layerName: rs.layerName, arrivals: deArrivals(rs.arrivals), group: groups.get(rs.seq) ?? null });
       }
       for (const cs of saved.preChanges ?? []) {
-        const miles = preMilestonesFor(cs.startAt, cs.branch, modelParams);
+        // Hitos guardados = los vigentes al guardar (con los params del CSV en
+        // vivo). Recalcular aquí usaría defaults (el CSV llega después del boot);
+        // recomputeActivePre() los refresca cuando los params cambien de verdad.
+        const miles = (Array.isArray(cs.miles) && cs.miles.length >= 2)
+          ? cs.miles
+          : preMilestonesFor(cs.startAt, cs.branch, modelParams);
         const ch = {
           id: cs.id, seq: cs.seq, color: cs.color, branch: cs.branch,
           startAt: cs.startAt, branchLabel: cs.branchLabel,

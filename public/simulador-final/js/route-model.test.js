@@ -159,7 +159,7 @@ test('editar longitudes recalcula sensores sin constantes ocultas', () => {
 });
 test('anotaciones usan refila/sierra corregidas y no 85.15 m', () => {
   const a = buildAnnotations(geometryFromParams());
-  assert(a.waypoints.some((w) => w.label === 'Inicio refila' && Math.abs(w.atM - 81.7) < TOL), 'refila 81.7');
+  assert(a.waypoints.some((w) => w.label === 'Inicio refila' && Math.abs(w.atM - 78.3) < TOL), 'refila 78.3');
   assert(a.waypoints.some((w) => w.label === 'Sensor 1' && Math.abs(w.atM - 88) < TOL), 'S1 88');
   assert(!a.waypoints.some((w) => Math.abs(w.atM - 85.15) < TOL), 'no debe persistir 85.15');
 });
