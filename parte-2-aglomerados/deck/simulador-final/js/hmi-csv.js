@@ -222,16 +222,24 @@ export const WINCC_ALIAS = {
   // Densidad flakes en dosificadora fina · kg/m³
   'F_SL_FlakeDens_PV':    'SILO6_RHO_KGM3',
 
-  /* Silos 5 y 6 · nivel y descarga (servidor C, Access SCRN). Los comentarios
-     del HMI declaran "Nivel silo capa interna %" y "Descarga desde silo capa
-     interna kg/h" — pero el NOMBRE completo sale truncado en la foto
-     (`066_C_Dry_Materia…`). En cuanto Sistemas confirme los cuatro nombres,
-     descomentar. La descarga viene en kg/h y el modelo usa kg/min → scale.
-  '066_C_Dry_Material_??_L_PCT_INT':  'SILO5_L_PCT',
-  '066_C_Dry_Material_??_KGH_INT':    { tag: 'SILO5_FOUT_KGMIN', scale: 1 / 60 },
-  '066_C_Dry_Material_??_L_PCT_EXT':  'SILO6_L_PCT',
-  '066_C_Dry_Material_??_KGH_EXT':    { tag: 'SILO6_FOUT_KGMIN', scale: 1 / 60 },
-  */
+  /* Silos finales 5 y 6 · nivel y descarga (servidor C · Access `SCRN` ·
+     grupo `Screening`). Nombres completos confirmados en pantalla el
+     21-jul-2026.
+
+     El propio nombre del tag resuelve la correspondencia que veníamos
+     infiriendo: el HMI llama CL a la "capa interna" y SL a la "capa externa",
+     igual que el modelo. CL = core = silo 5 · SL = fina = silo 6.
+
+     La descarga la publica el HMI en kg/h y el modelo la usa en kg/min → el
+     `scale` hace la conversión, así IT vuelca el número crudo del servidor. */
+  // "Nivel silo capa interna %"
+  '066_C_Dry_Material_CL_Level':     'SILO5_L_PCT',
+  // "Descarga desde silo capa interna kg/h"
+  '066_C_Dry_Material_CL_discharge': { tag: 'SILO5_FOUT_KGMIN', scale: 1 / 60 },
+  // "Nivel silo capa externa %"
+  '066_C_Dry_Material_SL_Level':     'SILO6_L_PCT',
+  // "Descarga desde silo capa externa kg/h"
+  '066_C_Dry_Material_SL_discharge': { tag: 'SILO6_FOUT_KGMIN', scale: 1 / 60 },
 };
 
 /* Normaliza una entrada de WINCC_ALIAS a { tag, scale }. */
@@ -592,12 +600,30 @@ export function detectarPerfil(texto, cfg = null) {
 /* `kv` = el nombre y sus dos puntos van ANTES que cualquier delimitador de
    tabla. La condición del delimitador es la que evita el falso positivo obvio:
    `2026-07-21 08:00:00;TAG;14,5` también tiene `:`, pero después del `;`. */
-const RE_KV = /^"?[A-Za-z_][A-Za-z0-9_. \-]*"?\s*:/;
+/* Devuelve el nombre del tag si la línea abre como `TAG:`, o null.
+   ------------------------------------------------------------
+   El nombre PUEDE empezar con dígito: en el servidor de Preparación casi todos
+   lo hacen (`066_C_Dry_Material_CL_Level`, `051_S_Hombak_Level`, `071_DRY_Hum_out`)
+   porque el prefijo es el código de área. La regla anterior exigía letra o `_`
+   inicial y hacía que ese CSV entero se detectara como "desconocido".
+
+   Las dos condiciones que siguen evitando el falso positivo del timestamp:
+   debe contener al menos una LETRA, y no puede arrancar como fecha `AAAA-`
+   o `AAAA/`. Tampoco se admiten espacios dentro del nombre — ningún tag de
+   WinCC los tiene y son la marca de un `2026-07-21 08:00:00`. */
+function claveKv(linea) {
+  const m = String(linea).match(/^\s*"?([A-Za-z0-9_.\-]+)"?\s*:/);
+  if (!m) return null;
+  const clave = m[1];
+  if (/^\d{4}[-/]/.test(clave)) return null;  // fecha AAAA-MM-DD / AAAA/MM/DD
+  if (!/[A-Za-z]/.test(clave)) return null;   // `08:00:00` y demás horas
+  return clave;
+}
 function pareceKv(lineas) {
   const muestra = lineas.slice(0, 10);
   let ok = 0;
   for (const l of muestra) {
-    if (!RE_KV.test(l)) continue;
+    if (!claveKv(l)) continue;
     const idxDos = l.indexOf(':');
     const idxDelim = Math.min(...DELIMS.map((d) => { const i = l.indexOf(d); return i === -1 ? Infinity : i; }));
     if (idxDos < idxDelim) ok += 1;

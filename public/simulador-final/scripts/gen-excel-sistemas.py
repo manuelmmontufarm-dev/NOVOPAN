@@ -194,10 +194,10 @@ rows = [
     (B, FB, "— NO INCLUIR —", "Gluing", "H_PressSpeed_PV y H_SL_FlakeDens_SP", "—", "", "Estos dos existen también en Formación con otro significado. Mandarlos desde acá causa conflicto: NO ponerlos en este archivo."),
 
     # ── Servidor C · Preparación ──
-    (C, FC, "066_C_Dry_Materia… (¿?)", "SCRN", "Silo 5 (capa interna · core) — nivel", "%", P1, "NOMBRE INCOMPLETO: clic en el tag y leer la barra de estado abajo del diálogo. Comment: \"Nivel silo capa interna %\". Alimenta Sección 2."),
-    (C, FC, "066_C_Dry_Materia… (¿?)", "SCRN", "Silo 5 (capa interna · core) — descarga", "kg/h", P1, "NOMBRE INCOMPLETO (ídem). Comment: \"Descarga desde silo capa interna kg/h\". OJO: el simulador lo usa en kg/min — mandar el valor crudo en kg/h, nosotros convertimos."),
-    (C, FC, "066_C_Dry_Materia… (¿?)", "SCRN", "Silo 6 (capa externa · fina) — nivel", "%", P1, "NOMBRE INCOMPLETO (ídem). Comment: \"Nivel silo capa externa %\". Alimenta Sección 2."),
-    (C, FC, "066_C_Dry_Materia… (¿?)", "SCRN", "Silo 6 (capa externa · fina) — descarga", "kg/h", P1, "NOMBRE INCOMPLETO (ídem). Comment: \"Descarga desde silo capa externa kg/h\". Mandar crudo en kg/h."),
+    (C, FC, "066_C_Dry_Material_CL_Level", "SCRN", "Silo 5 (capa interna · core) — nivel", "%", P1, "Confirmado en pantalla 21-jul. Comment: \"Nivel silo capa interna %\"."),
+    (C, FC, "066_C_Dry_Material_CL_discharge", "SCRN", "Silo 5 (capa interna · core) — descarga", "kg/h", P1, "Confirmado. MANDAR EL VALOR CRUDO EN kg/h — el simulador convierte a kg/min. No dividir entre 60."),
+    (C, FC, "066_C_Dry_Material_SL_Level", "SCRN", "Silo 6 (capa externa · fina) — nivel", "%", P1, "Confirmado en pantalla 21-jul. Comment: \"Nivel silo capa externa %\"."),
+    (C, FC, "066_C_Dry_Material_SL_discharge", "SCRN", "Silo 6 (capa externa · fina) — descarga", "kg/h", P1, "Confirmado. MANDAR EL VALOR CRUDO EN kg/h — el simulador convierte. No dividir entre 60."),
     (C, FC, "Prensa_metal_detector", "Prensa", "Metal detectado en el material (detector a 37.69 m)", "0/1", P2, "Está en el servidor de Preparación aunque el equipo es de Sección 2."),
 ]
 # Alcance deliberado: SOLO Sección 2 (silos 5/6 → sensores). El tramo de
@@ -246,11 +246,8 @@ ws.row_dimensions[1].height = 26
 # correspondencia aserrín↔Silo1, ambigüedad 041.11) queda documentado en
 # MAPEO-WINCC.md y se pedirá cuando se cablee ese tramo.
 pend = [
-    ("Nombre incompleto", "Los 4 tags que empiezan con 066_C_Dry_Materia… (Access SCRN). Sus comentarios son "
-     "\"Nivel silo capa interna %\", \"Descarga desde silo capa interna kg/h\", \"Nivel silo capa externa %\" "
-     "y \"Descarga desde silo capa externa kg/h\". Necesitamos el nombre completo de los cuatro "
-     "(clic en el tag → el nombre completo sale en la barra de estado abajo del diálogo).",
-     "Sistemas", "Son los silos 5 (core) y 6 (capa fina) — la entrada de Sección 2. Es lo más importante de esta lista."),
+    # Los 4 nombres de 066_C_Dry_Material_* quedaron confirmados en pantalla
+    # el 21-jul-2026 y ya están cableados en WINCC_ALIAS — pendiente resuelto.
     ("Unidad", "¿En qué unidad está F_SL_FlakeFlow_PV? Su comentario dice solo \"SL flake flow\".",
      "Sistemas", "Lo estamos usando como kg/min. Si es kg/h, el modelo se equivoca por 60×."),
 ]

@@ -3,7 +3,7 @@
 > Archivo **generado**. No editar a mano — correr `node scripts/gen-tags.mjs`
 > desde `simulador-final/`. Sale de `TAG_MAP` + `WINCC_ALIAS` + los CSV desplegados.
 
-**104 parámetros** · 9 con tag real de WinCC ya cableado.
+**104 parámetros** · 13 con tag real de WinCC ya cableado.
 
 | Origen del dato | Cantidad | Qué significa |
 |---|---|---|
@@ -52,11 +52,11 @@ En este orden; **el último gana** y toda colisión queda avisada en el pill de 
 | `BUNKER_L_PCT` | % | — | — | `p1:bk_L` |
 | `BUNKER_FHUM_KGH` | kg/h | — | — | `p1:bk_F` |
 | `SILO5_RHO_KGM3` | kg/m³ | `F_CL_FlakeDens_PV` | Encolado | `p1:s5_rho` |
-| `SILO5_L_PCT` | % | — | — | `p1:s5_L` |
-| `SILO5_FOUT_KGMIN` | kg/min | — | — | `p1:s5_Fmin` |
+| `SILO5_L_PCT` | % | `066_C_Dry_Material_CL_Level` | Preparación | `p1:s5_L` |
+| `SILO5_FOUT_KGMIN` | kg/min | `066_C_Dry_Material_CL_discharge (×0.0167)` | — | `p1:s5_Fmin` |
 | `SILO6_RHO_KGM3` | kg/m³ | `F_SL_FlakeDens_PV` | Encolado | `p1:s6_rho` |
-| `SILO6_L_PCT` | % | — | — | `p1:s6_L` |
-| `SILO6_FOUT_KGMIN` | kg/min | — | — | `p1:s6_Fmin` |
+| `SILO6_L_PCT` | % | `066_C_Dry_Material_SL_Level` | Preparación | `p1:s6_L` |
+| `SILO6_FOUT_KGMIN` | kg/min | `066_C_Dry_Material_SL_discharge (×0.0167)` | — | `p1:s6_Fmin` |
 | `SILO4_RHO_KGM3` | kg/m³ | — | — | `p1:s4_rho` |
 | `SILO4_L_PCT` | % | — | — | `p1:s4_L` |
 | `SILO4_FOUT_KGMIN` | kg/min | — | — | `p1:s4_Fmin` |

@@ -49,13 +49,18 @@
 # Clap_Silo2B_open       "Clapeta bajo silo 2B abierta"
 # 051_T_Madera_Co…       "Total madera, consumo x turno"
 
-# ── Silos finales 5 y 6 (Access: SCRN) — unidades YA declaradas ──
-# Los cuatro son 066_C_Dry_Materia… (nombre truncado en la foto; pedir completo)
-#   "Nivel silo capa interna %"              → SILO5_L_PCT   (core · CL)
-#   "Descarga desde silo capa interna kg/h"  → SILO5_FOUT
-#   "Nivel silo capa externa %"              → SILO6_L_PCT   (fina · SL)
-#   "Descarga desde silo capa externa kg/h"  → SILO6_FOUT
+# ── Silos finales 5 y 6 (Access: SCRN) — ACTIVOS ──
+# Nombres confirmados en pantalla 21-jul-2026. El HMI llama CL a la capa
+# interna (core → silo 5) y SL a la externa (fina → silo 6), igual que el
+# modelo. La descarga va en kg/h tal como la publica el servidor; el
+# simulador la convierte a kg/min. NO dividir entre 60 al escribir.
+066_C_Dry_Material_CL_Level: 44;         # Nivel silo capa interna %
+066_C_Dry_Material_CL_discharge: 18120;  # Descarga capa interna kg/h → 302 kg/min
+066_C_Dry_Material_SL_Level: 31;         # Nivel silo capa externa %
+066_C_Dry_Material_SL_discharge: 6480;   # Descarga capa externa kg/h → 108 kg/min
+
 # 066_56_*  "Extractor Silo CE" (807T1/T2 temp, 807T3 presión, 735Y1 válvula)
+# 051_T_Madera_Cons_3T  "Total madera, consumo x turno"
 
 # ── Secadero (Access: DRYR) ──
 # 071_DRY_Hum_out        humedad de salida del secadero

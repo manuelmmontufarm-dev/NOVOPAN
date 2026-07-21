@@ -97,6 +97,34 @@ for (const [f, perfil] of Object.entries(PERFIL_ESPERADO)) {
   });
 }
 
+/* Regresión: los tags del servidor de Preparación empiezan con DÍGITO porque
+   el prefijo es el código de área. El sniffer exigía letra o `_` inicial y
+   clasificaba ese CSV entero como "desconocido" — el adaptador lo habría
+   rechazado. Al abrirlo hay que seguir rechazando el timestamp. */
+group('perfil detectado · nombres que empiezan con dígito');
+for (const [linea, esperado] of [
+  ['066_C_Dry_Material_CL_Level: 44;', 'kv'],
+  ['051_S_Hombak_Level: 30;', 'kv'],
+  ['071_DRY_Hum_out: 3.4;', 'kv'],
+  ['066_C_Dry_Material_CL_Level: 44;   # con comentario al final', 'kv'],
+  ['"H_Act_MatWeight_SP": 11.5;', 'kv'],
+]) {
+  test(`${linea.slice(0, 38)}… ⇒ ${esperado}`, () => {
+    const d = detectarPerfil(linea);
+    assert(d.perfil === esperado, `perfil obtenido: ${d.perfil} (${d.detalle})`);
+  });
+}
+for (const linea of [
+  '2026-07-21 08:00:00;H_PressSpeed_PV;14,5',
+  '2026/07/21 08:00:00;H_PressSpeed_PV;14,5',
+  '08:00:00;H_PressSpeed_PV;14,5',
+]) {
+  test(`${linea.slice(0, 30)}… NO se confunde con kv`, () => {
+    const d = detectarPerfil(linea);
+    assert(d.perfil !== 'kv', `se detectó kv por error (${d.detalle})`);
+  });
+}
+
 /* ── 2 · el contrato: mismo updates{} desde cualquier formato ── */
 group('mismo updates{} desde cualquier formato');
 for (const f of FIXTURES) {
