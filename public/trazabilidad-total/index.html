@@ -6,13 +6,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <title>Parte 1 + Parte 2 · Preparación → tablero · NOVOPAN</title>
+<script>
+/* Estado de la Sección 1 ANTES del primer paint (evita el flash del wireframe
+   al recargar con la sección apagada). La clase va en <html> porque <body>
+   aún no existe en este punto del parseo. */
+(function () {
+  try {
+    if (localStorage.getItem('novopan.sec1On') === '0') document.documentElement.classList.add('sec1-off');
+  } catch (e) { /* localStorage bloqueado → Sección 1 visible por defecto */ }
+})();
+</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23004E38'/%3E%3Ctext x='50' y='72' font-family='Helvetica,Arial,sans-serif' font-size='68' font-weight='700' text-anchor='middle' fill='white'%3EN%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" />
-<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260711a" />
-<link rel="stylesheet" href="css/params.css?v=20260701" />
+<link rel="stylesheet" href="vendor/katex/katex.min.css?v=0.17.0" />
+<link rel="stylesheet" href="css/trazabilidad-total.css?v=20260720a" />
+<link rel="stylesheet" href="css/params.css?v=20260714a" />
+<script defer src="vendor/katex/katex.min.js?v=0.17.0"></script>
 </head>
 <body>
 
@@ -60,6 +72,11 @@
         <span class="s2-speed__unit">m/min</span>
       </span>
     </div>
+    <label class="s2-sec1-toggle" title="Enciende/apaga la Sección 1 (preparación) para concentrarte en la Sección 2">
+      <input type="checkbox" id="sec1Toggle" autocomplete="off" checked />
+      <span class="s2-sec1-toggle__track"><span class="s2-sec1-toggle__thumb"></span></span>
+      <span class="s2-sec1-toggle__lbl">Sección 1</span>
+    </label>
     <span class="s2-toolbar__label">Ir a zona</span>
     <div class="s2-zones">
       <button type="button" class="s2-zone-btn" data-scroll="0">
@@ -91,7 +108,7 @@
         <strong>2E</strong> Calidad
       </button>
     </div>
-    <span class="s2-toolbar__label">Inyectar P1</span>
+    <span class="s2-toolbar__label s2-toolbar__label--p1">Inyectar P1</span>
     <div class="s2-preinject">
       <button type="button" class="s2-preinject__btn" data-pre-trigger="patios" data-label="Patios · cambio receta">
         <span class="ms">yard</span> Patios
@@ -107,23 +124,22 @@
     <label class="s2-time-scale">
       <span class="ms">timer</span>
       <span>Tiempo</span>
-      <select id="timeScaleSelect" aria-label="Multiplicador de tiempo">
-        <option value="1">1×</option>
-        <option value="60">60×</option>
-        <option value="300" selected>300×</option>
-        <option value="1800">1800×</option>
-        <option value="3600">3600×</option>
-        <option value="36000">36000× P1 · 300× P2</option>
-      </select>
+      <input type="number" id="timeScaleInput" min="1" max="100000" step="1" value="1"
+             aria-label="Multiplicador de tiempo"
+             title="Escribe el multiplicador de simulación. La Sección 2 se limita a 300× para que se vea el detalle." />
+      <span class="s2-time-scale__x">×</span>
     </label>
     <div class="s2-mover">
       <span class="s2-mover__label"><span class="ms">drag_pan</span> Mover cambio seleccionado</span>
-      <input type="range" class="s2-mover__range" id="moverRange" min="0" max="85.15" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
+      <input type="range" class="s2-mover__range" id="moverRange" min="0" max="85.55" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
     </div>
+    <button type="button" class="s2-pause-btn" id="pauseBtn" title="Pausar la simulación (los cambios se congelan)">
+      <span class="ms">pause</span> Pausa
+    </button>
     <button type="button" class="s2-reports-btn" id="reportsToggle">
       <span class="ms">receipt_long</span> Reportes <span class="s2-reports-btn__count" id="reportsCount">0</span>
     </button>
-    <button type="button" class="s2-reset-changes-btn" id="resetChangesBtn" title="Borrar todos los cambios y reportes (demo)">
+    <button type="button" class="s2-reset-changes-btn" id="resetChangesBtn" title="Borrar todos los cambios y reportes (demo)" aria-label="Reiniciar cambios y reportes">
       <span class="ms">restart_alt</span>
     </button>
     </div>
@@ -133,7 +149,7 @@
   <div class="s2-reports-panel is-hidden" id="reportsPanel">
     <div class="s2-reports-panel__hd">
       <h4><span class="ms">receipt_long</span> Reportes de cambios</h4>
-      <button type="button" id="reportsClose" class="s2-reports-panel__close"><span class="ms">close</span></button>
+      <button type="button" id="reportsClose" class="s2-reports-panel__close" aria-label="Cerrar reportes"><span class="ms">close</span></button>
     </div>
     <p class="s2-reports-panel__hint">Hora real de Quito (Ecuador) en que cada cambio pasó por cada equipo. Nace "en curso" al inyectarlo y se completa al llegar al final.</p>
     <div class="s2-reports-panel__list" id="reportsList">
@@ -143,7 +159,7 @@
 
   <!-- ══ CANVAS ══ -->
   <!-- Escala lineal real: x = 80 + 70 × metros. Tramo medido 0→85.15 m
-       (0→80 · 45→3230 · 55→3930 · 71.6→5092 · 85.15→6040.5) + margen hasta 91 m. -->
+       (0→80 · 45→3230 · 52.67→3766.9 · 71.6→5092 · 85.15→6040.5) + margen hasta 91 m. -->
   <div class="s2-canvas" id="canvasScroll">
     <svg id="lineCanvas" width="10650" height="650" viewBox="-2200 0 10650 650">
       <defs>
@@ -168,6 +184,15 @@
         <marker id="wfArrowRec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="#D47A00"/>
         </marker>
+        <marker id="wfArrowCL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#0A7D5A"/>
+        </marker>
+        <marker id="wfArrowSL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1565C0"/>
+        </marker>
+        <marker id="wfArrowBio" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#7B6752"/>
+        </marker>
       </defs>
 
       <!-- ══════════ PARTE 1 · WIREFRAME ORIGINAL ══════════ -->
@@ -177,15 +202,15 @@
         <line x1="620" y1="0" x2="620" y2="614" class="wf-bandline"/>
         <line x1="790" y1="0" x2="790" y2="614" class="wf-bandline"/>
         <line x1="1005" y1="0" x2="1005" y2="614" class="wf-bandline"/>
-        <line x1="1515" y1="0" x2="1515" y2="614" class="wf-bandline"/>
         <line x1="1620" y1="0" x2="1620" y2="614" class="wf-bandline"/>
+        <line x1="1970" y1="0" x2="1970" y2="614" class="wf-bandline"/>
         <text x="92" y="22" class="wf-band">PATIOS</text>
         <text x="402" y="22" class="wf-band">REDUCCIÓN · 3 VÍAS</text>
         <text x="705" y="22" class="wf-band">SILOS VERDES</text>
         <text x="898" y="22" class="wf-band">DOSIF. · SECADO</text>
-        <text x="1260" y="22" class="wf-band">CLASIFICACIÓN REAL</text>
-        <text x="1568" y="80" class="wf-band">SILOS 5/6</text>
-        <text x="1855" y="80" class="wf-band">PASA A SECCIÓN 2 ANIMADA →</text>
+        <text x="1310" y="22" class="wf-band">CLASIFICACIÓN · 4 RUTAS</text>
+        <text x="1780" y="22" class="wf-band">SILOS FINALES · REINGRESO</text>
+        <text x="1995" y="80" class="wf-band">→ SECCIÓN 2</text>
         <line x1="0" y1="42" x2="2100" y2="42" stroke="#111" stroke-width="1.5"/>
 
         <text x="205" y="96" class="wf-lane">VÍA ASERRÍN</text>
@@ -218,22 +243,27 @@
         <polyline class="wf-edge" points="1065,410 1086,410 1086,445 1110,445"/>
         <polyline class="wf-edge" points="1140,207 1140,306"/>
         <polyline class="wf-edge" points="1140,433 1140,334"/>
-        <polyline class="wf-edge" points="1170,320 1210,320 1210,194 1475,194"/>
-        <polyline class="wf-edge" points="1170,320 1244,320"/>
-        <polyline class="wf-edge" points="1276,320 1324,320"/>
-        <polyline class="wf-edge" points="1356,320 1435,390"/>
-        <polyline class="wf-edge wf-edge-rec" points="1170,320 1208,320 1208,505 1234,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1266,505 1304,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1338,500 1374,473"/>
-        <polyline class="wf-edge wf-edge-rec" points="1338,510 1374,537"/>
-        <polyline class="wf-edge wf-edge-rec" points="1406,473 1432,501"/>
-        <polyline class="wf-edge wf-edge-rec" points="1406,537 1432,509"/>
-        <polyline class="wf-edge wf-edge-rec" points="1462,505 1494,505"/>
-        <polyline class="wf-edge wf-edge-rec" points="1526,505 1560,505 1560,296 1260,296 1260,300"/>
-        <polyline class="wf-edge wf-edge-bio" points="1170,320 1190,320 1190,582 1218,582"/>
-        <polyline class="wf-edge wf-edge-bio" points="1262,582 1296,582"/>
-        <polyline class="wf-edge wf-edge-bio" points="1318,596 1318,612 1032,612 1032,596"/>
-        <polyline class="wf-edge wf-edge-bio" points="136,622 988,622 988,596"/>
+        <!-- salida de las zarandas: cuatro colectores físicos antes de cada ruta -->
+        <polyline class="wf-edge wf-edge-cl" points="1170,320 1200,320 1200,195 1228,195"/>
+        <polyline class="wf-edge wf-edge-cl" points="1292,195 1702,194"/>
+        <polyline class="wf-edge wf-edge-sl" points="1170,320 1228,320"/>
+        <polyline class="wf-edge wf-edge-sl" points="1292,320 1382,320"/>
+        <polyline class="wf-edge wf-edge-sl" points="1418,320 1522,320"/>
+        <polyline class="wf-edge wf-edge-sl" points="1558,320 1702,320"/>
+        <polyline class="wf-edge wf-edge-rec" points="1170,320 1200,320 1200,480 1228,480"/>
+        <polyline class="wf-edge wf-edge-rec" points="1292,480 1382,480"/>
+        <polyline class="wf-edge wf-edge-rec" points="1418,480 1502,480"/>
+        <polyline class="wf-edge wf-edge-rec" points="1538,475 1624,448"/>
+        <polyline class="wf-edge wf-edge-rec" points="1538,485 1624,512"/>
+        <polyline class="wf-edge wf-edge-rec" points="1658,448 1742,476"/>
+        <polyline class="wf-edge wf-edge-rec" points="1658,512 1742,484"/>
+        <polyline class="wf-edge wf-edge-rec" points="1778,480 1862,480"/>
+        <polyline class="wf-edge wf-edge-rec" points="1898,480 1940,480 1940,292 1400,292 1400,302"/>
+        <polyline class="wf-edge wf-edge-bio" points="1170,320 1190,320 1190,600 1228,600"/>
+        <polyline class="wf-edge wf-edge-bio" points="1292,600 1382,600"/>
+        <polyline class="wf-edge wf-edge-bio" points="1418,600 1522,600"/>
+        <polyline class="wf-edge wf-edge-bio" points="1558,600 1776,600"/>
+        <polyline class="wf-edge wf-edge-bio" points="136,622 1776,622 1776,600"/>
 
         <!-- conectores visuales hacia Sección 2 animada -->
         <text x="1720" y="200" class="wf-elabel" style="fill:#0A7D5A;font-weight:700">CL/core → Silo 5 animado · transportador aéreo</text>
@@ -245,7 +275,7 @@
           <text y="34" class="wf-nlabel">Patios · rumas</text>
           <text y="48" class="wf-nsub">CLIC = cambio receta</text>
         </g>
-        <g class="wf-node" transform="translate(92 120)">
+        <g class="wf-node" data-pre-stage="patios" data-label="Aserrín comprado" transform="translate(92 120)">
           <rect x="-48" y="-18" width="96" height="36" class="wf-box"/>
           <text y="34" class="wf-nlabel">Aserrín comprado</text>
           <text y="48" class="wf-nsub">~9 t/h</text>
@@ -359,79 +389,103 @@
           <text y="34" class="wf-nlabel">Zaranda 3</text>
           <text y="48" class="wf-nsub">clapetas 1–7</text>
         </g>
-        <text x="1188" y="168" class="wf-elabel wf-rec-text">regla HMI: POS 7 / 100% = todo al Silo CL</text>
-        <text x="1196" y="286" class="wf-elabel">5 fracciones: CL · SL-Macro · SL-Micro · Part. Grandes · Polvo</text>
-        <g class="wf-node" data-pre-stage="partG" transform="translate(1250 505)">
+        <text x="1188" y="156" class="wf-elabel wf-rec-text">Regla HMI: POS 7 / 100% = todo a CL</text>
+        <text x="1188" y="280" class="wf-elabel">CL · SL · Partículas grandes · Polvo</text>
+
+        <!-- Colectores: reciben cada fracción separada por las zarandas -->
+        <g class="wf-node wf-collector wf-collector--cl" data-pre-stage="colector-cl" data-label="Colector CL" transform="translate(1260 195)">
+          <path d="M-32,-16 H32 V2 L12,20 H-12 L-32,2 Z" class="wf-collector-shape"/>
+          <text y="3" class="wf-icon">CL</text>
+          <text y="38" class="wf-nlabel">Colector CL</text>
+          <text y="51" class="wf-nsub">→ Silo 5</text>
+        </g>
+        <g class="wf-node wf-collector wf-collector--sl" data-pre-stage="colector-sl" data-label="Colector SL" transform="translate(1260 320)">
+          <path d="M-32,-16 H32 V2 L12,20 H-12 L-32,2 Z" class="wf-collector-shape"/>
+          <text y="3" class="wf-icon">SL</text>
+          <text y="38" class="wf-nlabel">Colector SL</text>
+          <text y="51" class="wf-nsub">→ Windsifter 1</text>
+        </g>
+        <g class="wf-node wf-collector wf-collector--rec" data-pre-stage="colector-pg" data-label="Colector de partículas grandes" transform="translate(1260 480)">
+          <path d="M-32,-16 H32 V2 L12,20 H-12 L-32,2 Z" class="wf-collector-shape"/>
+          <text y="3" class="wf-icon">PG</text>
+          <text y="38" class="wf-nlabel">Colector P. Grandes</text>
+          <text y="51" class="wf-nsub">→ reproceso</text>
+        </g>
+        <g class="wf-node wf-collector wf-collector--bio" data-pre-stage="colector-polvo" data-label="Colector de polvo" transform="translate(1260 600)">
+          <path d="M-32,-16 H32 V2 L12,20 H-12 L-32,2 Z" class="wf-collector-shape"/>
+          <text y="3" class="wf-icon">P</text>
+          <text y="38" class="wf-nlabel">Colector Polvo</text>
+        </g>
+
+        <g class="wf-node" data-pre-stage="partG" transform="translate(1400 480)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">PG</text>
           <text y="34" class="wf-nlabel">Part. Grandes</text>
           <text y="48" class="wf-nsub">oversize</text>
         </g>
-        <g class="wf-node" data-pre-stage="ws1" transform="translate(1260 320)">
+        <g class="wf-node" data-pre-stage="ws1" transform="translate(1400 320)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">W1</text>
           <text y="34" class="wf-nlabel">Windsifter 1</text>
           <text y="48" class="wf-nsub">línea SL</text>
         </g>
-        <g class="wf-node" data-pre-stage="ws2" transform="translate(1340 320)">
+        <g class="wf-node" data-pre-stage="ws2" transform="translate(1540 320)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">W2</text>
           <text y="34" class="wf-nlabel">Windsifter 2</text>
           <text y="48" class="wf-nsub">línea SL</text>
         </g>
-        <g class="wf-node" data-pre-stage="w3" transform="translate(1320 505)">
+        <g class="wf-node" data-pre-stage="w3" transform="translate(1520 480)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">W3</text>
           <text y="34" class="wf-nlabel">Windsifter 3</text>
           <text y="48" class="wf-nsub">arena/piedras</text>
         </g>
-        <g class="wf-node" data-pre-stage="r1" transform="translate(1390 465)">
+        <g class="wf-node" data-pre-stage="r1" transform="translate(1640 440)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">R1</text>
           <text y="34" class="wf-nlabel">Refinador 1</text>
-          <text y="48" class="wf-nsub">6.8 T/h</text>
         </g>
-        <g class="wf-node" data-pre-stage="r2" transform="translate(1390 545)">
+        <g class="wf-node" data-pre-stage="r2" transform="translate(1640 520)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">R2</text>
           <text y="34" class="wf-nlabel">Refinador 2</text>
-          <text y="48" class="wf-nsub">8.0 T/h</text>
         </g>
-        <g class="wf-node" data-pre-stage="cy" transform="translate(1446 505)">
+        <g class="wf-node" data-pre-stage="cy" transform="translate(1760 480)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">CY</text>
           <text y="34" class="wf-nlabel">Ciclones</text>
         </g>
-        <g class="wf-node" data-pre-stage="clasSL" transform="translate(1510 505)">
+        <g class="wf-node" data-pre-stage="clasSL" transform="translate(1880 480)">
           <circle r="18" class="wf-circle"/>
           <text y="4" class="wf-icon">CL</text>
           <text y="34" class="wf-nlabel">Clasificadores</text>
         </g>
-        <g class="wf-node" data-pre-stage="silo5" data-label="Silo 5 · CL/core" transform="translate(1495 194)">
+        <g class="wf-node" data-pre-stage="silo5" data-label="Silo 5 · CL/core" transform="translate(1720 194)">
           <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
           <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
           <text y="42" class="wf-nlabel">Silo 5 · CL/core</text>
           <text y="56" class="wf-nsub">ρ 128–135 · L 44%</text>
           <text y="70" class="wf-unk">V m³ ?</text>
         </g>
-        <g class="wf-node" data-pre-stage="silo6" data-label="Silo 6 · SL/capas" transform="translate(1455 390)">
+        <g class="wf-node" data-pre-stage="silo6" data-label="Silo 6 · SL/capas" transform="translate(1720 320)">
           <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
           <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
           <text y="42" class="wf-nlabel">Silo 6 · SL/capas</text>
           <text y="56" class="wf-nsub">ρ 161–188 · L 31%</text>
           <text y="70" class="wf-unk">V m³ ?</text>
         </g>
-        <g class="wf-node" data-pre-stage="silo4" transform="translate(1240 582)">
+        <g class="wf-node" data-pre-stage="silo4" transform="translate(1400 600)">
           <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
           <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
           <text y="42" class="wf-nlabel">Silo 4 · Polvo</text>
         </g>
-        <g class="wf-node" data-pre-stage="silo8" transform="translate(1318 582)">
+        <g class="wf-node" data-pre-stage="silo8" transform="translate(1540 600)">
           <path d="M-18,-22 h36 v34 L0,26 -18,12 z" class="wf-silo"/>
           <ellipse cx="0" cy="-22" rx="18" ry="6" class="wf-silo"/>
           <text y="42" class="wf-nlabel">Silo 8 · TVM</text>
         </g>
-        <g class="wf-node" transform="translate(1010 580)">
+        <g class="wf-node" data-pre-stage="quemador" data-label="Quemador · biomasa" transform="translate(1820 600)">
           <rect x="-44" y="-16" width="88" height="32" class="wf-side"/>
           <text y="34" class="wf-nlabel">Quemador</text>
           <text y="48" class="wf-nsub">corteza+polvo</text>
@@ -439,11 +493,11 @@
       </g>
       <!-- Transportadores aéreos P1 → silos animados (mismo camino que siguen los trazadores) -->
       <g id="aerialBridges" fill="none">
-        <path d="M -685 408 H -630 Q -618 408 -618 396 V 42 Q -618 30 -606 30 H 318 Q 330 30 330 42 V 100" stroke="#1565C0" stroke-width="4" stroke-linecap="round"/>
-        <path d="M -685 408 H -630 Q -618 408 -618 396 V 42 Q -618 30 -606 30 H 318 Q 330 30 330 42 V 100" class="wf-flow"/>
+        <path d="M -420 338 H -405 Q -393 338 -393 326 V 42 Q -393 30 -381 30 H 318 Q 330 30 330 42 V 100" stroke="#1565C0" stroke-width="4" stroke-linecap="round"/>
+        <path d="M -420 338 H -405 Q -393 338 -393 326 V 42 Q -393 30 -381 30 H 318 Q 330 30 330 42 V 100" class="wf-flow"/>
         <polygon points="323,98 337,98 330,110" fill="#1565C0"/>
-        <path d="M -645 212 H -594 Q -582 212 -582 200 V 26 Q -582 14 -570 14 H 848 Q 860 14 860 26 V 66" stroke="#0A7D5A" stroke-width="4" stroke-linecap="round"/>
-        <path d="M -645 212 H -594 Q -582 212 -582 200 V 26 Q -582 14 -570 14 H 848 Q 860 14 860 26 V 66" class="wf-flow"/>
+        <path d="M -420 212 H -369 Q -357 212 -357 200 V 26 Q -357 14 -345 14 H 848 Q 860 14 860 26 V 66" stroke="#0A7D5A" stroke-width="4" stroke-linecap="round"/>
+        <path d="M -420 212 H -369 Q -357 212 -357 200 V 26 Q -357 14 -345 14 H 848 Q 860 14 860 26 V 66" class="wf-flow"/>
         <polygon points="853,64 867,64 860,76" fill="#0A7D5A"/>
       </g>
 
@@ -476,10 +530,10 @@
           <text x="-82" y="2" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">DOSING FINA</text>
           <text x="-82" y="17" text-anchor="end" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">τ = M/F_descarga ×60 · HMI</text>
         </g>
-        <g class="s2-intake__node" data-pre-stage="active-encCE" data-label="Encolador CE" transform="translate(330 500)">
+        <g class="s2-intake__node" data-pre-stage="active-encCE" data-label="Encoladora CE" transform="translate(330 500)">
           <rect x="-70" y="-34" width="140" height="68" rx="28" fill="#B7C4D2" stroke="#758697" stroke-width="2"/>
           <g stroke="#758697" stroke-width="3" opacity=".75"><line x1="-42" y1="-24" x2="-30" y2="24"/><line x1="-12" y1="-24" x2="0" y2="24"/><line x1="18" y1="-24" x2="30" y2="24"/></g>
-          <text x="-82" y="-4" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADOR CE</text>
+          <text x="-82" y="-4" text-anchor="end" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADORA CE</text>
           <text x="-82" y="11" text-anchor="end" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">capas externas</text>
         </g>
 
@@ -500,10 +554,10 @@
           <text x="72" y="-4" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">DOSING GRUESA</text>
           <text x="72" y="11" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">τ = M/F_descarga ×60 · HMI</text>
         </g>
-        <g class="s2-intake__node" data-pre-stage="active-encCI" data-label="Encolador CI" transform="translate(860 460)">
+        <g class="s2-intake__node" data-pre-stage="active-encCI" data-label="Encoladora CI" transform="translate(860 460)">
           <rect x="-70" y="-34" width="140" height="68" rx="28" fill="#B7C4D2" stroke="#758697" stroke-width="2"/>
           <g stroke="#758697" stroke-width="3" opacity=".75"><line x1="-42" y1="-24" x2="-30" y2="24"/><line x1="-12" y1="-24" x2="0" y2="24"/><line x1="18" y1="-24" x2="30" y2="24"/></g>
-          <text x="72" y="-4" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADOR CI</text>
+          <text x="72" y="-4" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="14" fill="#1A1D1B">ENCOLADORA CI</text>
           <text x="72" y="11" font-family="'Barlow',sans-serif" font-weight="700" font-size="9" fill="#676E69">core</text>
         </g>
 
@@ -513,8 +567,8 @@
           <rect x="560" y="141" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="603" y="157">211.2 s</text>
           <rect x="450" y="342" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="493" y="358">10.8 s</text>
           <rect x="560" y="296" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="603" y="312">5.3 s</text>
-          <rect x="450" y="501" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="493" y="517">10.0 s</text>
-          <rect x="560" y="455" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text x="603" y="471">12.0 s</text>
+          <rect x="450" y="501" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text id="intakeTauEncCE" x="493" y="517">40 s</text>
+          <rect x="560" y="455" width="86" height="24" rx="12" fill="#E3F1E8" stroke="#9AD4B1"/><text id="intakeTauEncCI" x="603" y="471">40 s</text>
         </g>
         <line x1="398" y1="534" x2="2100" y2="534" stroke="#2C80D8" stroke-width="8" stroke-linecap="round"/>
         <line x1="398" y1="534" x2="2100" y2="534" stroke="#BFDDFB" stroke-width="2" stroke-dasharray="22 18" stroke-linecap="round"/>
@@ -538,12 +592,12 @@
       <!-- ── ZONE BACKGROUNDS (metros) ── -->
       <rect x="80" y="42" width="1868" height="410" fill="rgba(0,78,56,0.035)"/>       <!-- 2A 0→26.68 -->
       <rect x="1948" y="42" width="1282" height="410" fill="rgba(21,101,192,0.04)"/>    <!-- 2B 26.68→45 -->
-      <rect x="3230" y="42" width="700" height="410" fill="rgba(198,40,40,0.04)"/>      <!-- 2C 45→55 -->
-      <rect x="3930" y="42" width="1162" height="410" fill="rgba(30,30,30,0.06)"/>      <!-- 2D 55→71.6 -->
+      <rect x="3230" y="42" width="536.9" height="410" fill="rgba(198,40,40,0.04)"/>      <!-- 2C 45→52.67 -->
+      <rect x="3766.9" y="42" width="1325.1" height="410" fill="rgba(30,30,30,0.06)"/>      <!-- 2D 52.67→71.6 -->
       <rect x="5092" y="42" width="1358" height="410" fill="rgba(0,78,56,0.05)"/>       <!-- 2E 71.6→91 -->
       <g stroke="#C7CCC7" stroke-width="1.5" stroke-dasharray="4 5" opacity="0.7">
         <line x1="1948" y1="44" x2="1948" y2="450"/><line x1="3230" y1="44" x2="3230" y2="450"/>
-        <line x1="3930" y1="44" x2="3930" y2="450"/><line x1="5092" y1="44" x2="5092" y2="450"/>
+        <line x1="3766.9" y1="44" x2="3766.9" y2="450"/><line x1="5092" y1="44" x2="5092" y2="450"/>
       </g>
 
       <!-- ── GROUND / SUPPORT ── -->
@@ -552,8 +606,8 @@
       <!-- ── BELT SEGMENTS (proporcionales · blanca 45 : roja 10 : prensa 16.6) ── -->
       <rect x="80" y="400" width="1868" height="24" fill="#FFFFFF" stroke="#004E38" stroke-width="2.5"/>   <!-- blanca 0→26.68 -->
       <rect x="1948" y="400" width="1282" height="24" fill="#BBDEFB" stroke="#1565C0" stroke-width="2.5"/> <!-- azul 26.68→45 -->
-      <rect x="3230" y="400" width="700" height="24" fill="#EF9A9A" stroke="#C62828" stroke-width="2.5"/>  <!-- roja 45→55 -->
-      <rect x="3930" y="400" width="1162" height="24" fill="url(#pressBelt)" stroke="#5C5C5C" stroke-width="2.5"/> <!-- prensa 55→71.6 -->
+      <rect x="3230" y="400" width="536.9" height="24" fill="#EF9A9A" stroke="#C62828" stroke-width="2.5"/>  <!-- roja 45→52.67 -->
+      <rect x="3766.9" y="400" width="1325.1" height="24" fill="url(#pressBelt)" stroke="#5C5C5C" stroke-width="2.5"/> <!-- prensa 52.67→71.6 -->
       <rect x="5092" y="400" width="1358" height="24" fill="#D9DDD9" stroke="#8A97A6" stroke-width="2.5"/> <!-- post-prensa 71.6→91 -->
       <!-- conveyor motion dashes on belt -->
       <line x1="86" y1="412" x2="6444" y2="412" stroke="rgba(0,0,0,0.16)" stroke-width="2" stroke-dasharray="14 14" style="animation:conveyor 1.1s linear infinite"/>
@@ -669,6 +723,36 @@
         <text x="439" y="56" text-anchor="end" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#1976D2" opacity="0.7">23.85 m</text>
       </g>
 
+      <!-- ══ INYECCIÓN EN EL COLCHÓN · antes / entre esparcidoras (ahí se ponen los papeles) ══
+           Reutilizan el mismo handler [data-inject-m]. El cambio nace en el colchón en ese
+           metro y avanza a v_prensa (sin caída de esparcidora). -->
+      <g class="s2-cushion-inject-row">
+        <g class="s2-machine s2-cushion-inject" data-inject-m="4.0" data-label="Colchón · antes de SL1" transform="translate(110 0)">
+          <rect x="-46" y="322" width="92" height="112" fill="transparent"/>
+          <line x1="0" y1="366" x2="0" y2="420" stroke="#C79A00" stroke-width="2" stroke-dasharray="4 3"/>
+          <circle cx="0" cy="352" r="12" fill="#FFDE00" stroke="#7A5D00" stroke-width="1.6"/>
+          <path d="M-5,352 H5 M0,347 V357" stroke="#7A5D00" stroke-width="2" stroke-linecap="round"/>
+          <text x="0" y="336" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="800" font-size="8.5" fill="#7A5D00">COLCHÓN</text>
+          <text x="0" y="438" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="700" font-size="8" fill="#7A5D00" opacity="0.8">antes SL1</text>
+        </g>
+        <g class="s2-machine s2-cushion-inject" data-inject-m="10.5" data-label="Colchón · entre SL1 y CL" transform="translate(782 0)">
+          <rect x="-46" y="322" width="92" height="112" fill="transparent"/>
+          <line x1="0" y1="366" x2="0" y2="420" stroke="#C79A00" stroke-width="2" stroke-dasharray="4 3"/>
+          <circle cx="0" cy="352" r="12" fill="#FFDE00" stroke="#7A5D00" stroke-width="1.6"/>
+          <path d="M-5,352 H5 M0,347 V357" stroke="#7A5D00" stroke-width="2" stroke-linecap="round"/>
+          <text x="0" y="336" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="800" font-size="8.5" fill="#7A5D00">COLCHÓN</text>
+          <text x="0" y="438" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="700" font-size="8" fill="#7A5D00" opacity="0.8">SL1→CL</text>
+        </g>
+        <g class="s2-machine s2-cushion-inject" data-inject-m="18.5" data-label="Colchón · entre CL y SL2" transform="translate(1254 0)">
+          <rect x="-46" y="322" width="92" height="112" fill="transparent"/>
+          <line x1="0" y1="366" x2="0" y2="420" stroke="#C79A00" stroke-width="2" stroke-dasharray="4 3"/>
+          <circle cx="0" cy="352" r="12" fill="#FFDE00" stroke="#7A5D00" stroke-width="1.6"/>
+          <path d="M-5,352 H5 M0,347 V357" stroke="#7A5D00" stroke-width="2" stroke-linecap="round"/>
+          <text x="0" y="336" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="800" font-size="8.5" fill="#7A5D00">COLCHÓN</text>
+          <text x="0" y="438" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="700" font-size="8" fill="#7A5D00" opacity="0.8">CL→SL2</text>
+        </g>
+      </g>
+
       <!-- ══════════ 2B · PRECOMPRESIÓN Y PROTECCIÓN ══════════ -->
 
       <!-- PRE PRENSA (cabezal/centro visual en 31.4 m; el clic inyecta al inicio de zona, 29.06 m) -->
@@ -772,12 +856,12 @@
 
       <!-- ══════════ 2D · PRENSADO (55 → 71.6 m · 16.6 m) ══════════ -->
       <g class="s2-machine" data-inject-m="55" data-label="Prensa continua">
-        <rect x="3930" y="150" width="1162" height="270" rx="6" fill="url(#pressBody)" stroke="#5C5C5C" stroke-width="2"/>
-        <rect x="3930" y="150" width="1162" height="34" fill="#3A424A"/>
+        <rect x="3766.9" y="150" width="1325.1" height="270" rx="6" fill="url(#pressBody)" stroke="#5C5C5C" stroke-width="2"/>
+        <rect x="3766.9" y="150" width="1325.1" height="34" fill="#3A424A"/>
         <!-- repeated frames (19 marcos · posiciones reales · poblado por JS) -->
         <g id="pressFrames" stroke="#1A1E22" stroke-width="1.5"></g>
         <!-- converging entry wedge -->
-        <polygon points="3930,368 3958,362 3958,406 3930,412" fill="#20252A"/>
+        <polygon points="3766.9,368 3794.9,362 3794.9,406 3766.9,412" fill="#20252A"/>
         <!-- heated inner band around board -->
         <rect x="3958" y="356" width="1112" height="52" fill="url(#heat)" style="animation:heatglow 2.6s ease-in-out infinite"/>
         <!-- cylinders / actuators on top -->
@@ -805,7 +889,7 @@
         <text x="0" y="325" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#676E69">2.30 m</text>
       </g>
 
-      <g class="s2-machine" data-inject-m="85.15" data-label="Sensores de calidad · fin de proceso" transform="translate(6040.5 0)">
+      <g class="s2-machine" data-inject-m="85.15" data-label="Sensor de calidad 1 (85.15 m)" transform="translate(6040.5 0)">
         <rect x="-95" y="170" width="10" height="262" fill="#4A5560"/><rect x="85" y="170" width="10" height="262" fill="#4A5560"/>
         <rect x="-100" y="170" width="200" height="18" rx="4" fill="url(#steel)" stroke="#6B7886"/>
         <!-- sensor modules -->
@@ -820,8 +904,14 @@
         <!-- lower module -->
         <rect x="-34" y="426" width="68" height="16" rx="4" fill="url(#steel)" stroke="#6B7886"/>
         <rect x="-92" y="112" width="184" height="30" rx="6" fill="#FFFFFF" stroke="#0A7D5A" stroke-width="1.5"/>
-        <text x="0" y="126" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="13" fill="#1A1D1B">SENSORES DE CALIDAD</text>
+        <text x="0" y="126" text-anchor="middle" font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="13" fill="#1A1D1B">SENSORES DE CALIDAD 1 · 2 · 3</text>
         <text x="0" y="137" text-anchor="middle" font-family="'Barlow',sans-serif" font-weight="600" font-size="8" fill="#676E69">ESPESOR · REVENTADOS · PESO · DENSIDAD</text>
+        <!-- posiciones reales S1 85.15 · S2 85.35 · S3 85.55 m (0.20 m = 14 px) -->
+        <g font-family="'Barlow Semi Condensed',sans-serif" font-weight="800" font-size="9" text-anchor="middle">
+          <line x1="0" y1="446" x2="0" y2="458" stroke="#0A7D5A" stroke-width="1.5"/><text x="0" y="470" fill="#0A7D5A">S1</text>
+          <line x1="14" y1="446" x2="14" y2="458" stroke="#9AA39E" stroke-width="1.5" stroke-dasharray="2 2"/><text x="14" y="480" fill="#676E69">S2</text>
+          <line x1="28" y1="446" x2="28" y2="458" stroke="#9AA39E" stroke-width="1.5" stroke-dasharray="2 2"/><text x="28" y="470" fill="#676E69">S3</text>
+        </g>
       </g>
 
       <!-- READINGS PANEL -->
@@ -869,6 +959,16 @@
       <g id="preTracers"></g>
     </svg>
   </div>
+  <script>
+  /* Con la Sección 1 apagada el canvas arranca ya en la formación (Sección 2):
+     se fija el scroll durante el parseo, antes del primer paint del canvas. */
+  (function () {
+    if (document.documentElement.classList.contains('sec1-off')) {
+      var c = document.getElementById('canvasScroll');
+      if (c) c.scrollLeft = 2320;
+    }
+  })();
+  </script>
 
   <!-- ══ LEGEND ══ -->
   <div class="s2-legend" id="lineaLegend">
@@ -885,23 +985,23 @@
   <!-- ══ PANEL PARÁMETROS ══ -->
   <div class="s2-params is-hidden" id="panelParams">
     <div class="s2-params__section">
-      <h3>Parámetros de planta · leídos del CSV del HMI</h3>
+      <h3>Parámetros y ecuaciones · Patios → Sensores</h3>
       <div class="s2-csv-banner" id="csvBanner">
         <span class="ms">sync</span>
-        <span>Estos valores <strong>se leen del CSV del HMI</strong> (<code>datos/hmi.csv</code>), releído cada 2&nbsp;s.
-        En planta, un job sobrescribe ese archivo; aquí es estático pero la tubería HMI→simulador está probada y lista para el servidor.</span>
+        <span>El <strong>CSV activo es la única fuente editable</strong>. Cada cambio modifica el documento CSV, lo vuelve a parsear y recién entonces actualiza ecuaciones y simulación. Un archivo local conectado puede guardarse; el CSV servido se descarga para persistirlo.</span>
         <span class="s2-hmi-status is-idle" id="hmiStatus2">● —</span>
       </div>
       <div class="s2-params__actions">
         <button type="button" class="btn btn--secondary" id="hmiConnectBtn2"><span class="ms">upload_file</span> Conectar CSV local</button>
-        <button type="button" class="btn btn--secondary" id="resetParamsBtn"><span class="ms">restart_alt</span> Defaults (sin CSV)</button>
+        <button type="button" class="btn btn--secondary" id="downloadCsvBtn"><span class="ms">download</span> Descargar CSV editado</button>
+        <button type="button" class="btn btn--secondary" id="resetParamsBtn"><span class="ms">restart_alt</span> Recargar CSV del servidor</button>
         <span class="param-save-feedback" id="saveFeedback" aria-live="polite"></span>
       </div>
       <details class="s2-csv-view" id="csvViewWrap">
         <summary><span class="ms">description</span> Ver CSV crudo del HMI (<span id="csvTagCount">0</span> tags)</summary>
         <pre class="s2-csv-raw" id="csvRaw">— aún no leído —</pre>
       </details>
-      <p class="s2-params__hint">Ecuaciones del modelo: τ = M/F×60 · τ_silo = ρ·V·L%/F×60 · t = L/v×60. Los campos con badge <strong>HMI</strong> vienen en vivo del CSV; <strong>Estim.</strong> = plug pendiente de instrumentar.</p>
+      <p class="s2-params__hint">Todas las ecuaciones muestran unidades. Los caudales en kg/h usan ×3600 s/h; kg/min y m/min usan ×60 s/min. <strong>Estimado</strong> identifica tiempos pendientes de validar en planta.</p>
       <div id="paramsGridTab"></div>
     </div>
   </div>
@@ -980,6 +1080,6 @@
   });
 })();
 </script>
-<script type="module" src="js/combined-app.js?v=20260713c"></script>
+<script type="module" src="js/combined-app.js?v=20260720a"></script>
 </body>
 </html>

@@ -97,16 +97,16 @@ export const FINE_PREFIX = [
   },
   {
     id: 'enc-fine',
-    label: 'Encolador fina',
+    label: 'Encoladora CE · capas externas',
     sublabel: 'Resina + parafina + agua',
     kind: 'retention',
     model: 'fixed',
-    retentionSec: 30,
+    retentionSec: 40,
     layout: 'process',
     source: {
       kind: 'estimated',
       desc: 'τ = tiempo fijo (s)',
-      detail: 'Un solo parámetro en segundos (~30 s acordado en planta). No depende de flujo ni holdup.',
+      detail: 'Retención estimada vigente: 40 s. No depende de flujo ni holdup; pendiente de validar con una prueba de cambio.',
     },
   },
   {
@@ -225,16 +225,16 @@ export const PATHS = {
       },
       {
         id: 'enc-thick',
-        label: 'Encolador gruesa',
+        label: 'Encoladora CI · capa interna',
         sublabel: '+ parafina',
         kind: 'retention',
         model: 'fixed',
-        retentionSec: 30,
+        retentionSec: 40,
         layout: 'process',
         source: {
           kind: 'estimated',
           desc: 'τ = tiempo fijo (s)',
-          detail: 'Un solo parámetro en segundos (~30 s acordado en planta). No depende de flujo ni holdup.',
+          detail: 'Retención estimada vigente: 40 s. No depende de flujo ni holdup; pendiente de validar con una prueba de cambio.',
         },
       },
       {
@@ -320,16 +320,16 @@ export const WHITE_WAYPOINTS = [
 export const RED_SEGMENTS = [
   { id: 'gap-pre-vapor', type: 'transport', lengthM: 1.86, label: 'Entrada → vapor' },
   { id: 'zone-vapor', type: 'zone', lengthM: 2.29, label: 'Zona vapor · Dynasteam' },
-  { id: 'gap-post-vapor', type: 'transport', lengthM: 5.88, label: 'Vapor → prensa' },
+  { id: 'gap-post-vapor', type: 'transport', lengthM: 3.52, label: 'Vapor → prensa (tambor)' },
 ];
 export const RED_WAYPOINTS = [
   { id: 'point-vapor-start', atM: 1.86, label: 'Vapor start' },
   { id: 'point-vapor-end', atM: 4.15, label: 'Vapor end' },
 ];
 
-/** Prensa metálica: 0.10 + 6×0.75 + 12×0.90 + 1.20 = 16.60 m (19 marcos). */
+/** Prensa metálica: 2.43 + 6×0.75 + 12×0.90 + 1.20 = 18.93 m tambor→tambor (19 marcos · plano DXF jul-2026). */
 function buildPressSegments() {
-  const segs = [{ id: 'gap-pre-m1', type: 'transport', lengthM: 0.10, label: 'Entrada → marco 1' }];
+  const segs = [{ id: 'gap-pre-m1', type: 'transport', lengthM: 2.43, label: 'Tambor entrada → marco 1' }];
   for (let i = 1; i <= 18; i++) {
     const L = i <= 6 ? 0.75 : 0.90; // pitch denso marcos 1–7, estándar 7–19
     segs.push({ id: `gap-m${i}-m${i + 1}`, type: 'transport', lengthM: L, label: `Marco ${i} → ${i + 1}` });
@@ -338,11 +338,11 @@ function buildPressSegments() {
   return segs;
 }
 export const PRESS_SEGMENTS = buildPressSegments();
-const PRESS_FRAME_M = [0.10, 0.85, 1.60, 2.35, 3.10, 3.85, 4.60, 5.50, 6.40, 7.30,
-  8.20, 9.10, 10.00, 10.90, 11.80, 12.70, 13.60, 14.50, 15.40];
+const PRESS_FRAME_M = [2.43, 3.18, 3.93, 4.68, 5.43, 6.18, 6.93, 7.83, 8.73, 9.63,
+  10.53, 11.43, 12.33, 13.23, 14.13, 15.03, 15.93, 16.83, 17.73];
 export const PRESS_WAYPOINTS = PRESS_FRAME_M
   .map((atM, i) => ({ id: `point:m${i + 1}`, atM, label: `Marco ${i + 1}` }))
-  .concat([{ id: 'point:end', atM: 16.60, label: 'Fin zona activa' }]);
+  .concat([{ id: 'point:end', atM: 18.93, label: 'Fin zona activa' }]);
 
 const BAND_SEGMENTS = { white: WHITE_SEGMENTS, red: RED_SEGMENTS, press: PRESS_SEGMENTS };
 const BAND_WAYPOINTS = { white: WHITE_WAYPOINTS, red: RED_WAYPOINTS, press: PRESS_WAYPOINTS };
@@ -424,7 +424,7 @@ export const DOWNSTREAM = [
     id: 'red',
     label: 'Banda roja',
     kind: 'transport',
-    lengthM: 10,
+    lengthM: 7.67,
     beltColor: 'red',
     validated: true,
     segments: RED_SEGMENTS,
@@ -433,7 +433,7 @@ export const DOWNSTREAM = [
       kind: 'measured',
       date: '2026-06-30',
       desc: 't = L_red / v_prensa × 60',
-      detail: '10 m medidos en planta, en cadena de sub-segmentos (entrada + Dynasteam vapor + salida a prensa).',
+      detail: 'Corregido con plano DXF Dieffenbacher (jul-2026): la banda entrega en el tambor de entrada de prensa a 52.67 m abs → 7.67 m (antes 10 m estimados a campo). Vapor conserva su posición medida (46.86–49.15 m abs).',
     },
     equipment: [
       { name: 'Vapor start', atPct: 19 },
@@ -443,9 +443,9 @@ export const DOWNSTREAM = [
   {
     id: 'press',
     label: 'Banda prensa metálica',
-    sublabel: '16,6 m activos',
+    sublabel: '18,93 m tambor a tambor',
     kind: 'transport',
-    lengthM: 16.6,
+    lengthM: 18.93,
     beltColor: 'press',
     validated: true,
     segments: PRESS_SEGMENTS,
@@ -454,7 +454,7 @@ export const DOWNSTREAM = [
       kind: 'measured',
       date: '2026-07',
       desc: 't = L_press / v_prensa × 60',
-      detail: 'Zona activa de prensado: 16,6 m (19 marcos, flexómetro jul-2026). El circuito total ~45 m incluye el retorno de la banda (no modelado).',
+      detail: 'Tambor a tambor: 18,93 m (plano DXF Dieffenbacher jul-2026). Zona de marcos: 16,6 m (19 marcos, flexómetro jul-2026) empezando 2,43 m después del tambor; marco 1 queda en 55,10 m abs. El circuito total ~45 m incluye el retorno de la banda (no modelado).',
     },
     equipment: [
       { name: 'Marco 1', atPct: 1 },
@@ -469,13 +469,13 @@ export const INJECTION_OPTIONS = [
   { id: 'enc-all', label: 'Demo pintura · ambos encoladores', group: 'Inicio completo' },
   { id: 'dosing-all', label: 'Inicio · ambos dosing bins', group: 'Inicio completo' },
   { id: 'dosing-fine', label: 'Dosing bin fina', group: 'Ruta fina' },
-  { id: 'enc-fine', label: 'Encolador fina', group: 'Ruta fina' },
+  { id: 'enc-fine', label: 'Encoladora CE', group: 'Ruta fina' },
   { id: 'incl-fine', label: 'Banda inclinada fina', group: 'Ruta fina' },
   { id: 'esp3-zone', label: 'Esparcidor 3 (TOP)', group: 'Ruta fina' },
   { id: 'esp1-zone', label: 'Esparcidor 1 (BOTTOM)', group: 'Ruta fina' },
   { id: 'dosing-thick', label: 'Dosing bin gruesa', group: 'Ruta gruesa (core)' },
   { id: 'sprays-caida', label: 'Sprays caída', group: 'Ruta gruesa (core)' },
-  { id: 'enc-thick', label: 'Encolador gruesa', group: 'Ruta gruesa (core)' },
+  { id: 'enc-thick', label: 'Encoladora CI', group: 'Ruta gruesa (core)' },
   { id: 'incl-thick', label: 'Banda inclinada gruesa', group: 'Ruta gruesa (core)' },
   { id: 'esp2-zone', label: 'Esparcidor 2 (CORE)', group: 'Ruta gruesa (core)' },
   { id: 'white', label: 'Banda blanca', group: 'Tramo común' },
@@ -714,10 +714,10 @@ export function findNode(nodeId) {
 /** Secuencia para barra de progreso (orden físico izquierda → derecha). */
 export const STAGE_SEQUENCE = [
   { id: 'dosing-fine', label: 'Dosing fina', short: 'D.fina' },
-  { id: 'enc-fine', label: 'Encolador fina', short: 'Enc.fina' },
+  { id: 'enc-fine', label: 'Encoladora CE', short: 'Enc.CE' },
   { id: 'dosing-thick', label: 'Dosing gruesa', short: 'D.gruesa' },
   { id: 'sprays-caida', label: 'Sprays caída', short: 'Sprays' },
-  { id: 'enc-thick', label: 'Encolador gruesa', short: 'Enc.gruesa' },
+  { id: 'enc-thick', label: 'Encoladora CI', short: 'Enc.CI' },
   { id: 'incl-fine', label: 'Banda inclinada fina', short: '↗ fina' },
   { id: 'incl-thick', label: 'Banda inclinada gruesa', short: '↗ gruesa' },
   { id: 'esp3-zone', label: 'Esparcidor 3 (TOP)', short: 'Esp.3' },

@@ -51,7 +51,7 @@ const NAMED_WAYPOINTS = [
   { m: 39.56, label: 'Cortadores de filo' },
   { m: 44.9, label: 'Nariz · rechazo' },
   { m: 46.86, label: 'Vapor EVOsteam' },
-  { m: 55.0, label: 'Prensa continua' },
+  { m: 52.67, label: 'Prensa continua · tambor entrada' },
   { m: 71.6, label: 'Fin prensa' },
   { m: 78.3, label: 'Cuchillos de refila · inicio' },
   { m: 79.65, label: 'Cuchillos de refila · fin' },
@@ -69,12 +69,12 @@ const CHANGE_COLORS = ['#FFDE00', '#FF7A33', '#29B6F6', '#AB47BC', '#EC407A', '#
 
 // ── Constantes de geometría (escala lineal real · Parte 1) ──
 // x = X0 + PX_PER_M × metros. Waypoints clave (px):
-//   0 m → 80 · 45 m → 3230 · 55 m → 3930 · 71.6 m → 5092 · 85.15 m → 6040.5.
+//   0 m → 80 · 45 m → 3230 · 52.67 m → 3766.9 · 71.6 m → 5092 · 85.15 m → 6040.5.
 const BELT_Y = 400;
 const X0 = 80;            // metro 0
 const PX_PER_M = 70;      // px por metro
 const xm = (m) => X0 + PX_PER_M * m;
-const PRESS_START_X = xm(55);   // 3930
+const PRESS_START_X = xm(52.67); // 3766.9 · tambor de entrada (DXF jul-2026)
 const PRESS_END_X = xm(71.6);   // 5092
 const END = xm(91);             // 6450 · margen visual después de sensores
 
@@ -142,15 +142,15 @@ function renderRollers() {
 
 // Posiciones reales de los 19 marcos (m desde inicio de prensa · MEDICIONES.md).
 const FRAME_POS_M = [
-  0.10, 0.85, 1.60, 2.35, 3.10, 3.85, 4.60,   // pitch 0.75 (marcos 1–7)
-  5.50, 6.40, 7.30, 8.20, 9.10, 10.00, 10.90, // pitch 0.90 (marcos 7–19)
-  11.80, 12.70, 13.60, 14.50, 15.40,
+  2.43, 3.18, 3.93, 4.68, 5.43, 6.18, 6.93,   // pitch 0.75 (marcos 1–7)
+  7.83, 8.73, 9.63, 10.53, 11.43, 12.33, 13.23, // pitch 0.90 (marcos 7–19)
+  14.13, 15.03, 15.93, 16.83, 17.73,
 ];
 
 function renderFrames() {
   const g = document.getElementById('pressFrames');
   for (const pos of FRAME_POS_M) {
-    const x = +xm(55 + pos).toFixed(1);
+    const x = +xm(52.67 + pos).toFixed(1);
     g.appendChild(el('line', { x1: x, y1: 188, x2: x, y2: 416 }));
   }
 }

@@ -1,0 +1,74 @@
+# ============================================================
+# NOVOPAN · Línea 1 · Trazabilidad total — datos del HMI
+# ------------------------------------------------------------
+# Formato: VARIABLE:VALOR;   (clave y valor separados por ':',
+# cada registro terminado en ';'). Una o varias por línea.
+# Valor vacío (VARIABLE:;) = no tocar (conserva el default).
+# Comentarios con '#' o '//'. Decimal '.' o ','.
+#
+# En planta: un job de SQL Server / WinCC / script sobrescribe
+# este archivo cada pocos segundos. El simulador lo relee cada
+# 2 s (fetch no-cache). Estático ahora = listo para el servidor.
+# Marcar el tag que NO se mide dejándolo vacío → se ve TBD.
+# ============================================================
+
+# ── Velocidad de prensa (máster de la línea) ──
+V_PRENSA_M_MIN: 14.5;
+PESO_MANTA_KGM2: 11.5;
+F_SL_KGMIN: 147.6;   F_CL_KGMIN: 118;
+PCT_SL1: 47.1;       PCT_SL2: 52.9;
+
+# ── Reducción · pilas y transporte ──
+PILA1_ASERRIN_M_KG: 5000;   PILA1_ASERRIN_F_KGH: 7000;
+T_DYNESCREEN_S: 20;         T_TRANSP_ASERRIN_S: 40;
+PILA2_CHIP_M_KG: 10000;     PILA2_CHIP_F_KGH: 20000;
+T_ESPERA_DESVIADOR_S: 90;   T_TRANSP_FLAKES_S: 45;
+T_HOMBAK_S3_S: 60;
+
+# ── Silos verdes (ρ·V·L%/F) · V m³ pendiente de confirmar ──
+SILO1_RHO_KGM3: 271;  SILO1_V_M3: 150;  SILO1_L_PCT: 50;   SILO1_FOUT_KGH: 7000;
+SILO2A_RHO_KGM3: 230; SILO2A_V_M3: 200; SILO2A_L_PCT: 25.4; SILO2A_FOUT_KGH: 13990;
+SILO2B_RHO_KGM3: 232; SILO2B_V_M3: 200; SILO2B_L_PCT: 41.5; SILO2B_FOUT_KGH: 13990;
+SILO3_RHO_KGM3: 211;  SILO3_V_M3: 250;  SILO3_L_PCT: 30;   SILO3_FOUT_KGH: 8700;
+
+# ── Dosing Bunker + secado ──
+BUNKER_RHO_KGM3: 290;  BUNKER_V_M3: 40;  BUNKER_L_PCT: 55;  BUNKER_FHUM_KGH: 27005;
+T_TRANSP_SECADERO_S: 30;  TAU_TAMBOR_S: 900;
+
+# ── Clasificación (tamices + zarandas + colectores) ──
+T_TAMICES_FG_S: 8;   T_ZARANDAS_S: 15;
+T_COLECT_CL_S: 12;   T_COLECT_SL_S: 12;
+T_COLECT_PG_S: 10;   T_COLECT_POLVO_S: 8;
+T_WS1_S: 10;  T_WS2_S: 10;  T_WS3_S: 10;
+T_IMAN_FE_S: 4;  T_NEUMATICO_SL_S: 8;
+
+# ── Oversize / refino ──
+T_REF1_S: 25;  T_REF2_S: 25;  T_CICLON_S: 8;  T_CLAS_SL_S: 12;  T_REINGRESO_SL_S: 10;
+
+# ── Silos finales 5 (CL/core) y 6 (SL/capas) · V m³ pendiente ──
+SILO5_RHO_KGM3: 135;  SILO5_V_M3: 120;  SILO5_L_PCT: 44;  SILO5_FOUT_KGMIN: 302;
+SILO6_RHO_KGM3: 188;  SILO6_V_M3: 120;  SILO6_L_PCT: 31;  SILO6_FOUT_KGMIN: 108;
+SILO4_RHO_KGM3: 238;  SILO4_V_M3: 60;   SILO4_L_PCT: 30;  SILO4_FOUT_KGMIN: 60.2;
+SILO8_RHO_KGM3: 238;  SILO8_V_M3: 40;   SILO8_L_PCT: 30;  SILO8_FOUT_KGMIN: 60.2;
+
+# ── Entrada a Parte 2 (dosing, encolado, bandas inclinadas) ──
+DOSING_CL_M_KG: 25;   DOSING_CL_F_KGMIN: 302;
+DOSING_SL_M_KG: 20;   DOSING_SL_F_KGMIN: 108;
+T_ENC_CI_S: 40;       T_ENC_CE_S: 40;
+T_SPRAYS_CAIDA_S: 5;
+INCL_CL_L_M: 68.5;    INCL_CL_V_MMIN: 96.5;
+INCL_SL_L_M: 64.57;   INCL_SL_V_MMIN: 99.5;
+
+# ── Esparcidores: τ = M_hopper / F_capa × 60; NO usan un tiempo fijo ──
+M_ESP1_KG: 12.5;      M_ESP2_KG: 40;        M_ESP3_KG: 15;
+
+# ── Longitudes medidas de la línea común ──
+L_BANDA_BLANCA_M: 45; L_BANDA_ROJA_M: 10;   L_PRENSA_M: 16.6;
+L_POSTPRENSA_M: 16.4;  OFFSET_SENSOR2_M: 0.2; OFFSET_SENSOR3_M: 0.4;
+
+# ── Posiciones físicas desde el inicio de formación (prueba 14-jul-2026) ──
+M_ESP1_CAIDA_M: 6.63; M_ESP2_CAIDA_M: 15; M_ESP3_CAIDA_M: 22.25;
+M_IMAN_M: 26.68; M_SPRAYS2_M: 35.99; M_DETECTOR_M: 37.69; M_CORTADORES_M: 39.56;
+M_NARIZ_M: 44.9; M_VAPOR_M: 46.86; M_PREPRENSA_M: 29.06; M_PREPRENSA_LEN_M: 4.69;
+M_REFILA_INICIO_M: 81.7; M_REFILA_FIN_M: 83;
+M_SIERRA_INICIO_M: 84.1; M_SIERRA_FIN_M: 86.4;

@@ -17,9 +17,9 @@ import {
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 // Offset absoluto (m) del inicio de cada banda a lo largo del downstream.
-// Usa los totales del contenedor (45 / 10) para casar con marker.positionM.
-export const BAND_OFFSET = { white: 0, red: 45, press: 55 };
-export const DOWNSTREAM_TOTAL_M = 71.6; // 45 + 10 + 16.6
+// Usa los totales del contenedor (45 / 7.67) para casar con marker.positionM.
+export const BAND_OFFSET = { white: 0, red: 45, press: 52.67 };
+export const DOWNSTREAM_TOTAL_M = 71.6; // 45 + 7.67 + 18.93 (tambores prensa · DXF jul-2026)
 
 // Tramo post-prensa CORREGIDO con la prueba de papel (14-jul-2026, v≈15.6):
 // el tramo fin-prensa→refila salió ~3.4 m más largo que lo medido al ojo (2-jul).
@@ -89,8 +89,8 @@ export function buildAnnotations() {
     }
   }
   // Prensa: resumen de pitch (no se etiqueta cada marco para no saturar).
-  segments.push({ x: mapAbsMToX(55 + 2.35), len: 0.75, type: 'pitch', label: '6× 0.75 m' });
-  segments.push({ x: mapAbsMToX(55 + 10.0), len: 0.90, type: 'pitch', label: '12× 0.90 m' });
+  segments.push({ x: mapAbsMToX(52.67 + 4.68), len: 0.75, type: 'pitch', label: '6× 0.75 m' });
+  segments.push({ x: mapAbsMToX(52.67 + 12.33), len: 0.90, type: 'pitch', label: '12× 0.90 m' });
   for (const s of POST_PRESS_SEGMENTS) {
     segments.push({
       x: mapAbsMToX((s.startM + s.endM) / 2),

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NOVOPAN · Modelo de ruta — pruebas y verificación</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#0f1512; --card:#17201b; --line:#2a3730; --ink:#e8f0ea; --dim:#9fb3a8; --ok:#3ecf8e; --bad:#ff6b6b; --est:#ffce4d; --cal:#ff9f43; --una:#8a9aa0; --green:#004E38; --yellow:#FFDE00; }
+    @media (prefers-color-scheme: light) { :root { --bg:#f4f7f5; --card:#fff; --line:#dde6e0; --ink:#132018; --dim:#5c6f64; --una:#8a9aa0; } }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:'Barlow',system-ui,sans-serif; background:var(--bg); color:var(--ink); line-height:1.45; }
+    header { background:var(--green); color:#fff; padding:18px 22px; }
+    header h1 { margin:0; font-size:19px; letter-spacing:.2px; }
+    header p { margin:4px 0 0; font-size:13px; opacity:.85; }
+    main { max-width:1080px; margin:0 auto; padding:20px 22px 60px; }
+    .summary { display:flex; gap:14px; flex-wrap:wrap; margin:14px 0 22px; }
+    .pill { padding:10px 16px; border-radius:10px; font-weight:600; font-size:15px; border:1px solid var(--line); background:var(--card); }
+    .pill--ok { color:#053; border-color:var(--ok); }
+    .pill.big { font-size:22px; }
+    .pass { color:var(--ok); } .fail { color:var(--bad); }
+    h2 { font-size:15px; margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+    .grp { margin:16px 0; }
+    .grp h3 { font-size:13px; color:var(--dim); text-transform:uppercase; letter-spacing:.6px; margin:0 0 6px; }
+    .t { display:flex; gap:8px; align-items:baseline; padding:3px 0; font-size:13.5px; }
+    .t .mark { width:16px; }
+    .t .err { color:var(--bad); font-size:12px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    th,td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); }
+    th { background:rgba(0,78,56,.08); font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--dim); }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .tag { display:inline-block; padding:1px 7px; border-radius:99px; font-size:11px; font-weight:700; }
+    .tag--ok { background:rgba(62,207,142,.16); color:var(--ok); }
+    .tag--estimated { background:rgba(255,206,77,.18); color:var(--est); }
+    .tag--not-calibrated { background:rgba(255,159,67,.18); color:var(--cal); }
+    .tag--unavailable,.tag--missing,.tag--invalid { background:rgba(138,154,160,.2); color:var(--una); }
+    .wrap { overflow-x:auto; }
+    .note { font-size:12.5px; color:var(--dim); margin:8px 0 0; }
+    code { background:rgba(127,127,127,.15); padding:1px 5px; border-radius:4px; font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NOVOPAN · Modelo de ruta — Silos 5/6 → Sensores 1/2/3</h1>
+    <p>Suite de pruebas + verificación en vivo del módulo <code>js/route-model.js</code>. Sin dependencias externas.</p>
+  </header>
+  <main>
+    <div class="summary" id="summary"></div>
+
+    <h2>1 · Predicción de la ruta (parámetros por defecto · HMI CSV 13-jul-2026)</h2>
+    <div class="wrap"><table id="routeTable"><thead><tr>
+      <th>Etapa</th><th class="num">Valor</th><th>Estado</th><th>Detalle</th>
+    </tr></thead><tbody></tbody></table></div>
+    <p class="note">El registro toma la capa más lenta: <code>t_registro = max(t_SL1, t_CL, t_SL2)</code>. Los sensores parten del registro: <code>t_sensor = t_registro + d/v_prensa×60</code>.</p>
+
+    <h2>2 · Cálculo automático vs cálculo a mano</h2>
+    <div class="wrap"><table id="handTable"><thead><tr>
+      <th>Magnitud</th><th class="num">A mano (s)</th><th class="num">Modelo (s)</th><th class="num">Δ</th><th>OK</th>
+    </tr></thead><tbody></tbody></table></div>
+
+    <h2>3 · Resultados de las pruebas</h2>
+    <div id="tests"></div>
+  </main>
+
+  <script type="module">
+    import { runReport } from './js/route-model.test.js';
+    import { computeRoute, formatSec, STATUS_LABEL } from './js/route-model.js';
+
+    const rep = runReport();
+
+    // ── Summary ──
+    const sum = document.getElementById('summary');
+    const okAll = rep.failed === 0;
+    sum.innerHTML = `
+      <div class="pill big ${okAll ? 'pass' : 'fail'}">${okAll ? '✅' : '❌'} ${rep.passed}/${rep.total}</div>
+      <div class="pill pill--ok">Pruebas correctas: <strong>${rep.passed}</strong></div>
+      <div class="pill ${rep.failed ? 'fail' : ''}">Fallidas: <strong>${rep.failed}</strong></div>`;
+
+    // ── Route table ──
+    const r = computeRoute();
+    const rows = [
+      ['Ruta fina (Silo 6→Dosing→Enc CE→Inclinada)', r.fine],
+      ['Ruta gruesa (Silo 5→Dosing→Enc CI→Inclinada)', r.coarse],
+      ['t_SL1 (fina + Esparcidor 1)', r.layers.tSL1],
+      ['t_CL (gruesa + Esparcidor 2)', r.layers.tCL],
+      ['t_SL2 (fina + Esparcidor 3)', r.layers.tSL2],
+      ['t_registro = max(SL1,CL,SL2)', r.registration],
+      ['Sensor 1 (85.15 m)', r.sensors.sensor1],
+      ['Sensor 2 (85.35 m)', r.sensors.sensor2],
+      ['Sensor 3 (85.55 m)', r.sensors.sensor3],
+    ];
+    const tb = document.querySelector('#routeTable tbody');
+    tb.innerHTML = rows.map(([label, q]) => {
+      const f = formatSec(q);
+      const val = q.value == null ? '—' : `${q.value.toFixed(1)} s (${(q.value / 60).toFixed(2)} min)`;
+      return `<tr><td>${label}</td><td class="num">${val}</td>
+        <td><span class="tag tag--${q.status}">${STATUS_LABEL[q.status]}</span></td>
+        <td class="note" style="margin:0">${q.reason ?? ''}</td></tr>`;
+    }).join('');
+
+    // ── Hand vs model ──
+    const H = rep.HAND;
+    const hand = [
+      ['τ_silo5', H.tauSilo5, r.coarse.steps[0].q.value],
+      ['τ_silo6', H.tauSilo6, r.fine.steps[0].q.value],
+      ['ruta fina', H.fine, r.fine.value],
+      ['ruta gruesa', H.coarse, r.coarse.value],
+      ['t_SL1', H.tSL1, r.layers.tSL1.value],
+      ['t_CL', H.tCL, r.layers.tCL.value],
+      ['t_SL2', H.tSL2, r.layers.tSL2.value],
+      ['t_registro', H.tReg, r.registration.value],
+      ['sensor1', H.sensor1, r.sensors.sensor1.value],
+      ['sensor2', H.sensor2, r.sensors.sensor2.value],
+      ['sensor3', H.sensor3, r.sensors.sensor3.value],
+    ];
+    document.querySelector('#handTable tbody').innerHTML = hand.map(([n, h, m]) => {
+      const d = Math.abs(h - m);
+      const ok = d <= 0.01;
+      return `<tr><td>${n}</td><td class="num">${h.toFixed(3)}</td><td class="num">${m.toFixed(3)}</td>
+        <td class="num">${d.toExponential(1)}</td><td class="${ok ? 'pass' : 'fail'}">${ok ? '✓' : '✗'}</td></tr>`;
+    }).join('');
+
+    // ── Tests ──
+    const tests = document.getElementById('tests');
+    tests.innerHTML = Object.entries(rep.byGroup).map(([g, list]) => `
+      <div class="grp"><h3>${g}</h3>${list.map((t) => `
+        <div class="t"><span class="mark ${t.ok ? 'pass' : 'fail'}">${t.ok ? '✓' : '✗'}</span>
+          <span>${t.name}</span>${t.ok ? '' : `<span class="err">→ ${t.err}</span>`}</div>`).join('')}</div>`).join('');
+
+    document.title = `${okAll ? '✅' : '❌'} ${rep.passed}/${rep.total} · Modelo de ruta`;
+  </script>
+</body>
+</html>
