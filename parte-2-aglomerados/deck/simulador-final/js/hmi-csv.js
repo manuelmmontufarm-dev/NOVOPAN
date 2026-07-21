@@ -398,7 +398,11 @@ export function parseHmiCsv(text) {
 const COL_TAG     = new Set(['tag', 'tagname', 'varname', 'variable', 'nombre', 'name', 'item', 'punto', 'senal', 'señal', 'signal']);
 const COL_VALOR   = new Set(['value', 'varvalue', 'valor', 'val', 'pv', 'medida', 'lectura', 'measurement', 'wert']);
 const COL_CALIDAD = new Set(['validity', 'quality', 'qc', 'calidad', 'validez', 'estado', 'status', 'flag']);
-const COL_TIEMPO  = new Set(['timestamp', 'timestring', 'time', 'datetime', 'date', 'fecha', 'hora', 'fechahora']);
+/* `$date` / `$time` son la convención de los export de tendencias de WinCC /
+   Wonderware ("Save To File" del gráfico histórico), que es como Sistemas va a
+   entregar los datos en la práctica. */
+const COL_TIEMPO  = new Set(['timestamp', 'timestring', 'time', 'datetime', 'date', 'fecha', 'hora', 'fechahora',
+  '$date', '$time', '$timestamp', '$datetime']);
 
 const DELIMS = [';', '\t', '|', ','];
 
@@ -469,6 +473,95 @@ const conocido = (celda) => LOOKUP.has(unquote(celda).toUpperCase());
    el formato es ambiguo (¿1234 o 1.234?); se resuelve por la forma del número
    —tres dígitos exactos por grupo— en vez de adivinar el locale del servidor. */
 const MILES = /^[-+]?\d{1,3}([.,]\d{3})+$/;
+
+/* ── Export de tendencias: la coma es separador Y decimal a la vez ──────────
+   Caso real (`DENSIDADESHUMEDAD.CSV`, 21-jul-2026):
+
+     $Date,$Time,NIVEL_SL,NIVEL_CL,HUMEDAD_CE,…      ← 9 columnas
+     07/20/26,07:42:50,70,89912,75,23389,2,68814,0,0,0,0   ← 12 campos
+
+   `70,89912` es UN valor (70.89912), no dos. Sin reparar esto el simulador
+   leería NIVEL_SL = 70 y descartaría el resto de la fila corrida.
+
+   El encabezado dice cuántas columnas hay, así que sobran (campos − columnas)
+   uniones. Cuáles unir se resuelve por programación dinámica: cada columna
+   toma 1 campo, o 2 si ambos son enteros puros (`70` + `89912`). Se prefiere
+   la fracción larga, porque un `0,0` de dos columnas booleanas contiguas
+   también es unible pero casi nunca es lo que se quiso decir. */
+const ENTERO_IZQ = /^[-+]?\d+$/;
+const ENTERO_DER = /^\d+$/;
+
+export function repararFilaAncha(campos, nCols) {
+  const M = campos.length;
+  if (M <= nCols) return { campos, uniones: 0 };
+  const NEG = -1e9;
+  // dp[i][j] = mejor puntaje usando i campos para llenar j columnas.
+  const dp = Array.from({ length: M + 1 }, () => new Array(nCols + 1).fill(NEG));
+  const via = Array.from({ length: M + 1 }, () => new Array(nCols + 1).fill(0));
+  dp[0][0] = 0;
+  for (let i = 0; i < M; i += 1) {
+    for (let j = 0; j < nCols; j += 1) {
+      if (dp[i][j] === NEG) continue;
+      if (dp[i][j] > dp[i + 1][j + 1]) { dp[i + 1][j + 1] = dp[i][j]; via[i + 1][j + 1] = 1; }
+      if (i + 1 < M) {
+        const a = unquote(campos[i]);
+        const b = unquote(campos[i + 1]);
+        if (ENTERO_IZQ.test(a) && ENTERO_DER.test(b)) {
+          // Fracción de ≥2 dígitos = decimal casi seguro; de 1 dígito, dudoso.
+          const puntos = b.length >= 2 ? 10 + b.length : 1;
+          if (dp[i][j] + puntos > dp[i + 2][j + 1]) { dp[i + 2][j + 1] = dp[i][j] + puntos; via[i + 2][j + 1] = 2; }
+        }
+      }
+    }
+  }
+  if (dp[M][nCols] === NEG) return { campos, uniones: 0 }; // no cuadra: se deja crudo
+  const out = new Array(nCols);
+  let i = M;
+  let j = nCols;
+  let uniones = 0;
+  while (j > 0) {
+    const paso = via[i][j];
+    if (paso === 2) { out[j - 1] = `${unquote(campos[i - 2])}.${unquote(campos[i - 1])}`; uniones += 1; i -= 2; }
+    else { out[j - 1] = campos[i - 1]; i -= 1; }
+    j -= 1;
+  }
+  return { campos: out, uniones };
+}
+
+/* ── Instante de una fila de tendencias ─────────────────────────────────────
+   Devuelve una clave numérica ordenable (no un Date: las fechas vienen en
+   formatos distintos según el servidor y solo necesitamos comparar). */
+export function clavarInstante(fecha, hora, diaPrimero = false) {
+  const f = unquote(fecha).trim();
+  const h = unquote(hora ?? '').trim();
+  let Y = 0;
+  let Mo = 0;
+  let D = 0;
+  let m = f.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);       // 2026-07-20
+  if (m) { Y = +m[1]; Mo = +m[2]; D = +m[3]; }
+  else {
+    m = f.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);        // 07/20/26 · 20/07/2026
+    if (!m) return null;
+    Y = +m[3];
+    if (Y < 100) Y += 2000;
+    if (diaPrimero) { D = +m[1]; Mo = +m[2]; } else { Mo = +m[1]; D = +m[2]; }
+  }
+  const t = h.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  const hh = t ? +t[1] : 0;
+  const mi = t ? +t[2] : 0;
+  const ss = t && t[3] ? +t[3] : 0;
+  return ((((Y * 100 + Mo) * 100 + D) * 100 + hh) * 100 + mi) * 100 + ss;
+}
+
+/* ¿El primer número de la fecha es el día? Se decide mirando TODAS las filas:
+   si alguna tiene un primer componente > 12 no puede ser un mes. */
+function detectarDiaPrimero(fechas) {
+  for (const f of fechas) {
+    const m = String(f ?? '').match(/^(\d{1,2})[-/.](\d{1,2})[-/.]\d{2,4}$/);
+    if (m && +m[1] > 12) return true;
+  }
+  return false;
+}
 
 function celdaNumero(bruto) {
   const t = unquote(bruto);
@@ -549,12 +642,20 @@ export function detectarPerfil(texto, cfg = null) {
         colTag: idxTag, colValor: idxVal, colCalidad: idxCal, calidadOk: null,
       };
     }
-    // 3 · ancho: el encabezado ES la lista de tags; cada fila, un instante.
+    /* 3 · ancho: el encabezado ES la lista de tags; cada fila, un instante.
+       Se reconoce por la FORMA (columna de tiempo + varias columnas más), no
+       por cuántos tags conocemos: un export de tendencias con tags que el
+       modelo aún no mapea sigue siendo un export de tendencias, y conviene
+       leerlo y avisar de los desconocidos antes que rechazarlo entero. */
     const conocidas = cab.filter(conocido).length;
-    if (conocidas >= 2) {
+    const conTiempo = cab.some((c) => COL_TIEMPO.has(norma(c)));
+    if (conocidas >= 2 || (conTiempo && cab.length >= 3)) {
+      const conf = conocidas >= 2 ? Math.min(1, conocidas / Math.max(1, cab.length - 1)) : 0.75;
       return {
-        perfil: 'ancho', confianza: Math.min(1, conocidas / Math.max(1, cab.length - 1)), delim, encabezado: true,
-        detalle: `${conocidas} tags en columnas · se lee la última fila`,
+        perfil: 'ancho', confianza: conf, delim, encabezado: true,
+        detalle: conocidas >= 2
+          ? `${conocidas} tags en columnas · se lee el instante más reciente`
+          : `columna de tiempo + ${cab.length - 1} columnas · se lee el instante más reciente`,
         colTag: -1, colValor: -1, colCalidad: -1, calidadOk: null,
       };
     }
@@ -682,11 +783,50 @@ export function normalizar(texto, perfil) {
   };
 
   if (perfil.perfil === 'ancho') {
-    const fila = datos[datos.length - 1] ?? [];
+    /* Un export de tendencias trae MUCHOS instantes y no siempre ordenados
+       (el operador puede pegar dos tramos, o exportar en orden inverso). Se
+       repara cada fila, se ordena por fecha+hora y se toma la MÁS RECIENTE
+       —no la última línea del archivo, que es lo que se hacía antes. */
+    const iFecha = cab.findIndex((c) => ['date', 'fecha', '$date'].includes(norma(c)));
+    const iHora = cab.findIndex((c) => ['time', 'hora', '$time'].includes(norma(c)));
+    const iStamp = cab.findIndex((c) => ['timestamp', 'datetime', 'fechahora', '$timestamp', '$datetime'].includes(norma(c)));
+
+    let unionesTot = 0;
+    const filas = datos.map((f) => {
+      const { campos, uniones } = repararFilaAncha(f, cab.length);
+      unionesTot += uniones;
+      return campos;
+    });
+
+    const colF = iFecha >= 0 ? iFecha : iStamp;
+    const diaPrimero = colF >= 0 ? detectarDiaPrimero(filas.map((f) => f[colF])) : false;
+    let elegida = filas[filas.length - 1] ?? [];
+    let cuando = null;
+    if (colF >= 0) {
+      let mejor = null;
+      for (const f of filas) {
+        const k = clavarInstante(f[colF], iHora >= 0 ? f[iHora] : (f[colF] ?? '').split(/[ T]/)[1], diaPrimero);
+        if (k == null) continue;
+        if (mejor == null || k > mejor) { mejor = k; elegida = f; }
+      }
+      if (mejor != null) {
+        cuando = `${unquote(elegida[colF])}${iHora >= 0 ? ` ${unquote(elegida[iHora])}` : ''}`;
+      }
+    }
+
+    if (unionesTot) {
+      avisos.push(`coma usada como separador Y como decimal: se reconstruyeron ${unionesTot} valor(es) guiándose por el número de columnas del encabezado`);
+    }
+    if (filas.length > 1) {
+      avisos.push(cuando
+        ? `${filas.length} instantes en el archivo · se usó el más reciente (${cuando})`
+        : `${filas.length} filas sin columna de fecha reconocible · se usó la última`);
+    }
+
     for (let i = 0; i < cab.length; i += 1) {
       const n = norma(cab[i]);
       if (!n || COL_TIEMPO.has(n) || COL_CALIDAD.has(n)) continue;
-      poner(cab[i], fila[i] ?? '');
+      poner(cab[i], elegida[i] ?? '');
     }
   } else {
     for (const f of datos) {

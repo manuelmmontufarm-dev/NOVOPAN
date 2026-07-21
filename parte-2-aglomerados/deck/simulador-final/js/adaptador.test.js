@@ -12,7 +12,7 @@
      · datos/adaptador.json fija el mapeo cuando el sniffer no acierta
    ============================================================ */
 
-import { adaptarCsv, detectarPerfil, parseHmiCsv } from './hmi-csv.js';
+import { adaptarCsv, detectarPerfil, parseHmiCsv, repararFilaAncha, clavarInstante } from './hmi-csv.js';
 
 /* ── mini-harness (mismo de route-model.test.js) ── */
 const results = [];
@@ -43,7 +43,7 @@ async function leer(ruta) {
 const FIXTURES = [
   'kv-actual.csv', 'kv-clasico.csv', 'tabla-wincc.csv', 'tabla-columnas-extra.csv',
   'taglogging-validity.csv', 'ancho.csv', 'tabla-sin-encabezado.csv',
-  'tabla-nombres-raros.csv', 'miles-comillas.csv', 'basura.csv',
+  'tabla-nombres-raros.csv', 'miles-comillas.csv', 'basura.csv', 'tendencia-metso.csv',
 ];
 const REALES = ['hmi.csv', 'hmi-preparacion.csv', 'hmi-encolado.csv', 'hmi-formacion.csv'];
 
@@ -299,6 +299,57 @@ test('mismo tag repetido en varios instantes ⇒ gana el último, sin conflicto'
   const r = correr('Tagname;Value;Timestamp\nV_PRENSA_M_MIN;13,9;07:58\nV_PRENSA_M_MIN;14,5;08:00\n');
   approx(r.updates['v_prensa'], 14.5, 'v_prensa');
   assert(!r.avisos.some((a) => /conflicto/i.test(a)), `avisos: ${r.avisos.join(' | ')}`);
+});
+
+/* ── export de tendencias: coma doble uso + muchos instantes + desordenado ── */
+group('tendencia (Save To File del HMI)');
+
+test('reconstruye 9 columnas a partir de 12 campos', () => {
+  const r = repararFilaAncha('07/20/26,07:42:50,70,89912,75,23389,2,68814,0,0,0,0'.split(','), 9);
+  assert(r.campos.length === 9, `columnas: ${r.campos.length}`);
+  assert(r.uniones === 3, `uniones: ${r.uniones}`);
+  assert(r.campos[2] === '70.89912', `SL: ${r.campos[2]}`);
+  assert(r.campos[3] === '75.23389', `CL: ${r.campos[3]}`);
+  assert(r.campos[4] === '2.68814', `HUM: ${r.campos[4]}`);
+});
+
+test('NO une los booleanos contiguos (0,0,0,0 son 4 columnas)', () => {
+  const r = repararFilaAncha('07/20/26,07:42:50,70,89912,75,23389,2,68814,0,0,0,0'.split(','), 9);
+  assert(r.campos.slice(5).join(',') === '0,0,0,0', r.campos.slice(5).join(','));
+});
+
+test('fila que ya cuadra queda intacta', () => {
+  const r = repararFilaAncha(['2026-07-21 08:00:00', '14,5', '6,8'], 3);
+  assert(r.uniones === 0 && r.campos.length === 3);
+});
+
+test('ordena instantes en MM/DD/YY, DD/MM/YY e ISO', () => {
+  assert(clavarInstante('07/21/26', '01:00:00') > clavarInstante('07/20/26', '23:00:00'), 'MM/DD');
+  assert(clavarInstante('20/07/26', '10:00', true) < clavarInstante('21/07/26', '09:00', true), 'DD/MM');
+  assert(clavarInstante('2026-07-21', '00:00:01') > clavarInstante('2026-07-20', '23:59:59'), 'ISO');
+  assert(clavarInstante('no-es-fecha', '10:00') === null, 'ilegible');
+});
+
+test('archivo real: perfil ancho + avisos de coma e instante', () => {
+  const a = adaptarCsv(FX['tendencia-metso.csv']);
+  assert(a.perfil === 'ancho', a.perfil);
+  assert(a.avisos.some((w) => /separador Y como decimal/.test(w)), 'falta aviso de coma');
+  assert(a.avisos.some((w) => /más reciente/.test(w)), 'falta aviso de instante');
+});
+
+test('toma el instante más reciente aunque esté en el MEDIO del archivo', () => {
+  const p = parseHmiCsv(adaptarCsv(FX['tendencia-metso.csv']).texto).updates;
+  approx(p['v_prensa'], 14.5, 'velocidad');
+  approx(p['_global:peso_manta'], 6.8, 'peso manta');
+  approx(p['_global:F_CL'], 320.5, 'flujo CL');
+  approx(p['p1:dosG_M'], 1234.56, 'masa dosing');
+  assert(p['v_prensa'] !== 14.2, 'se quedó con la última línea, que es un dato viejo');
+});
+
+test('reconoce el formato por su forma aunque no conozca ningún tag', () => {
+  const a = adaptarCsv('$Date,$Time,TAG_QUE_NO_EXISTE,OTRO_TAG_RARO\n07/20/26,10:00:00,1,5,2,5\n');
+  assert(a.perfil === 'ancho', a.perfil);
+  assert(a.avisos.some((w) => /no existen en el modelo/.test(w)), 'falta aviso de desconocidos');
 });
 
 /* ── reporte ── */
