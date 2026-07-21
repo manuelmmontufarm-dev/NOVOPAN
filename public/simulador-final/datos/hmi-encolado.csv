@@ -1,0 +1,35 @@
+# ============================================================
+# NOVOPAN · Línea 1 · SERVIDOR B — ENCOLADO / COCINA DE COLA  (WinCC `HMI`, 420 tags)
+# ------------------------------------------------------------
+# Conexiones (Access Name): Gluing · PLC_GE (EVOjet)
+# Grupos útiles: CL_DosBin · SL_DosBin · CL_Blender · SL_Blender · GlueKitchen
+#
+# Formato: VARIABLE:VALOR;   ·  decimal '.' o ','  ·  comentarios con '#' o '//'
+#
+# Este servidor comparte dos nombres con Formación (`H_PressSpeed_PV`,
+# `H_SL_FlakeDens_SP`) con OTRO significado. Por eso se lee ANTES que
+# Formación: si ambos traen el tag, gana Formación y queda avisado.
+# NO agregar `H_PressSpeed_PV` a este archivo.
+# ============================================================
+
+# ── Confirmados por el campo Comment del propio HMI ──
+# "CL dosing bin weight"
+F_CL_DosBin_Weight: 25;
+# "SL dosing bin weight"
+F_SL_DosBin_Weight: 20;
+# "SL flake flow"  ⚠️ unidad NO declarada en el Comment; se asume kg/min por
+# simetría con H_CL_Total_Flakes. CONFIRMAR en pantalla antes de dar por bueno.
+F_SL_FlakeFlow_PV: 147.6;
+
+# ── Pendientes: existen en el HMI pero aún no están mapeados ──
+#
+# F_CL_FlakeFlow_PV      "CL flake flow"            → redundante con H_CL_Total_Flakes
+# F_CL_Filling_PV        "CL dosing bin filling level"
+# F_SL_Filling_PV        "SL dosing bin filling level"
+# F_CL_DosBin_Speed      "CL dosing bin, metering belt speed"
+# F_SL_DosBin_Speed      "SL dosing bin, metering belt speed"
+# F_CL_FlakeDens_PV      densidad de flakes en dosificación
+# F_CL_FlakeTemp_PV      "TEMP ENFRIAMIENTO" (grupo CL_Blender)
+# GE10S_B441_GEN_PV …    "EVOjet Flujo boquilla de resina 1…8 [l/min]"
+# Nivel_CL / Nivel_SL    niveles de TANQUE DE RESINA (no de silo de material)
+# AIR_HUMIDITY           humedad de aire

@@ -1,0 +1,43 @@
+# ============================================================
+# NOVOPAN · Línea 1 · SERVIDOR A — FORMACIÓN  (WinCC `HMI-METSO`, 700 tags)
+# ------------------------------------------------------------
+# Conexiones (Access Name): Forming · PLC_L · Press · POF · SPRAY · Gluing · PLC170
+#
+# Formato: VARIABLE:VALOR;   ·  decimal '.' o ','  ·  comentarios con '#' o '//'
+# Valor vacío (VARIABLE:;) = pendiente → el simulador conserva el default.
+#
+# Los nombres de abajo son los TAGS REALES DE WinCC. IT no renombra nada:
+# vuelca el tag tal como sale del servidor. El simulador los traduce solo.
+#
+# Este archivo PISA a datos/hmi.csv y se lee de último (ver CSV_SOURCES),
+# porque Formación es el dueño de la prensa.
+# ============================================================
+
+# ── Confirmados por el campo Comment del propio HMI ──
+# "Press speed (m/min)"
+H_PressSpeed_PV: 14.5;
+# "Mat weight after forming (kg/m2)"
+H_Act_MatWeight_SP: 11.5;
+# "CL total flakes kg/min"
+H_CL_Total_Flakes: 118;
+# "SL1 % Set value (%)"
+H_Act_SL1_SP: 47.1;
+
+# ── Pendientes: existen en el HMI pero aún no están mapeados ──
+# Descomentar cuando se confirmen unidad y correspondencia. Ver MAPEO-WINCC.md §4.
+#
+# H_FL_FormConv_Speed_PV     "Forming conveyor speed (m/min)"      → velocidad real de la banda blanca
+# H_FL_FormConv_Speed_Mode   "1= Speed from press, 0 = manual"     → dice si la banda sigue a la prensa
+# H_PP_Upper_Speed_PV        "Prepress upper main drive speed (m/min)"
+# H_PP_Lower_Speed_PV        "Prepress lower drive speed (m/min)"
+# H_MaterialFlow_TonsPerHour "Forming line material flow tons per hour"  → validación cruzada
+# H_LineDistance_PV          "Line running after starting forming"
+# H_Moisure_PV               "Humedad PEW758"
+# H_TrimSaw_Width            "Trim saw width (mm)"
+# Q_Act_PanelLength          largo del tablero terminado (Access: POF)
+# Q_Act_PanelWidth           ancho del tablero terminado
+# Q_Act_FinalThickness       espesor final
+# Prensa_metal_detector      "Metal en material Prensa"  ← ojo: vive en el servidor C
+#
+# ⚠️ OK_BOMBAS_GLUING_CL / _SL: el nombre dice OK pero el Comment dice
+#    "FALLA BOMBAS ENCOLADO". Confirmar polaridad antes de usarlo.

@@ -1,0 +1,53 @@
+# ============================================================
+# NOVOPAN · Línea 1 · SERVIDOR C — PREPARACIÓN / SECADO  (WinCC, 586 tags)
+# ------------------------------------------------------------
+# Conexiones (Access Name):
+#   WETS    silos húmedos — extracción       WETB   bunker dosificador húmedo
+#   DRYR    secadero                          BRNR   quemador
+#   SCRN    clasificación · windsifter WS3    PLCU112  molino Hombak U112
+#
+# ⚠️ ARCHIVO AÚN SIN TAGS ACTIVOS — A PROPÓSITO.
+#
+# Este servidor SÍ tiene los datos del upstream, pero falta un dato humano
+# antes de poder cablearlo: el HMI nombra los silos POR MATERIAL
+# ("silo aserrín", "silo flakes 2", "silo hombak", "silo de polvo 8") y el
+# modelo los nombra POR NÚMERO (SILO1, SILO2A, SILO2B, SILO3, SILO8).
+# La correspondencia probable es aserrín→SILO1, flakes→SILO2A/2B,
+# hombak→SILO3, pero NO está confirmada. Aliasear a ciegas cruzaría dos
+# silos distintos y el modelo mentiría con números creíbles.
+#
+# Confirmar esa correspondencia en planta y descomentar las líneas de abajo.
+# Ver MAPEO-WINCC.md §1c.
+# ============================================================
+
+# ── Bunker dosificador húmedo (Access: WETB) — listo salvo unidades ──
+# 051_D_Bunker_Level     "Bunker dosificador, nivel calculado"  → BUNKER_L_PCT (¿% o m³?)
+# 051_60_A1_3_OUTxEU     "900A1.3, Bin medidor peso"
+# 051_60_A1_1_OUTxEU     "900A1.1, Bin medidor caudal 1"
+# 051_60_A1_2_OUTxEU     "900A1.2, Bin medidor caudal 2"
+# 051_60_B1_OUTxEU       "902T2, Bin medidor humedad"
+# Wet_Mat_CALC_T…        "Total wet material kg/h to 051.60 dosing bunker"  → BUNKER_FHUM_KGH
+#                        (nombre truncado en la foto — pedir el completo)
+
+# ── Silos húmedos (Access: WETS) ──
+# 051_08_SL7_OUTxEU      "897T4, Extractor Silo Flak.2 transmisor nivel"
+# D_Bunker_Calc_03       "fact.vel.dos. silo aserrín"
+# D_Bunker_Calc_04       "fact.vel.dos. silo flakes 2"
+# D_Bunker_Calc_05       "fact.vel.dos. silo hombak"
+# Silo3_DescargaTotal    "Cálculo consumo silo 3 x día"
+# Clap_Silo2B_open       "Clapeta bajo silo 2B abierta"
+
+# ── Secadero (Access: DRYR) ──
+# 071_DRY_Hum_out        humedad de salida del secadero
+# 071_DRYR_Reg_T_l…      "Secador, reg.temp.ent. PV / SP"
+# 071_DRYR_Reg_T_…       "Secador, reg.temp.sal. PV / SP"
+# Delta_T_out            "Delta T entrada – salida Tambor"   → apoya TAU_TAMBOR_S
+# Rendimiento_sec        rendimiento del secadero
+
+# ── Silo de polvo 8 (Access: BRNR) ──
+# ⚠️ Alimenta el QUEMADOR. Probablemente NO es el SILO8 del modelo
+#    (que es un silo final que dosifica a Sección 2). Verificar.
+# nivel_silo8 / densidad_silo8 / humedad_silo8
+
+# ── Clasificación (Access: SCRN) ──
+# Corriente_WS3 · Potencia_WS3_M06 · Temp1_M06_WS3 · Level_ciclon_WS3

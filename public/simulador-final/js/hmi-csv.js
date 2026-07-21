@@ -24,6 +24,25 @@ const POLL_MS = (() => {
 })();
 const WRITE_DEBOUNCE_MS = 420;
 
+/* Un archivo por servidor WinCC. Se leen todos y se combinan.
+   ------------------------------------------------------------
+   `hmi.csv` es la BASE: trae los 104 parámetros con sus valores por defecto o
+   estimados, con los nombres canónicos del simulador. Los tres archivos por
+   servidor lo pisan con dato vivo usando los nombres reales de WinCC.
+
+   EL ORDEN ES LA PRECEDENCIA — el último gana. Formación va al final a
+   propósito: es el dueño de la prensa, y `H_PressSpeed_PV` también existe en
+   el servidor de Encolado con otro significado ("Press Conveyor Speed").
+   Toda colisión queda avisada en el pill de estado, ya no es silenciosa.
+
+   Un archivo ausente NO es un error: el simulador funciona con los que haya. */
+export const CSV_SOURCES = [
+  { file: 'datos/hmi.csv',             label: 'base' },
+  { file: 'datos/hmi-preparacion.csv', label: 'Preparación' }, // servidor C — WETS/WETB/DRYR/BRNR/SCRN
+  { file: 'datos/hmi-encolado.csv',    label: 'Encolado' },    // servidor B — Gluing/PLC_GE
+  { file: 'datos/hmi-formacion.csv',   label: 'Formación' },   // servidor A — Forming/PLC_L/Press/POF
+];
+
 const entry = (keys, kind, unit) => ({ keys: Array.isArray(keys) ? keys : [keys], kind, unit });
 
 /* Tag CSV → claves del modelo. Algunos tags alimentan tanto el modelo
@@ -113,9 +132,13 @@ export const TAG_MAP = {
   T_ENC_CE_S:          entry(['p1:tEncCE', 'ret:enc-fine'], 'est', 's'),
   T_SPRAYS_CAIDA_S:    entry('ret:sprays-caida', 'est', 's'),
   INCL_CL_L_M:         entry(['p1:inclG_L', 'len:incl-thick'], 'measured', 'm'),
-  INCL_CL_V_MMIN:      entry(['p1:inclG_v', 'speed:incl-thick'], 'hmi', 'm/min'),
+  /* `measured`, no `hmi`: se barrieron los tres servidores WinCC (1.706 tags,
+     21-jul-2026) y NO existe tag de velocidad de banda inclinada. Lo más
+     parecido, `H_CC_Speed_SP`, es "CC Metering belt speed" — la dosificadora,
+     otra máquina. Marcarlo como HMI haría creer que el número viene de planta. */
+  INCL_CL_V_MMIN:      entry(['p1:inclG_v', 'speed:incl-thick'], 'measured', 'm/min'),
   INCL_SL_L_M:         entry(['p1:inclF_L', 'len:incl-fine'], 'measured', 'm'),
-  INCL_SL_V_MMIN:      entry(['p1:inclF_v', 'speed:incl-fine'], 'hmi', 'm/min'),
+  INCL_SL_V_MMIN:      entry(['p1:inclF_v', 'speed:incl-fine'], 'measured', 'm/min'),
 
   M_ESP1_KG:           entry('mass:esp1-zone', 'hmi', 'kg'),
   M_ESP2_KG:           entry('mass:esp2-zone', 'hmi', 'kg'),
@@ -240,10 +263,16 @@ function toNumber(valRaw, sep) {
 export function parseHmiCsv(text) {
   const updates = {};
   const warnings = [];
+  const setBy = {};
   let vPrensa = null;
   let count = 0;
+  let origin = null;
   const clean = String(text ?? '').replace(/^﻿/, '');
   for (const rawLine of clean.split(/\r?\n/)) {
+    /* Marca de origen que inserta pollServer al concatenar los CSV de cada
+       servidor. Va como comentario para que un CSV suelto siga siendo válido. */
+    const mark = rawLine.match(/^#\s*@origen:\s*(.+?)\s*$/i);
+    if (mark) { origin = mark[1]; continue; }
     let line = rawLine;
     const h = line.indexOf('#'); if (h !== -1) line = line.slice(0, h);
     const c = line.indexOf('//'); if (c !== -1) line = line.slice(0, c);
@@ -272,7 +301,17 @@ export function parseHmiCsv(text) {
       if (num.empty) continue;
       if (num.nan) { warnings.push(`valor inválido en ${tag}`); continue; }
       if (num.val < 0) { warnings.push(`valor negativo ignorado en ${tag}`); continue; }
-      for (const key of meta.keys) updates[key] = num.val;
+      /* Colisión entre servidores: `H_PressSpeed_PV` existe en Formación y en
+         Encolado con significados distintos. Antes ganaba el último en silencio;
+         ahora gana igual (el orden de CSV_SOURCES es la precedencia) pero queda
+         un aviso visible en el pill de estado. */
+      for (const key of meta.keys) {
+        if (key in updates && updates[key] !== num.val) {
+          warnings.push(`conflicto en ${key}: ${setBy[key] ?? '?'}=${updates[key]} vs ${origin ? origin + '/' : ''}${tag}=${num.val} — gana ${tag}`);
+        }
+        updates[key] = num.val;
+        setBy[key] = `${origin ? origin + '/' : ''}${tag}`;
+      }
       if (meta.keys.includes('v_prensa')) vPrensa = num.val;
       count += 1;
     }
@@ -304,6 +343,7 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
   let lastGood = null;
   let failStreak = 0;
   let lastCount = 0;
+  let lastWarnings = [];
   let writeTimer = 0;
 
   function setStatus(cls, msg, title) {
@@ -329,6 +369,7 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     lastGood = new Date();
     failStreak = 0;
     lastCount = parsed.count;
+    lastWarnings = parsed.warnings;
     const warn = parsed.warnings.length ? ` · ⚠ ${parsed.warnings.length}` : '';
     const edited = mode === 'edited';
     setStatus(edited || mode === 'manual-file' ? 'manual' : 'live',
@@ -338,28 +379,52 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     return true;
   }
 
+  const SOURCE_LIST = CSV_SOURCES.map((s) => s.file).join(', ');
+
   function markServerDown() {
     failStreak += 1;
     if (failStreak < 2) return;
-    if (lastGood) setStatus('error', `● CSV · reconectando… (último ${fmtTime(lastGood)})`, 'No se encuentra datos/hmi.csv.');
-    else setStatus('idle', '● CSV · sin conexión', 'Conecta un archivo CSV o verifica datos/hmi.csv.');
+    if (lastGood) setStatus('error', `● CSV · reconectando… (último ${fmtTime(lastGood)})`, `No se encuentra ninguno de: ${SOURCE_LIST}`);
+    else setStatus('idle', '● CSV · sin conexión', `Conecta un archivo CSV o verifica: ${SOURCE_LIST}`);
   }
 
+  /* Lee TODOS los CSV declarados y los concatena en un solo documento con una
+     marca `# @origen:` por bloque. Cada servidor WinCC escribe su propio
+     archivo; los que falten se ignoran sin romper nada (así el simulador sigue
+     andando con solo `datos/hmi.csv`, como antes). El orden de CSV_SOURCES es
+     la precedencia: el último que define un parámetro gana, y la colisión
+     queda avisada por `parseHmiCsv`. */
   async function pollServer() {
-    try {
-      const res = await fetch(`datos/hmi.csv?t=${Date.now()}`, { cache: 'no-store' });
-      if (!res.ok) { if (mode === 'server') markServerDown(); return false; }
-      mode = 'server';
-      const text = await res.text();
-      const changed = applyText(text, 'HMI CSV');
-      // Solo el caso "sin cambios" refresca el pill en vivo; un 'error' de
-      // formato debe quedar visible hasta que llegue un CSV válido.
-      if (changed === false && lastGood) setStatus('live', `● HMI CSV · ${fmtTime(lastGood)} · ${lastCount} tags`, 'Contenido sin cambios; última lectura válida.');
-      return true;
-    } catch {
-      if (mode === 'server') markServerDown();
-      return false;
+    const stamp = Date.now();
+    const fetched = await Promise.all(CSV_SOURCES.map(async (src) => {
+      try {
+        const res = await fetch(`${src.file}?t=${stamp}`, { cache: 'no-store' });
+        if (!res.ok) return null;
+        const text = await res.text();
+        return text.trim() ? { src, text } : null;
+      } catch {
+        return null; // fuente ausente u offline: no es un error, es opcional
+      }
+    }));
+    const parts = fetched.filter(Boolean);
+    if (parts.length === 0) { if (mode === 'server') markServerDown(); return false; }
+    mode = 'server';
+    const combined = parts
+      .map(({ src, text }) => `# @origen: ${src.label}\n${text.replace(/\s*$/, '')}\n`)
+      .join('\n');
+    const label = parts.length > 1 ? `HMI CSV · ${parts.length} servidores` : 'HMI CSV';
+    const changed = applyText(combined, label);
+    /* Solo el caso "sin cambios" refresca el pill en vivo; un 'error' de
+       formato debe quedar visible hasta que llegue un CSV válido.
+       Los warnings se re-emiten aquí a propósito: un conflicto entre servidores
+       es permanente mientras el CSV no cambie, así que no puede desaparecer del
+       pill en el siguiente sondeo. */
+    if (changed === false && lastGood) {
+      const warn = lastWarnings.length ? ` · ⚠ ${lastWarnings.length}` : '';
+      setStatus('live', `● ${label} · ${fmtTime(lastGood)} · ${lastCount} tags${warn}`,
+        lastWarnings.length ? lastWarnings.join('\n') : 'Contenido sin cambios; última lectura válida.');
     }
+    return true;
   }
 
   let lastModified = 0;
