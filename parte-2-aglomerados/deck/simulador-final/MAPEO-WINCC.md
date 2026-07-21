@@ -7,7 +7,7 @@ en vista de tabla (`Tag Type` · `Access Name` · `Alarm Group` · `Comment`):
 |---|---|---|---|---|
 | **A** | `HMI-METSO` (monitor AOC) | 700 | formación · pre-prensa · prensa · calidad | completa: `<none>` → `variation` |
 | **B** | `HMI` (monitor OMNI) | 420 | encolado · cocina de cola · EVOjet · **dosificación** | completa: `<none>` → `winch_overload_m05` |
-| **C** | HMI de preparación (monitor AOC) | 586 | **silos húmedos · bunker · secadero · quemador · molino Hombak · clasificación** | leído 8/16 fotos — bloque numérico `0xx_*` incompleto |
+| **C** | HMI de preparación (monitor AOC) | 586 | **silos húmedos · bunker · secadero · quemador · molino Hombak · clasificación** | leído 12/16 fotos — faltan 4 del bloque `071_*` (regulación del secadero) |
 
 Todos con `Filter: <none>`. Todos los mapeos salen del campo `Comment` del propio
 HMI, no de parecido de nombres.
@@ -99,18 +99,60 @@ Los prefijos numéricos son **códigos de área**: `051` = silos húmedos + bunk
 | `Grecon_Z2…Z27_chispa/fuego` | detección de chispa y fuego por zona | eventos de línea |
 | `Prensa_metal_detector` | **"Metal en material Prensa"** | el detector de metales (37.69 m) que faltaba |
 
-### ⚠️ El problema que queda: la numeración no coincide
+### Los silos SÍ están completos — con la misma estructura del modelo
 
-El HMI nombra los silos **por material** (`silo aserrín`, `silo flakes 2`,
-`silo hombak`, `silo de polvo 8`, `Silo3`, `silo 2B`); el modelo los nombra
-**por número** (`SILO1`, `SILO2A`, `SILO2B`, `SILO3`, `SILO8`). Correspondencia
-probable pero **sin confirmar**: aserrín→SILO1, flakes→SILO2A/2B, hombak→SILO3.
-Hasta que eso se confirme en planta no se puede aliasear ningún silo sin riesgo
-de cruzar dos silos distintos.
+*(Corrige una conclusión anterior de este documento: sí hay `%` de nivel por
+silo. Estaba en el bloque `051_S_*` que faltaba leer.)*
 
-Tampoco aparece un `%` de nivel por silo verde: solo hay **un** transmisor de
-nivel (`051_08_SL7_OUTxEU`, silo Flakes 2), la clapeta de 2B y el consumo diario
-de silo 3. Los `L_PCT` de SILO1 / 2A / 3 siguen sin fuente directa.
+Cada silo húmedo publica exactamente el juego ρ · V · L% · F que usa el modelo:
+
+| Silo del HMI | Capacidad | Densidad | Nivel | Descarga | Humedad |
+|---|---|---|---|---|---|
+| aserrín | `051_S_Saw_Dust_Cap` | `051_S_Saw_Dust_Dens` | `051_S_Saw_Dust_Level` | `…_D…` "desc. kg/h" | `051_S_Saw_Dust_Hum` |
+| flakes 1 | — | — | `051_S_Flakes_1_Level` | — | — |
+| flakes 2 | `051_S_Flakes_2_Cap` | `051_S_Flakes_2_Dens` | `051_S_Flakes_2_Level` | `…_De…` "desc. kg/h" | `051_S_Flakes_2_Hum` |
+| hombak | `051_S_Hombak_Cap` | `051_S_Hombak_Dens` | `051_S_Hombak_Level` | `…_De…` "desc. kg/h" | `051_S_Hombak_Hum` |
+
+Cada uno trae además `desc. kg/h seco`, `consumo x turno / x día / x total`,
+`rotor` y `TSF`. Equipos: `760M1` aserrín · `750M1` flakes 2 · `770M1` hombak.
+
+**Y los silos finales 5 y 6 también** — en el área de clasificación (`SCRN`),
+con la unidad declarada en el comentario:
+
+| Comment del HMI | Parámetro del modelo |
+|---|---|
+| "**Nivel silo capa interna %**" | `SILO5_L_PCT` (core / CL) |
+| "**Descarga desde silo capa interna kg/h**" | `SILO5_FOUT` |
+| "**Nivel silo capa externa %**" | `SILO6_L_PCT` (fina / SL) |
+| "**Descarga desde silo capa externa kg/h**" | `SILO6_FOUT` |
+
+Los cuatro son `066_C_Dry_Materia…` (nombre truncado en la foto — pedir el completo).
+"Capa interna" = core = silo 5 · "capa externa" = superficie = silo 6.
+
+### Correspondencia silo-material ↔ silo-número
+
+Ya no es corazonada, pero **sigue necesitando un sí de planta**:
+
+| Modelo | HMI | Evidencia |
+|---|---|---|
+| `SILO1` | Silo aserrín (`051_S_Saw_Dust_*`, 760M1) | único silo de aserrín |
+| `SILO2A` | Silo flakes 1 (`051_S_Flakes_1_*`) | son dos silos gemelos de flakes… |
+| `SILO2B` | Silo flakes 2 (`051_S_Flakes_2_*`, 750M1) | …y el modelo también tiene 2A/2B gemelos (mismo V y mismo F) |
+| `SILO3` | Silo hombak (`051_S_Hombak_*`, 770M1) | el hombak es el molino que alimenta el tercer silo |
+| `SILO5` | silo "capa interna" (`066_C_*`) | core = CL = silo 5 |
+| `SILO6` | silo "capa externa" (`066_C_*`) | superficie = SL = silo 6 |
+
+⚠️ `nivel_silo8` / `densidad_silo8` es el **silo de polvo que alimenta el
+quemador** (`BRNR`). El `SILO8` del modelo es un silo final que dosifica a
+Sección 2. Casi seguro **no son el mismo**.
+
+⚠️ Ambigüedad pendiente: `041.11` aparece a la vez como "TSF **SILO3**"
+(`DB13_REAL52_PLC041`) y como "OLD_DATA **Sawdust** 041.11" (`041_11_FDBxCURR`).
+O el silo 3 transporta aserrín, o el número de área se reusa. Resolver antes de
+cablear `SILO3`.
+
+Por eso siguen sin aplicarse alias del servidor C: la estructura ya está clara,
+falta la confirmación humana y los nombres completos de los tags truncados.
 
 ---
 
