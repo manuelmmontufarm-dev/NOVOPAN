@@ -1564,15 +1564,27 @@ function initSimulation() {
     }
   }
 
-  /* Muestra el τ de residencia REAL de cada encolador (tEncCE fina · tEncCI core)
-     en los chips de la zona de entrada, sincronizado con el modelo/CSV del HMI. */
+  /* Muestra el τ de residencia REAL de cada nodo de entrada (silos finales,
+     dosificadoras, encoladores, bandas inclinadas) sincronizado con el
+     modelo/CSV del HMI. Usa las MISMAS ecuaciones que la animación
+     (tauSiloM / tauMF / longitud÷velocidad) — nunca números pegados en el SVG:
+     esos badges nacían hardcodeados del diseño y mentían apenas cambiaba el CSV. */
   function renderIntakeTaus() {
-    const set = (id, key) => {
+    const fmt = (sec) => !Number.isFinite(sec) || sec <= 0 ? '— s'
+      : sec >= 100 ? `${Math.round(sec)} s` : `${sec.toFixed(1)} s`;
+    const put = (id, sec) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = `${Math.round(Number(modelParams?.[key]) || 0)} s`;
+      if (el) el.textContent = fmt(sec);
     };
-    set('intakeTauEncCE', 'p1:tEncCE');
-    set('intakeTauEncCI', 'p1:tEncCI');
+    const p = modelParams ?? {};
+    put('intakeTauSilo6', tauSiloM(p, 's6'));
+    put('intakeTauSilo5', tauSiloM(p, 's5'));
+    put('intakeTauDosF', tauMF(p, 'p1:dosF_M', 'p1:dosF_F'));
+    put('intakeTauDosG', tauMF(p, 'p1:dosG_M', 'p1:dosG_F'));
+    put('intakeTauEncCE', num(p, 'p1:tEncCE'));
+    put('intakeTauEncCI', num(p, 'p1:tEncCI'));
+    put('intakeTauInclF', num(p, 'p1:inclF_v') > 0 ? num(p, 'p1:inclF_L') / num(p, 'p1:inclF_v') * 60 : 0);
+    put('intakeTauInclG', num(p, 'p1:inclG_v') > 0 ? num(p, 'p1:inclG_L') / num(p, 'p1:inclG_v') * 60 : 0);
   }
 
   // ── HMI en vivo vía CSV local (releído cada 2 s; estático ahora, listo para el servidor) ──

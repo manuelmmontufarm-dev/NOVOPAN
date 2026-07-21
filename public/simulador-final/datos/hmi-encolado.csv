@@ -21,6 +21,13 @@ F_SL_DosBin_Weight: 20;
 # simetría con H_CL_Total_Flakes. CONFIRMAR en pantalla antes de dar por bueno.
 F_SL_FlakeFlow_PV: 147.6;
 
+# ── Densidad de flakes medida en las dosing bins (kg/m³) ──
+# El bin se llena directo del silo final con el mismo material → su densidad
+# es la del silo 5 (gruesa/core) y silo 6 (fina). Unidad confirmada por los
+# tags _SP gemelos de Formación: "CL flake density (kg/m3)".
+F_CL_FlakeDens_PV: 135;
+F_SL_FlakeDens_PV: 188;
+
 # ── Pendientes: existen en el HMI pero aún no están mapeados ──
 #
 # F_CL_FlakeFlow_PV      "CL flake flow"            → redundante con H_CL_Total_Flakes

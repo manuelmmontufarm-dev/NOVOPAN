@@ -36,8 +36,12 @@ const WRITE_DEBOUNCE_MS = 420;
    Toda colisión queda avisada en el pill de estado, ya no es silenciosa.
 
    Un archivo ausente NO es un error: el simulador funciona con los que haya. */
+/* Etiqueta reservada del archivo de defaults: sus valores existen para ser
+   pisados por los servidores en vivo, así que pisarlos NO es un conflicto. */
+export const DEFAULTS_LABEL = 'base';
+
 export const CSV_SOURCES = [
-  { file: 'datos/hmi.csv',             label: 'base' },
+  { file: 'datos/hmi.csv',             label: DEFAULTS_LABEL },
   { file: 'datos/hmi-preparacion.csv', label: 'Preparación' }, // servidor C — WETS/WETB/DRYR/BRNR/SCRN
   { file: 'datos/hmi-encolado.csv',    label: 'Encolado' },    // servidor B — Gluing/PLC_GE
   { file: 'datos/hmi-formacion.csv',   label: 'Formación' },   // servidor A — Forming/PLC_L/Press/POF
@@ -177,7 +181,12 @@ export const TAG_MAP = {
 
    Cada alias está confirmado por la columna `Comment` del propio HMI (fotos de
    descripciones, 21-jul-2026) — no por parecido de nombre. La unidad citada es
-   la que declara ese comentario. */
+   la que declara ese comentario.
+
+   El valor puede ser un string (el tag canónico) o `{ tag, scale }` cuando el
+   HMI entrega otra unidad: el valor del CSV se multiplica por `scale` antes de
+   entrar al modelo (p.ej. kg/h → kg/min con scale 1/60). Así IT vuelca el
+   número crudo del servidor y la conversión vive en un solo lugar auditable. */
 export const WINCC_ALIAS = {
   // "Press speed (m/min)" · Access Name: Forming
   'H_PressSpeed_PV':      'V_PRENSA_M_MIN',
@@ -200,16 +209,45 @@ export const WINCC_ALIAS = {
   // "SL flake flow" · unidad no declarada en el comentario; se asume kg/min por
   // simetría con `H_CL_Total_Flakes` ("CL total flakes kg/min"). CONFIRMAR.
   'F_SL_FlakeFlow_PV':    'F_SL_KGMIN',
+
+  /* Densidad de los silos finales 5 y 6: no la publica ningún tag propio del
+     silo — se mide en las DOSING BINS (los `H_*Dens` de Formación son Access
+     Name `Gluing`, o sea leídos de encolado; `H_cc_density_fromgluin` lo dice
+     en el nombre). El bin se llena directo del silo con el mismo material,
+     así que su densidad ES la del silo. Matiz: es material recién caído; la
+     columna dentro del silo compacta algo más. Menos error que una constante. */
+  // Densidad flakes en dosificadora gruesa · kg/m³ (unidad confirmada por los
+  // `_SP` gemelos de Formación: "CL flake density (kg/m3)")
+  'F_CL_FlakeDens_PV':    'SILO5_RHO_KGM3',
+  // Densidad flakes en dosificadora fina · kg/m³
+  'F_SL_FlakeDens_PV':    'SILO6_RHO_KGM3',
+
+  /* Silos 5 y 6 · nivel y descarga (servidor C, Access SCRN). Los comentarios
+     del HMI declaran "Nivel silo capa interna %" y "Descarga desde silo capa
+     interna kg/h" — pero el NOMBRE completo sale truncado en la foto
+     (`066_C_Dry_Materia…`). En cuanto Sistemas confirme los cuatro nombres,
+     descomentar. La descarga viene en kg/h y el modelo usa kg/min → scale.
+  '066_C_Dry_Material_??_L_PCT_INT':  'SILO5_L_PCT',
+  '066_C_Dry_Material_??_KGH_INT':    { tag: 'SILO5_FOUT_KGMIN', scale: 1 / 60 },
+  '066_C_Dry_Material_??_L_PCT_EXT':  'SILO6_L_PCT',
+  '066_C_Dry_Material_??_KGH_EXT':    { tag: 'SILO6_FOUT_KGMIN', scale: 1 / 60 },
+  */
 };
 
-/* Índice de búsqueda: NOMBRE_NORMALIZADO → metadatos. Cubre los nombres
-   canónicos y los alias de WinCC en una sola tabla. */
+/* Normaliza una entrada de WINCC_ALIAS a { tag, scale }. */
+export function aliasTarget(value) {
+  return typeof value === 'string' ? { tag: value, scale: 1 } : { tag: value.tag, scale: value.scale ?? 1 };
+}
+
+/* Índice de búsqueda: NOMBRE_NORMALIZADO → { meta, scale }. Cubre los nombres
+   canónicos (scale 1) y los alias de WinCC en una sola tabla. */
 const LOOKUP = (() => {
   const out = new Map();
-  for (const [tag, meta] of Object.entries(TAG_MAP)) out.set(tag.toUpperCase(), meta);
-  for (const [wincc, canon] of Object.entries(WINCC_ALIAS)) {
-    const meta = TAG_MAP[canon];
-    if (meta) out.set(wincc.toUpperCase(), meta);
+  for (const [tag, meta] of Object.entries(TAG_MAP)) out.set(tag.toUpperCase(), { meta, scale: 1 });
+  for (const [wincc, value] of Object.entries(WINCC_ALIAS)) {
+    const { tag, scale } = aliasTarget(value);
+    const meta = TAG_MAP[tag];
+    if (meta) out.set(wincc.toUpperCase(), { meta, scale });
   }
   return out;
 })();
@@ -264,6 +302,7 @@ export function parseHmiCsv(text) {
   const updates = {};
   const warnings = [];
   const setBy = {};
+  const setByOrigin = {};
   let vPrensa = null;
   let count = 0;
   let origin = null;
@@ -295,24 +334,33 @@ export function parseHmiCsv(text) {
       const tag = unquote(rec.slice(0, sepIdx));
       const norm = tag.toUpperCase();
       if (!tag || norm === 'TAG' || norm === 'TAGNAME' || norm === 'VARIABLE') continue;
-      const meta = LOOKUP.get(norm);
-      if (!meta) { warnings.push(`tag desconocido: ${tag}`); continue; }
+      const hit = LOOKUP.get(norm);
+      if (!hit) { warnings.push(`tag desconocido: ${tag}`); continue; }
       const num = toNumber(rec.slice(sepIdx + 1), sep);
       if (num.empty) continue;
       if (num.nan) { warnings.push(`valor inválido en ${tag}`); continue; }
       if (num.val < 0) { warnings.push(`valor negativo ignorado en ${tag}`); continue; }
+      /* La conversión de unidad del alias (p.ej. kg/h → kg/min) se aplica ANTES
+         de comparar por colisión, para que dos orígenes en unidades distintas
+         se comparen ya en la unidad del modelo. */
+      const val = num.val * hit.scale;
+      const meta = hit.meta;
       /* Colisión entre servidores: `H_PressSpeed_PV` existe en Formación y en
          Encolado con significados distintos. Antes ganaba el último en silencio;
          ahora gana igual (el orden de CSV_SOURCES es la precedencia) pero queda
          un aviso visible en el pill de estado. */
       for (const key of meta.keys) {
-        if (key in updates && updates[key] !== num.val) {
-          warnings.push(`conflicto en ${key}: ${setBy[key] ?? '?'}=${updates[key]} vs ${origin ? origin + '/' : ''}${tag}=${num.val} — gana ${tag}`);
+        /* Pisar un default de la base es el comportamiento esperado, no un
+           conflicto: solo se avisa cuando DOS orígenes en vivo discrepan. */
+        const prevIsDefault = setByOrigin[key] === DEFAULTS_LABEL;
+        if (key in updates && updates[key] !== val && !prevIsDefault) {
+          warnings.push(`conflicto en ${key}: ${setBy[key] ?? '?'}=${updates[key]} vs ${origin ? origin + '/' : ''}${tag}=${val} — gana ${tag}`);
         }
-        updates[key] = num.val;
+        updates[key] = val;
         setBy[key] = `${origin ? origin + '/' : ''}${tag}`;
+        setByOrigin[key] = origin;
       }
-      if (meta.keys.includes('v_prensa')) vPrensa = num.val;
+      if (meta.keys.includes('v_prensa')) vPrensa = val;
       count += 1;
     }
   }
@@ -484,16 +532,24 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     if (!canon) return null;
     const has = (name) => new RegExp(`(^|[;\\n\\r])[ \\t]*${escapeRegExp(name)}[ \\t]*:`, 'im').test(text);
     if (has(canon)) return canon;
-    for (const [wincc, target] of Object.entries(WINCC_ALIAS)) {
-      if (target === canon && has(wincc)) return wincc;
+    for (const [wincc, value] of Object.entries(WINCC_ALIAS)) {
+      if (aliasTarget(value).tag === canon && has(wincc)) return wincc;
     }
     return canon;
   }
 
   function updateKey(key, value) {
     const tag = tagPresentIn(currentText, key);
-    const numeric = Number(value);
+    let numeric = Number(value);
     if (!tag || !Number.isFinite(numeric) || numeric < 0 || !currentText) return false;
+    /* Si la fila del archivo es un alias con conversión de unidad (kg/h→kg/min),
+       la UI edita en unidades del modelo: se escribe el valor DES-escalado para
+       que el documento siga en la unidad cruda del servidor. */
+    const aliasValue = WINCC_ALIAS[tag];
+    if (aliasValue !== undefined) {
+      const { scale } = aliasTarget(aliasValue);
+      if (scale !== 1 && scale > 0) numeric = numeric / scale;
+    }
     mode = 'edited';
     const next = updateCsvTag(currentText, tag, numeric);
     applyText(next, fileHandle ? 'CSV local editado' : 'CSV editado en memoria', true);

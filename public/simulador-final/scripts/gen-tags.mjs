@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TAG_MAP, WINCC_ALIAS, CSV_SOURCES } from '../js/hmi-csv.js';
+import { TAG_MAP, WINCC_ALIAS, CSV_SOURCES, aliasTarget } from '../js/hmi-csv.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -24,8 +24,9 @@ for (const src of CSV_SOURCES) {
 }
 
 const aliasOf = {};
-for (const [wincc, canon] of Object.entries(WINCC_ALIAS)) {
-  (aliasOf[canon] ??= []).push(wincc);
+for (const [wincc, value] of Object.entries(WINCC_ALIAS)) {
+  const { tag, scale } = aliasTarget(value);
+  (aliasOf[tag] ??= []).push(scale === 1 ? wincc : `${wincc} (×${scale.toFixed(4).replace(/0+$/, '')})`);
 }
 
 const KIND_LABEL = {
