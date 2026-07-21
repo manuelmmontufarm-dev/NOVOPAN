@@ -84,18 +84,17 @@ si el bloque corresponde a lo instalado.
 
 Deltas plano−modelo: SL1 +0.39 · imán −0.48 · pre-prensa inicio +0.15 / fin +0.06 · nariz −0.26 m.
 
-## 7 · Post-prensa (preliminar — NO adoptar hasta re-medir)
+## 7 · Post-prensa (sierras ya cerradas; rodillos/sensores pendientes)
 
 | Punto | Valor | Fuente |
 |---|---|---|
-| Máquina de refila: cuerpo | sim 78.3 – 85.6 | plano — confirma inicio 78.30 de campo |
-| Eje de cuchilla de refila (CL Edge Trim Saw) | 85.57 | plano |
-| Sensores de calidad (Sensor 1 calibrado simulador-final) | ≈ 88.00 | campo/HMI |
-| **Cuchillas transversales: 32 m desde la prensa** | sim ≈ 103.6 (si es desde el tambor 71.6) | **campo 21-jul** |
+| Grupo de sierras: cuerpo | sim 78.3 – 85.6 | plano — inicio 78.3 = campo julio (refila) |
+| **Sierras transversales (eje)** | **85.57** | plano (`CL Edge Trim Saw`) + operador 21-jul |
+| Sensores de calidad (Sensor 1) | ≈ 88.00 | campo/HMI — después de las sierras ✓ |
+| Maquinaria sim 99–105 (entre dos máquinas idénticas 91.5–100.3 / 107.4–115) | transferencia/enfriadores | plano |
 | Otra sierra («saw blade under the line», zona apilado) | ≈ 125.2 | plano |
 
-Verificación del 32 m contra el plano: **plausible** — hay un grupo de maquinaria en sim 99–105,
-entre dos máquinas grandes idénticas (91.5–100.3 y 107.4–115, probables enfriadores/volteadores),
-y la secuencia refila (78–86) → sensores (~88) → transversal (~104) es coherente. El plano no
-etiqueta esta sierra con CL propio. **Pendiente:** confirmar desde dónde se midieron los 32 m
-(tambor de salida 71.6 → 103.6, o fin de la estructura de prensa 76.2 → 108.2).
+Cierre del 32 m del operador: 85.57 − 32 = 53.6 = «un poco después del primer tambor»
+(tambor de entrada 52.67). Plano, operador y campo de julio coinciden.
+La máquina 78.3–85.6 es el grupo completo: refila al inicio, transversales al final.
+Pendiente de re-medir: rodillos hacia los sensores y posición exacta de sensores 1-2-3.

@@ -270,29 +270,36 @@
     ]
   },
   "post_prensa_preliminar": {
-    "nota": "NO adoptar aun — re-medir en campo. Anclas que el plano SI da:",
+    "nota": "Preliminar — rodillos/sensores pendientes de re-medir, pero las sierras ya cierran entre plano, campo jul y operador 21-jul.",
     "puntos": [
       {
-        "id": "refila_maquina",
-        "label": "Maquina de refila: cuerpo sim 78.3-85.6; eje de cuchilla (CL Edge Trim Saw) en 85.57",
+        "id": "grupo_sierras",
+        "label": "Grupo de sierras: cuerpo sim 78.3 - 85.6",
         "fuente": "dxf",
-        "nota": "CONFIRMA el inicio 78.30 medido en campo en julio"
+        "nota": "Inicio 78.3 = campo julio (cuchillos de refila)"
       },
       {
         "id": "sierra_transversal",
-        "label": "Cuchillas transversales: 32 m desde la prensa (campo 21-jul) -> sim ~103.6 si es desde el tambor de salida (71.6)",
-        "fuente": "campo",
-        "verificacion_dxf": "PLAUSIBLE: cluster de maquinaria en sim 99-105, entre dos maquinas identicas grandes (91.5-100.3 y 107.4-115, probables enfriadores/volteadores). El plano no etiqueta esta sierra con CL propio. PENDIENTE: confirmar el punto de partida de los 32 m (tambor 71.6 vs fin de estructura de prensa 76.2 -> 103.6 vs 108.2)"
-      },
-      {
-        "id": "saw_access",
-        "label": "'Access to the saw blade under the line' en sim 125.2 (otra sierra, zona de apilado)",
-        "fuente": "dxf"
+        "label": "Sierras transversales (eje) = CL 'Edge Trim Saw' del plano",
+        "sim_m": 85.57,
+        "fuente": "dxf + operador 21-jul: 32 m desde la entrada a la prensa (~53.6, un poco despues del tambor 52.67) -> 85.6. Cierre exacto."
       },
       {
         "id": "sensores",
-        "label": "Sensores de calidad ~85-88 (calibrado simulador-final: Sensor 1 = 88.00) — quedan ANTES de la transversal: secuencia refila -> sensores -> transversal tiene sentido",
-        "fuente": "campo/hmi"
+        "label": "Sensores de calidad (Sensor 1 calibrado simulador-final)",
+        "sim_m": 88.0,
+        "fuente": "campo/hmi",
+        "nota": "Quedan despues de las sierras: fin prensa 71.6 -> sierras 78.3-85.6 -> sensores ~88"
+      },
+      {
+        "id": "cluster_99_105",
+        "label": "Maquinaria sim 99-105 entre dos maquinas identicas (91.5-100.3 / 107.4-115): transferencia/enfriadores, NO las sierras",
+        "fuente": "dxf"
+      },
+      {
+        "id": "saw_access",
+        "label": "'Access to the saw blade under the line' sim 125.2 (otra sierra, zona apilado)",
+        "fuente": "dxf"
       }
     ]
   }
