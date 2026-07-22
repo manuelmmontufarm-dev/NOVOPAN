@@ -15,6 +15,50 @@
 
 ## Historial reciente
 
+### 2026-07-22 (tarde) · Ronda de pantalla: frescura del CSV, paro real y sellos honestos
+
+Nueve pedidos del recorrido por la pantalla de planta. Los tres de fondo:
+
+- **Flujo 0 = equipo DETENIDO, no «0 segundos».** Era un bug de verdad: con
+  `F = 0` en el CSV, `τ = ρ·V·L%/F` devolvía 0 y el trazador cruzaba el silo de
+  un salto — justo cuando el silo estaba parado — y el reporte prometía una hora
+  de llegada imposible. Ahora τ = ∞: el material se queda dentro hasta que la
+  descarga arranque (y arranca solo en cuanto el CSV vuelve a traer flujo).
+  Se distingue el 0 REAL del HMI del parámetro ausente. En pantalla se lee
+  `PARO` / «detenido aguas arriba», nunca una hora inventada. El modelo de ruta
+  gana un estado propio `STOPPED` («Detenido (flujo 0)»), separado de `INVALID`:
+  flujo cero y flujo corrupto piden acciones distintas en planta.
+- **Widget de frescura en la cabecera.** El pill decía la hora de la última
+  LECTURA, que avanza cada 2 s aunque el archivo sea de ayer. El widget nuevo
+  dice de cuándo es EL DATO, con esta jerarquía: columna de tiempo del propio
+  CSV → `Last-Modified` del archivo → (último recurso) cuándo cambió el
+  contenido, mostrado con `≥`. Envejece solo cada segundo y se pone rojo si pasa
+  de 5 min o si el reloj del servidor viene adelantado.
+- **Se acabaron los sellos «HMI» falsos.** «Velocidad · Banda inclinada fina»
+  salía con sello HMI: no existe ese tag (barrido de 1.706 tags, 21-jul). El
+  sello ya no lo decide el esquema genérico del grafo sino el origen REAL del
+  CSV que se está leyendo — si el valor salió de nuestro `datos/hmi.csv`, dice
+  `Supuesto`. Hoy: 23 HMI de verdad · 30 supuestos · 33 estimados · 10 medidos.
+  El día que IT publique el tag, el sello vuelve a «HMI» solo.
+
+Y los de operación: fuera el slider de velocidad de prensa (no se puede mover,
+dibujarlo solo invitaba a intentarlo) y el movedor manual del cambio (falseaba
+las horas del reporte) · el botón de CSV ahora ES el estado de conexión y dice
+la dirección de la que lee · TODA edición de variable pide confirmación con
+nombre, valor anterior → nuevo y consecuencia, no solo las claves del plano ·
+`scripts/hmi-sim.py` reescribe `datos/hmi-sistemas.csv` cada 10 s en el formato
+real del Historian (`--paro silo6` simula un equipo detenido; el archivo queda
+fuera de git y fuera del build, en planta lo escribe Sistemas de verdad).
+
+**El multiplicador de tiempo escondido se abre con `?tiempo` en la URL:**
+`novopan.vercel.app/simulador-final/?tiempo`. Sin ese parámetro la escala queda
+clavada en 1× a propósito (commit `8b951be`).
+
+Verificado en navegador con el generador corriendo: 0 errores de consola,
+trazador quieto 3.000 s con el silo 6 en paro y en marcha al volver el flujo.
+Checks de producción 25+25+2 · suites 58 + 88 = todo verde.
+
+
 ### 2026-07-21 (tarde) · Revisión final de funcionamiento del simulador
 
 - **Escala visual verificada:** Sección 2 es 70.0000 px/m EXACTOS (residuo 0.00 px

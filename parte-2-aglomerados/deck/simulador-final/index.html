@@ -41,6 +41,12 @@
         <span>Salida: <strong>Silo 5 CL + Silo 6 SL → Sección 2</strong></span>
       </div>
       <div class="s2-clocks">
+        <!-- Frescura del CSV: de cuándo es EL DATO (no cuándo se leyó).
+             Se llena desde hmi-csv.js y envejece solo cada segundo. -->
+        <div class="s2-fresh is-none" id="csvFresh">
+          <span class="ms">schedule</span>
+          <span class="s2-fresh__txt">CSV · sin datos</span>
+        </div>
         <div class="s2-clock">
           <div class="s2-clock__time" id="liveClock">00:00:00</div>
           <div class="s2-clock__pct">Hora real · Quito (Ecuador)</div>
@@ -57,17 +63,23 @@
     </div>
     <div class="s2-hmi">
       <span class="s2-hmi-status is-idle" id="hmiStatus" title="Lectura del CSV del HMI">● HMI CSV · —</span>
-      <button type="button" class="s2-hmi__btn" id="hmiConnectBtn" title="Elegir un CSV local del HMI (fallback)">
-        <span class="ms">upload_file</span> Conectar CSV
+      <!-- El botón ES el estado de conexión: dice si hay CSV conectado y de
+           dónde sale. Lo reescribe hmi-csv.js (setConnected). -->
+      <button type="button" class="s2-hmi__btn is-off" id="hmiConnectBtn" title="Elegir un CSV local del HMI (respaldo si no hay servidor)">
+        <span class="ms">upload_file</span>
+        <span class="s2-hmi__btn-txt">
+          <span class="s2-hmi__btn-label" id="hmiConnectLabel">Conectar CSV</span>
+          <span class="s2-hmi__btn-addr" id="hmiConnectAddr" hidden></span>
+        </span>
       </button>
       <input type="file" id="hmiFileInput" accept=".csv,.txt" hidden />
     </div>
     <div class="s2-linea-controls" id="lineaControls">
     <!-- PRODUCCIÓN: la velocidad es dato vivo del HMI — SOLO LECTURA.
-         El slider se conserva como indicador visual (se mueve con el CSV). -->
+         Sin slider: no se puede mover, así que dibujarlo solo invitaba a
+         intentarlo. Queda el número, que es el dato. -->
     <div class="s2-speed s2-speed--readonly" title="Dato vivo del HMI (H_PressSpeed_PV) · solo lectura">
       <span class="s2-speed__label"><span class="ms">speed</span> Velocidad de prensa</span>
-      <input type="range" class="s2-speed__range" id="speedRange" min="8" max="22" step="0.1" value="14.5" disabled />
       <span class="s2-speed__box">
         <input type="number" id="speedInput" min="8" max="22" step="0.1" value="14.5" disabled aria-label="Velocidad de prensa (dato vivo del HMI, solo lectura)" />
         <span class="s2-speed__unit">m/min</span>
@@ -83,10 +95,8 @@
              title="Escribe el multiplicador de simulación. La Sección 2 se limita a 300× para que se vea el detalle." />
       <span class="s2-time-scale__x">×</span>
     </label>
-    <div class="s2-mover">
-      <span class="s2-mover__label"><span class="ms">drag_pan</span> Mover cambio seleccionado</span>
-      <input type="range" class="s2-mover__range" id="moverRange" min="0" max="88.4" step="0.05" value="0" disabled aria-label="Mover el cambio seleccionado a lo largo de la línea" />
-    </div>
+    <!-- PRODUCCIÓN: sin movedor manual — un cambio avanza al ritmo de la línea
+         real; arrastrarlo a mano falseaba las horas del reporte. -->
     <button type="button" class="s2-pause-btn s2-sound-btn" id="soundBtn" title="Sonidos silenciados · click para activar" aria-label="Activar o silenciar sonidos">
       <span class="ms">volume_off</span>
     </button>

@@ -26,8 +26,14 @@ export const STATUS = {
   OK: 'ok',                       // valor válido, fuente confiable
   ESTIMATED: 'estimated',         // valor calculado sobre una entrada estimada (por validar)
   NOT_CALIBRATED: 'not-calibrated', // valor sobre una posición/entrada aún no medida
+  /* El equipo NO se está moviendo: su flujo (o su velocidad) vale exactamente
+     0. NO es un error de dato ni un parámetro faltante — es información buena
+     sobre la planta, y su τ no es 0 s sino infinito (el material se queda
+     dentro). Se separa de INVALID a propósito: "flujo 0" y "flujo corrupto"
+     obligan a acciones distintas en planta. */
+  STOPPED: 'stopped',
   MISSING: 'missing',             // falta un parámetro requerido (vacío/undefined)
-  INVALID: 'invalid',             // entrada presente pero inválida (negativo, NaN, ∞, cero no permitido)
+  INVALID: 'invalid',             // entrada presente pero inválida (negativo, NaN, ∞)
   UNAVAILABLE: 'unavailable',     // no se puede calcular porque una dependencia falla
 };
 
@@ -36,6 +42,7 @@ export const STATUS_LABEL = {
   [STATUS.OK]: 'OK',
   [STATUS.ESTIMATED]: 'Valor estimado',
   [STATUS.NOT_CALIBRATED]: 'Sin calibrar',
+  [STATUS.STOPPED]: 'Detenido (flujo 0)',
   [STATUS.MISSING]: 'Falta parámetro',
   [STATUS.INVALID]: 'Entrada inválida',
   [STATUS.UNAVAILABLE]: 'Cálculo no disponible',
@@ -46,13 +53,16 @@ const SEVERITY = {
   [STATUS.OK]: 0,
   [STATUS.ESTIMATED]: 1,
   [STATUS.NOT_CALIBRATED]: 2,
-  [STATUS.MISSING]: 3,
-  [STATUS.INVALID]: 4,
-  [STATUS.UNAVAILABLE]: 5,
+  [STATUS.STOPPED]: 3,
+  [STATUS.MISSING]: 4,
+  [STATUS.INVALID]: 5,
+  [STATUS.UNAVAILABLE]: 6,
 };
 
-// Estados que impiden que exista un valor numérico (bloquean el cálculo).
-const BLOCKING = new Set([STATUS.MISSING, STATUS.INVALID, STATUS.UNAVAILABLE]);
+/* Estados que impiden que exista un valor numérico (bloquean el cálculo).
+   STOPPED entra aquí porque su τ es infinito: no hay número que sumar, y
+   cualquier total que lo incluya es también infinito. */
+const BLOCKING = new Set([STATUS.STOPPED, STATUS.MISSING, STATUS.INVALID, STATUS.UNAVAILABLE]);
 
 export function isBlocking(status) { return BLOCKING.has(status); }
 export function isAvailable(q) { return q != null && q.value != null && !BLOCKING.has(q.status); }
@@ -210,7 +220,7 @@ export function defaultParamValues() {
  * Si el parámetro es de fuente estimated / not-calibrated, el estado OK se
  * degrada a ese flag (para que se propague aguas abajo).
  */
-export function readParam(params, key, { allowZero = true } = {}) {
+export function readParam(params, key, { allowZero = true, ceroDetiene = false } = {}) {
   const def = PARAM_INDEX[key];
   const unit = def?.unit ?? '';
   const source = def?.source ?? '';
@@ -233,6 +243,12 @@ export function readParam(params, key, { allowZero = true } = {}) {
     return failQ(STATUS.INVALID, unit, `«${def?.label ?? key}» es negativo (${n})`, { source });
   }
   if (!allowZero && n === 0) {
+    /* Un flujo o una velocidad en 0 NO es un dato malo: es la máquina parada,
+       y el HMI la reporta así todos los días. Un volumen o una retención en 0
+       sí es un dato malo. Por eso el llamador declara qué significa el cero. */
+    if (ceroDetiene) {
+      return failQ(STATUS.STOPPED, unit, `«${def?.label ?? key}» = 0 → equipo detenido, el material no avanza`, { source });
+    }
     return failQ(STATUS.INVALID, unit, `«${def?.label ?? key}» no puede ser 0`, { source });
   }
   if (def) {
@@ -293,7 +309,7 @@ export function tauSilo(params, prefix) {
   const rho = readParam(params, `${prefix}.rho`);
   const V = readParam(params, `${prefix}.capacity`, { allowZero: false });
   const level = readParam(params, `${prefix}.level`);
-  const flow = readParam(params, `${prefix}.flow`, { allowZero: false });
+  const flow = readParam(params, `${prefix}.flow`, { allowZero: false, ceroDetiene: true });
 
   const parts = [
     { name: `${prefix}.rho`, q: rho },
@@ -322,7 +338,7 @@ export function tauSilo(params, prefix) {
 /** τ_dosing = M / F × 60  → segundos. */
 export function tauDosing(params, prefix) {
   const M = readParam(params, `${prefix}.mass`);
-  const flow = readParam(params, `${prefix}.flow`, { allowZero: false });
+  const flow = readParam(params, `${prefix}.flow`, { allowZero: false, ceroDetiene: true });
   const parts = [{ name: `${prefix}.mass`, q: M }, { name: `${prefix}.flow`, q: flow }];
   const blockers = parts.filter((p) => isBlocking(p.q.status) || p.q.value == null);
   if (blockers.length) {
@@ -349,7 +365,7 @@ export function tauMixer(params, prefix) {
 /** t_incline = L / v × 60  → segundos. */
 export function tInclined(params, prefix) {
   const L = readParam(params, `${prefix}.length`);
-  const v = readParam(params, `${prefix}.speed`, { allowZero: false });
+  const v = readParam(params, `${prefix}.speed`, { allowZero: false, ceroDetiene: true });
   const parts = [{ name: `${prefix}.length`, q: L }, { name: `${prefix}.speed`, q: v }];
   const blockers = parts.filter((p) => isBlocking(p.q.status) || p.q.value == null);
   if (blockers.length) {
@@ -366,7 +382,7 @@ export function tInclined(params, prefix) {
 /** τ_esparcidor = M_hopper / F_capa × 60. */
 export function tauSpreader(params, prefix) {
   const M = readParam(params, `${prefix}.mass`);
-  const F = readParam(params, `${prefix}.flow`, { allowZero: false });
+  const F = readParam(params, `${prefix}.flow`, { allowZero: false, ceroDetiene: true });
   const blockers = [M, F].filter((q) => isBlocking(q.status) || q.value == null);
   if (blockers.length) return makeQ({ value: null, unit: 's', status: STATUS.UNAVAILABLE, reason: `τ_${prefix} no disponible` });
   return okQ((M.value / F.value) * 60, 's', { flags: worstFlags([M, F]) });
@@ -375,7 +391,7 @@ export function tauSpreader(params, prefix) {
 /** t_sensor = t_registration + distancia / v_línea × 60. */
 export function tSensor(params, sensorKey, tRegistrationQ) {
   const dist = readParam(params, `${sensorKey}.distance`);
-  const v = readParam(params, 'line.speed', { allowZero: false });
+  const v = readParam(params, 'line.speed', { allowZero: false, ceroDetiene: true });
   const parts = [
     { name: 't_registro', q: tRegistrationQ },
     { name: `${sensorKey}.distance`, q: dist },

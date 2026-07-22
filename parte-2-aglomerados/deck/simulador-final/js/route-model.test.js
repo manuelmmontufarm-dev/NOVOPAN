@@ -14,7 +14,7 @@
    ============================================================ */
 
 import {
-  STATUS, MIXER_TAU_SEC, convert, flowToKgMin, defaultParamValues,
+  STATUS, STATUS_LABEL, MIXER_TAU_SEC, convert, flowToKgMin, defaultParamValues,
   readParam, tauSilo, tauDosing, tauMixer, tInclined, tauSpreader,
   fineUpstream, coarseUpstream, layerArrivals, registration, computeRoute,
   isAvailable, PARAM_INDEX,
@@ -228,10 +228,23 @@ test('flowToKgMin rechaza unidad desconocida (NaN, no 0)', () => {
 
 /* ── Cero, negativo, NaN, Infinity ── */
 group('Cero / negativo / NaN / Infinity');
-test('flujo de silo = 0 ⇒ INVALID (división por cero evitada)', () => {
+/* Flujo 0 ≠ dato malo: es el silo PARADO. Debe distinguirse de INVALID para
+   que en planta se lea "detenido" y no "revisar el CSV". */
+test('flujo de silo = 0 ⇒ STOPPED (detenido), no INVALID ni 0 s', () => {
   const q = tauSilo({ ...defaultParamValues(), 'silo5.flow': 0 }, 'silo5');
-  assert(q.status === STATUS.UNAVAILABLE || q.status === STATUS.INVALID, `estado ${q.status}`);
+  assert(q.status === STATUS.UNAVAILABLE, `estado ${q.status}`);
+  assert(q.value === null, 'sin valor: τ es infinito, no 0');
+  assert(/detenido/i.test(q.reason ?? ''), `la razón debe nombrar el equipo detenido: ${q.reason}`);
+});
+test('readParam de un flujo en 0 ⇒ STOPPED con razón explícita', () => {
+  const q = readParam({ 'silo5.flow': 0 }, 'silo5.flow', { allowZero: false, ceroDetiene: true });
+  assert(q.status === STATUS.STOPPED, `estado ${q.status}`);
   assert(q.value === null, 'sin valor');
+  assert(STATUS_LABEL[q.status] === 'Detenido (flujo 0)', 'etiqueta legible');
+});
+test('capacidad de silo en 0 sigue siendo INVALID (dato malo, no paro)', () => {
+  const q = readParam({ 'silo5.capacity': 0 }, 'silo5.capacity', { allowZero: false });
+  assert(q.status === STATUS.INVALID, `estado ${q.status}`);
 });
 test('velocidad inclinada = 0 ⇒ ruta fina UNAVAILABLE', () => {
   const r = computeRoute({ 'inclSL.speed': 0 });

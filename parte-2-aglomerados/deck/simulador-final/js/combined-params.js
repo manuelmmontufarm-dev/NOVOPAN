@@ -17,7 +17,9 @@ import {
 import {
   tauForNode, transportForNode, flowFor,
 } from '../../trazabilidad/js/core/trace-engine.js';
-import { KIND_BY_KEY, TAG_BY_KEY, TAG_MAP } from './hmi-csv.js';
+import {
+  KIND_BY_KEY, TAG_BY_KEY, TAG_MAP, UNIT_BY_KEY, esSupuesto, registrarOrigenes,
+} from './hmi-csv.js';
 import { lockParameters, requestParametersAccess } from './params-auth.js';
 import { geometryFromParams, validateGeometry } from './line-bridge.js';
 
@@ -188,7 +190,27 @@ const BADGE = {
   manual: { cls: 'manual', short: 'Manual' }, measured: { cls: 'ok', short: 'Medido' },
   derived: { cls: 'derived', short: 'Calculado' }, estimated: { cls: 'est', short: 'Estimado' },
   est: { cls: 'est', short: 'Estimado' },
+  // Se esperaba del HMI, pero ningún tag de WinCC lo publica todavía.
+  assumed: { cls: 'assumed', short: 'Supuesto' },
 };
+
+/* ══ Quién decide si un campo es "HMI": KIND_BY_KEY, nunca la tarjeta ══════
+   `process-graph.js` reparte `kindBadge: 'hmi-live'` a TODO speed:/mass: por
+   defecto — es el esquema genérico del grafo, no sabe qué publica el HMI. Así
+   salían con sello HMI campos que el HMI no tiene: «Velocidad · Banda
+   inclinada fina» (en TAG_MAP es `measured`; se barrieron los 3 servidores
+   WinCC el 21-jul-2026 y NO existe tag de velocidad de banda inclinada).
+
+   Un sello HMI falso es peor que no poner sello: dice "esto viene de planta"
+   sobre un número que escribimos nosotros. La autoridad es la misma que la del
+   candado — KIND_BY_KEY — y la etiqueta de la tarjeta solo se usa cuando la
+   clave no está en el mapa de tags (campos derivados, sin tag propio). */
+function kindReal(key, fallback) {
+  /* Declarado HMI pero hoy nadie de planta lo escribe: sale de nuestro
+     archivo de defaults. Se muestra como supuesto, no como dato de planta. */
+  if (key && esSupuesto(key)) return 'assumed';
+  return (key && KIND_BY_KEY[key]) ?? fallback;
+}
 
 function badgeHtml(kind) {
   const badge = BADGE[kind] ?? BADGE.estimated;
@@ -301,9 +323,10 @@ function fieldHtml({ key, label, unit, unknown = false, kind }) {
   const disabled = !tag || hmiLock;
   return `
     <label class="equation-field${hmiLock ? ' equation-field--hmi-lock' : ''}"${hmiLock ? ' title="Dato vivo del HMI · solo lectura"' : ''}>
-      <span class="equation-field__label">${label} ${badgeHtml(kind ?? KIND_BY_KEY[key])}</span>
+      <span class="equation-field__label">${label} ${badgeHtml(kindReal(key, kind))}</span>
       <span class="equation-field__control">
         <input type="number" step="any" min="0" data-key="${key}" data-csv-tag="${tag ?? ''}"
+          data-label="${String(label).replace(/"/g, '&quot;')}" data-unit="${unit ?? ''}"
           ${unknown ? 'data-unknown="1"' : ''} ${disabled ? 'disabled' : ''}>
         <span>${unit}</span>
       </span>
@@ -531,6 +554,30 @@ const PLANO_PROTECTED = new Set([
   'p1:inclF_L', 'p1:inclG_L', 'p1:inclF_v', 'p1:inclG_v',
 ]);
 const PLANO_ALERT = '⚠️ MEDICIÓN DE LOS PLANOS\n\nEste valor proviene de los planos Dieffenbacher o de mediciones validadas en campo (prueba de papel 21-jul-2026).\n\n¿Seguro que quieres cambiarlo?';
+
+/* ── Confirmación de CUALQUIER cambio de variable ───────────────────────
+   Esta pantalla vive en planta y las constantes que se editan aquí mueven
+   los tiempos de todo el modelo: un número cambiado por accidente (o por un
+   dedo apoyado en el teclado) desplaza las horas de todos los reportes y
+   nadie se entera hasta que no cuadran. Por eso TODA edición pide
+   confirmación nombrando el parámetro, su valor anterior, el nuevo y qué
+   pasa si se acepta — no solo las claves del plano, que era el único caso
+   protegido antes.
+
+   Se confirma al SALIR del campo (evento `change`), nunca por tecla: un
+   diálogo por pulsación sería inusable. */
+function textoConfirmacion(key, label, unit, prev, value) {
+  const enc = `${label}${unit ? ` (${unit})` : ''}`;
+  const antes = Number.isFinite(prev) ? `${prev}` : '—';
+  if (PLANO_PROTECTED.has(key)) {
+    return `${PLANO_ALERT}\n\n${enc}\n${antes} → ${value}`;
+  }
+  return '⚠️ VAS A CAMBIAR UNA VARIABLE DEL MODELO\n\n'
+    + `${enc}\n${antes} → ${value}\n\n`
+    + 'Esto recalcula los tiempos de recorrido y las horas previstas de TODOS los cambios en curso, '
+    + 'y queda guardado en esta computadora hasta que se restablezcan las constantes.\n\n'
+    + '¿Confirmas el cambio?';
+}
 const PLANO_MEDS = [
   ['Eje · báscula de manta (matscale)', '26.20 m', 'plano'],
   ['Eje · salida pre-prensa (CL Pre-Press)', '33.81 m', 'plano (modelo: 33.75)'],
@@ -655,15 +702,24 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
           showFeedback('Valor inválido; el CSV no cambió.');
           return;
         }
-        // Claves del plano: pedir confirmación explícita antes de cambiar.
-        if (PLANO_PROTECTED.has(key)) {
-          const prev = Number(params[key]);
-          if (Number.isFinite(prev) && Math.abs(prev - value) > 1e-9) {
-            if (!window.confirm(PLANO_ALERT)) {
-              input.value = params[key] ?? '';
-              showFeedback('Cambio cancelado — medición de los planos.');
-              return;
-            }
+        /* TODA variable pide confirmación, no solo las del plano: esta
+           pantalla está en planta y un número tocado sin querer mueve las
+           horas previstas de todos los cambios en curso. */
+        const prev = Number(params[key]);
+        if (!Number.isFinite(prev) || Math.abs(prev - value) > 1e-9) {
+          const meta = PARAM_BY_KEY[key];
+          const aviso = textoConfirmacion(
+            key,
+            input.dataset.label || meta?.label || key,
+            input.dataset.unit || meta?.unit || UNIT_BY_KEY[key] || '',
+            prev, value,
+          );
+          if (!window.confirm(aviso)) {
+            input.value = params[key] ?? '';
+            showFeedback(PLANO_PROTECTED.has(key)
+              ? 'Cambio cancelado — medición de los planos.'
+              : 'Cambio cancelado; nada se modificó.');
+            return;
           }
         }
         // Constantes (longitudes, volúmenes, geometría, tiempos estimados):
@@ -687,8 +743,10 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
         if (!ok) input.value = params[key] ?? '';
         showFeedback(ok ? `CSV actualizado · ${input.dataset.csvTag}` : 'Este valor no tiene un tag CSV editable.');
       };
-      // Claves del plano confirman en 'change' (no por tecla); el resto en vivo.
-      input.addEventListener(PLANO_PROTECTED.has(key) ? 'change' : 'input', commitToCsv);
+      /* SIEMPRE en 'change' (al salir del campo o con Enter), nunca en
+         'input': con confirmación en cada tecla, escribir "12.5" abriría
+         cuatro diálogos. */
+      input.addEventListener('change', commitToCsv);
       input.addEventListener('change', () => {
         if (input.value.trim() === '') input.value = params[key] ?? '';
       });
@@ -927,7 +985,16 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     showFeedback(onCsvDownload?.() ? 'CSV descargado.' : 'Aún no hay un CSV activo.');
   });
 
-  function applyExternal({ updates, rawText, count } = {}) {
+  function applyExternal({ updates, rawText, count, origenPorClave } = {}) {
+    /* Antes de nada: quién escribió cada valor en ESTE CSV. De ahí sale el
+       sello «HMI» vs «Supuesto» de las tarjetas (ver kindReal). */
+    let sellosCambian = false;
+    if (origenPorClave) {
+      const antes = new Set(Object.keys(params).filter((k) => esSupuesto(k)));
+      registrarOrigenes(origenPorClave);
+      const ahora = new Set(Object.keys(params).filter((k) => esSupuesto(k)));
+      sellosCambian = antes.size !== ahora.size || [...ahora].some((k) => !antes.has(k));
+    }
     let changed = false;
     for (const [key, value] of Object.entries(updates ?? {})) {
       // Un tiempo S1 enchufado localmente manda sobre lo que traiga el CSV
@@ -945,6 +1012,9 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     if (raw && rawText != null) raw.textContent = rawText;
     const tagCount = document.getElementById('csvTagCount');
     if (tagCount && count != null) tagCount.textContent = String(count);
+    /* Un tag que EMPIEZA (o deja) de llegar de planta cambia el sello de su
+       tarjeta: hay que repintar las tarjetas, no solo los números. */
+    if (sellosCambian && built) build();
     refreshEquations();
     if (changed) onChange?.(params);
     return changed;

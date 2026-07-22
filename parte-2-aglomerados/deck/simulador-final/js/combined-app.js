@@ -194,12 +194,32 @@ const STAGE_CONFIG = {
 
 const num = (params, key, fallback = 0) => Number(params?.[key] ?? fallback) || 0;
 const fixed = (params, key) => Math.max(0, num(params, key));
+
+/* ══ Flujo (o velocidad) CERO = EQUIPO PARADO ══════════════════════════════
+   Un silo que descarga 0 kg/min no se vacía en un instante: NO está
+   descargando. τ = M/F con F = 0 es infinito, y eso es literalmente lo que
+   significa en planta — lo que hay dentro se queda ahí hasta que la descarga
+   arranque. Devolver 0 s (lo que se hacía antes) es la mentira opuesta: el
+   trazador cruzaba el equipo de un salto justo cuando el equipo estaba
+   detenido, y el reporte prometía una hora de llegada imposible.
+
+   DETENIDO se propaga solo: `preMilestonesFor` suma τ a los hitos siguientes,
+   así que todo lo que va aguas abajo queda también en el infinito y el
+   trazador se detiene DENTRO del equipo parado. */
+const DETENIDO = Infinity;
+/* 0 REAL del CSV (parado) ≠ parámetro ausente (desconocido): un tag que no
+   llegó no puede hacer creer que la máquina está parada. `parseHmiCsv` no
+   escribe los valores vacíos, así que el 0 que se ve aquí lo puso el HMI. */
+const paradoEn = (params, key) => Number(params?.[key]) === 0;
+
 const tauPila = (params, mKey, fKey) => {
+  if (paradoEn(params, fKey)) return DETENIDO;   // la pila no alimenta nada
   const M = num(params, mKey);
   const Fh = num(params, fKey);
   return M > 0 && Fh > 0 ? M / (Fh / 3600) : 0;
 };
 const tauSiloH = (params, prefix) => {
+  if (paradoEn(params, `p1:${prefix}_F`)) return DETENIDO;
   const rho = num(params, `p1:${prefix}_rho`);
   const V = num(params, `p1:${prefix}_V`);
   const L = num(params, `p1:${prefix}_L`);
@@ -207,6 +227,7 @@ const tauSiloH = (params, prefix) => {
   return rho > 0 && V > 0 && L > 0 && F > 0 ? (rho * V * L / 100) / (F / 3600) : 0;
 };
 const tauSiloM = (params, prefix) => {
+  if (paradoEn(params, `p1:${prefix}_Fmin`)) return DETENIDO;
   const rho = num(params, `p1:${prefix}_rho`);
   const V = num(params, `p1:${prefix}_V`);
   const L = num(params, `p1:${prefix}_L`);
@@ -214,11 +235,13 @@ const tauSiloM = (params, prefix) => {
   return rho > 0 && V > 0 && L > 0 && F > 0 ? (rho * V * L / 100) / F * 60 : 0;
 };
 const tauMF = (params, mKey, fKey) => {
+  if (paradoEn(params, fKey)) return DETENIDO;   // dosificadora sin descarga
   const M = num(params, mKey);
   const F = num(params, fKey);
   return M > 0 && F > 0 ? M / F * 60 : 0;
 };
 const tBelt = (params, lKey, vKey) => {
+  if (paradoEn(params, vKey)) return DETENIDO;   // banda quieta: no transporta
   const L = num(params, lKey);
   const v = num(params, vKey);
   return L > 0 && v > 0 ? L / v * 60 : 0;
@@ -566,6 +589,9 @@ function fmtWallTime(date) {
 }
 
 function fmtCountdown(sec) {
+  /* Infinito = equipo parado aguas arriba (flujo 0). No es "no se sabe": es
+     "no llega mientras siga parado", y así hay que decirlo. */
+  if (sec === Infinity) return 'PARO';
   if (!Number.isFinite(sec) || sec < 0) return '—';
   if (sec < 1) return '< 1 s';
   const s = Math.ceil(sec);
@@ -592,7 +618,6 @@ function initSimulation() {
   let timeScale = clamp(Number(document.getElementById('timeScaleInput')?.value) || 1, 1, 100000);
   let modelParams = loadPart1Params();
   let hmiCsvApi = null;
-  let scrubbing = false;
   let paused = false;      // pausa/reanuda la simulación (no borra nada; el reloj real sigue)
   let changeSeq = 0;
   let selectedId = null;   // cambio que controla el movedor manual (el último inyectado)
@@ -603,7 +628,6 @@ function initSimulation() {
   // PREDICCIONES congeladas al inyectar (registro + sensores 1/2/3).
   const groups = new Map(); // seq → { seq, origin, wallStart, expected:Set, landed:Map, registeredAt, predictions, tracersLeft }
 
-  const speedRange = document.getElementById('speedRange');
   const speedInput = document.getElementById('speedInput');
   const timeScaleInput = document.getElementById('timeScaleInput');
   /* PRODUCCIÓN: el multiplicador de tiempo es herramienta interna de
@@ -615,7 +639,6 @@ function initSimulation() {
     catch { return false; }
   })();
   if (timeToolEnabled) document.getElementById('timeScaleWrap')?.removeAttribute('hidden');
-  const moverRange = document.getElementById('moverRange');
   const canvas = document.getElementById('canvasScroll');
   const tracersLayer = document.getElementById('tracers');
   const preTracersLayer = document.getElementById('preTracers');
@@ -678,10 +701,6 @@ function initSimulation() {
       node.dataset.injectM = String(m);
       node.setAttribute('transform', `translate(${xm(m).toFixed(1)} 0)`);
     });
-    if (moverRange) {
-      moverRange.max = String(activeGeometry.processEndM);
-      moverRange.value = String(Math.min(Number(moverRange.value) || 0, activeGeometry.processEndM));
-    }
     for (const ch of changes) ch.posM = Math.min(ch.posM, activeGeometry.processEndM);
     renderColchon();
     renderFrames();
@@ -693,7 +712,6 @@ function initSimulation() {
   }
 
   function syncSpeedUI() {
-    if (speedRange && document.activeElement !== speedRange) speedRange.value = vPrensa;
     if (speedInput && document.activeElement !== speedInput) speedInput.value = vPrensa;
   }
   function setSpeed(v) {
@@ -1019,9 +1037,12 @@ function initSimulation() {
       totalEl.textContent = paused ? 'PAUSA' : (snap.totalDisp == null ? '—' : fmtCountdown(snap.totalDisp));
     }
     if (etaEl) {
-      etaEl.textContent = paused || snap.totalDisp == null
-        ? (snap.totalDisp == null ? 'no pasa por sensores' : 'llega ≈ —')
-        : `llega ≈ ${fmtWallTime(new Date(Date.now() + snap.totalDisp * 1000))}`;
+      /* Con un equipo parado NO se promete una hora: prometerla sería el peor
+         error posible en un reporte de trazabilidad. */
+      etaEl.textContent = snap.totalDisp === Infinity ? 'detenido aguas arriba'
+        : paused || snap.totalDisp == null
+          ? (snap.totalDisp == null ? 'no pasa por sensores' : 'llega ≈ —')
+          : `llega ≈ ${fmtWallTime(new Date(Date.now() + snap.totalDisp * 1000))}`;
     }
   }
 
@@ -1072,13 +1093,6 @@ function initSimulation() {
     updateReportCountdowns();
   }
 
-  function syncMoverEnabled() {
-    if (!moverRange) return;
-    const sel = changes.find((c) => c.id === selectedId);
-    moverRange.disabled = !sel;
-    if (sel && document.activeElement !== moverRange) moverRange.value = sel.posM.toFixed(1);
-  }
-
   function recordCrossings(ch, prevM) {
     let added = false;
     for (const wp of namedWaypoints()) {
@@ -1109,7 +1123,6 @@ function initSimulation() {
     if (reports.length > 8) reports.length = 8;
     if (selectedId === ch.id) selectedId = changes.length ? changes[changes.length - 1].id : null;
     renderReportsList();
-    syncMoverEnabled();
     saveSim();
   }
 
@@ -1138,7 +1151,6 @@ function initSimulation() {
     updateTracerEl(ch);
     changes.push(ch);
     selectedId = ch.id;
-    syncMoverEnabled();
     renderReportsList(); // el reporte nace con el cambio, no solo al completarse
     sound.inject();
     ensureRunning();
@@ -1173,7 +1185,6 @@ function initSimulation() {
     updateTracerEl(ch);
     changes.push(ch);
     selectedId = ch.id;
-    syncMoverEnabled();
     renderReportsList();
   }
 
@@ -1219,7 +1230,6 @@ function initSimulation() {
       g.tracersLeft += 1;
     }
     selectedId = null;
-    syncMoverEnabled();
     renderReportsList();
     sound.inject();
     ensureRunning();
@@ -1299,7 +1309,6 @@ function initSimulation() {
         continue;
       }
       if (!ch.landed && ch.layerName && recordLanding(ch)) crossed = true; // τ=0 o aterrizado por mover manual
-      if (scrubbing && ch.id === selectedId) continue; // el movedor controla este directamente
       const prevM = ch.posM;
       ch.posM = Math.min(ch.posM + advanceM, processEndM());
       if (recordCrossings(ch, prevM)) crossed = true;
@@ -1347,10 +1356,6 @@ function initSimulation() {
       updateReportCountdowns();
       saveSim();   // el estado sobrevive a cerrar el tab (~3 Hz es barato: JSON pequeño)
     }
-    if (selectedId && moverRange && document.activeElement !== moverRange) {
-      const sel = changes.find((c) => c.id === selectedId);
-      if (sel) moverRange.value = sel.posM.toFixed(1);
-    }
     // Suspende el bucle cuando no queda nada activo (idle = 0 CPU).
     if (changes.length || preChanges.length) {
       rafId = requestAnimationFrame(frame);
@@ -1365,7 +1370,6 @@ function initSimulation() {
     const normalized = clamp(parseFloat(value) || DEFAULT_SPEED, SPEED_MIN, SPEED_MAX);
     if (!hmiCsvApi?.updateKey('v_prensa', normalized)) syncSpeedUI();
   };
-  speedRange?.addEventListener('input', () => requestSpeedChange(speedRange.value));
   speedInput?.addEventListener('change', () => requestSpeedChange(speedInput.value));
   // Multiplicador de tiempo escribible: se aplica en vivo mientras se escribe
   // (clamp interno sin pisar lo tecleado) y se normaliza el valor al salir del campo.
@@ -1422,31 +1426,6 @@ function initSimulation() {
   document.addEventListener('click', (e) => {
     if (e.target !== soundBtn && e.target.closest?.('button, summary, .s2-sec1-toggle')) sound.click();
   }, true);
-
-  // Movedor manual: adelanta/retrocede el cambio SELECCIONADO (el último inyectado).
-  const endScrub = () => { scrubbing = false; last = performance.now(); };
-  moverRange?.addEventListener('pointerdown', () => { scrubbing = true; });
-  moverRange?.addEventListener('input', () => {
-    scrubbing = true;
-    const sel = changes.find((c) => c.id === selectedId);
-    if (!sel) return;
-    if (sel.dropM != null && sel.dropAge < sel.dropDur) {
-      sel.dropAge = sel.dropDur;   // mover manual → aterriza el descenso
-      recordLanding(sel);          // la caída observada queda registrada igual
-    }
-    const prevM = sel.posM;
-    sel.posM = clamp(parseFloat(moverRange.value) || 0, 0, processEndM());
-    const crossed = recordCrossings(sel, prevM);
-    if (sel.posM >= processEndM()) finishChange(sel);
-    else {
-      updateTracerEl(sel);
-      if (crossed) renderReportsList();
-      else updateReportCountdowns();
-    }
-  });
-  moverRange?.addEventListener('pointerup', endScrub);
-  moverRange?.addEventListener('pointercancel', endScrub);
-  moverRange?.addEventListener('change', endScrub);
 
   // Todo equipo de P1/P2 tiene una zona de toque ampliada. El SVG solo recibe
   // clics sobre píxeles pintados por defecto; el hitbox transparente evita que
@@ -1539,13 +1518,11 @@ function initSimulation() {
     if (paused) setPaused(false);
     if (rafId) cancelAnimationFrame(rafId);
     running = false;   // el bucle se reanuda solo al inyectar el próximo cambio
-    syncMoverEnabled();
     renderReportsList();
     saveSim();   // sin cambios ni reportes ⇒ borra el estado persistido
   }
   resetChangesBtn?.addEventListener('click', resetAll);
 
-  syncMoverEnabled();
   renderReportsList();
   // El bucle arranca solo cuando hay un cambio (ensureRunning en inject/injectPre).
 
@@ -1579,8 +1556,10 @@ function initSimulation() {
      (tauSiloM / tauMF / longitud÷velocidad) — nunca números pegados en el SVG:
      esos badges nacían hardcodeados del diseño y mentían apenas cambiaba el CSV. */
   function renderIntakeTaus() {
-    const fmt = (sec) => !Number.isFinite(sec) || sec <= 0 ? '— s'
-      : sec >= 100 ? `${Math.round(sec)} s` : `${sec.toFixed(1)} s`;
+    // `PARO` = flujo 0 en el CSV: el equipo no descarga, no es que tarde 0 s.
+    const fmt = (sec) => (sec === Infinity ? 'PARO'
+      : !Number.isFinite(sec) || sec <= 0 ? '— s'
+        : sec >= 100 ? `${Math.round(sec)} s` : `${sec.toFixed(1)} s`);
     const put = (id, sec) => {
       const el = document.getElementById(id);
       if (el) el.textContent = fmt(sec);
@@ -1603,6 +1582,10 @@ function initSimulation() {
     statusEl: hmiStatusEl,
     connectBtn: document.getElementById('hmiConnectBtn'),
     fileInput: document.getElementById('hmiFileInput'),
+    // Widget de la cabecera: antigüedad de la VERSIÓN del CSV (no de la lectura).
+    freshEl: document.getElementById('csvFresh'),
+    connectLabelEl: document.getElementById('hmiConnectLabel'),
+    connectAddrEl: document.getElementById('hmiConnectAddr'),
     applyData: (data) => {
       paramsApi.applyExternal(data);            // pisa los params del modelo con el CSV
       modelParams = paramsApi.getParams();
@@ -1667,6 +1650,13 @@ function initSimulation() {
   const serArrivals = (arr) => arr.map((a) => ({ label: a.label, m: a.m, wallTime: serDate(a.wallTime) }));
   const deArrivals = (arr) => (arr ?? []).map((a) => ({ label: a.label, m: a.m, wallTime: new Date(a.wallTime) }));
 
+  /* JSON no tiene infinito: `JSON.stringify(Infinity)` es `null`, y al
+     restaurar un hito «detenido» volvería como null → NaN aguas abajo. Se
+     serializa con un centinela y se revive en el parse. */
+  const INF_TOKEN = '__inf__';
+  const serInf = (_k, v) => (v === Infinity ? INF_TOKEN : v);
+  const revInf = (_k, v) => (v === INF_TOKEN ? Infinity : v);
+
   function saveSim() {
     try {
       if (!changes.length && !preChanges.length && !reports.length) {
@@ -1703,13 +1693,13 @@ function initSimulation() {
           registeredAt: g.registeredAt ? serDate(g.registeredAt) : null,
           predictions: g.predictions, tracersLeft: g.tracersLeft, state: g.state,
         })),
-      }));
+      }, serInf));
     } catch { /* sin localStorage o lleno: la sim sigue igual */ }
   }
 
   function restoreSim() {
     let saved = null;
-    try { saved = JSON.parse(localStorage.getItem(SIM_STORE_KEY) || 'null'); }
+    try { saved = JSON.parse(localStorage.getItem(SIM_STORE_KEY) || 'null', revInf); }
     catch { return; }
     if (!saved || !Number.isFinite(saved.savedAt)) return;
     try {
@@ -1777,7 +1767,6 @@ function initSimulation() {
         }
         wallNowOverride = null;
       }
-      syncMoverEnabled();
       renderReportsList();
       if (changes.length || preChanges.length) ensureRunning();
       saveSim();

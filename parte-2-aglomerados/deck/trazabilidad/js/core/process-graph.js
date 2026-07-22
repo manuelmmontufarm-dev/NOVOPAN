@@ -5,7 +5,7 @@
  *   - Bins / hoppers (tolva):                        τ = M_holdup / F × 60   [s]
  *   - Encoladores / sprays (tiempo fijo):            τ = constante (s)       [s]
  *   - Bandas acopladas a prensa:                     t = L / v_prensa × 60   [s]
- *   - Bandas inclinadas (velocidad fija HMI):          t = L / v_banda × 60   [s]
+ *   - Bandas inclinadas (velocidad fija MEDIDA, no HMI): t = L / v_banda × 60  [s]
  *   - Sprays (caída instantánea):                    t = constante (estimado)
  *   - Cualquier etapa puede sumar buffer manual:     t_total = t_calc + buffer_s
  *
@@ -125,7 +125,7 @@ export const FINE_PREFIX = [
       kind: 'measured',
       date: '2026-06-25',
       desc: 't = L / v_banda × 60',
-      detail: 'Velocidad FIJA HMI: 99,5 m/min (123,5 rpm). L = 64,57 m → t ≈ 38,9 s. No depende de v_prensa.',
+      detail: 'Velocidad FIJA medida en campo: 99,5 m/min (123,5 rpm). NO es un tag del HMI — se barrieron los 3 servidores WinCC (1.706 tags, 21-jul-2026) y no existe velocidad de banda inclinada. L = 64,57 m → t ≈ 38,9 s. No depende de v_prensa.',
     },
   },
 ];
@@ -149,7 +149,7 @@ export const PATHS = {
         source: {
           kind: 'hmi-live',
           desc: 'τ = M_hopper_esp1 / (F_SL × %SL1) × 60',
-          detail: 'M = 12,5 kg (SL1, HMI). τ ≈ 10,8 s a F_SL1 = 69,5 kg/min.',
+          detail: 'M = 12,5 kg (SL1) — SUPUESTO, no lo publica ningún tag de WinCC todavía; se calibra con H_*_Filling_PV + H_*_Empty_ON. τ ≈ 10,8 s a F_SL1 = 69,5 kg/min.',
         },
         equipment: [
           { name: 'Banda interna', atPct: 20 },
@@ -178,7 +178,7 @@ export const PATHS = {
         source: {
           kind: 'hmi-live',
           desc: 'τ = M_hopper_esp3 / (F_SL × %SL2) × 60',
-          detail: 'M = 15 kg (SL2, HMI). τ ≈ 11,5 s a F_SL2 = 78,1 kg/min.',
+          detail: 'M = 15 kg (SL2) — SUPUESTO, sin tag de WinCC que lo publique (ver esparcidor 1). τ ≈ 11,5 s a F_SL2 = 78,1 kg/min.',
         },
         equipment: [
           { name: 'Banda interna', atPct: 20 },
@@ -252,7 +252,7 @@ export const PATHS = {
           kind: 'measured',
           date: '2026-06-25',
           desc: 't = L / v_banda × 60',
-          detail: 'Velocidad FIJA HMI: 96,5 m/min (119 rpm). L = 68,5 m → t ≈ 42,6 s. No depende de v_prensa.',
+          detail: 'Velocidad FIJA medida en campo: 96,5 m/min (119 rpm). NO es un tag del HMI (ver banda inclinada fina). L = 68,5 m → t ≈ 42,6 s. No depende de v_prensa.',
         },
       },
       {
@@ -267,7 +267,7 @@ export const PATHS = {
         source: {
           kind: 'hmi-live',
           desc: 'τ = M_hopper_esp2 / F_CL × 60',
-          detail: 'M = 40 kg (CL, HMI). τ ≈ 20,3 s a F_CL = 118 kg/min.',
+          detail: 'M = 40 kg (CL) — SUPUESTO, sin tag de WinCC que lo publique (ver esparcidor 1). τ ≈ 20,3 s a F_CL = 118 kg/min.',
         },
         equipment: [
           { name: 'Banda interna', atPct: 20 },

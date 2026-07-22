@@ -1,0 +1,11 @@
+# CSV en vivo generado por scripts/hmi-sim.py (demo local).
+#
+# NO se versiona a propósito: en planta este mismo archivo lo escribe el job
+# de Sistemas con datos REALES. Si una copia simulada llegara a producción, la
+# pantalla mostraría flujos inventados con cara de dato de planta — y el
+# despliegue de Vercel sale de un checkout limpio, así que basta con no
+# rastrearlo para que nunca se suba.
+datos/hmi-sistemas.csv
+
+# Temporales de la escritura atómica del generador.
+datos/.hmi-*.tmp

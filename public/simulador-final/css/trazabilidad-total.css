@@ -57,6 +57,8 @@ body {
 .badge--ok      { background: var(--ok-bg); color: var(--ok-ink); }
 .badge--derived { background: #fff4d6; color: #7a5d00; }
 .badge--est     { background: var(--surface-card); color: var(--text-muted); border: 1px solid var(--line-100); }
+/* Declarado HMI pero sin tag vivo que lo publique: es supuesto nuestro. */
+.badge--assumed { background: #FFF3E0; color: #8A4300; border: 1px solid #E0B080; }
 
 .ms {
   font-family: 'Material Symbols Rounded';
@@ -757,44 +759,6 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
   color: #004E38;
 }
 .s2-speed__label .ms { font-size: 18px; }
-.s2-speed__range {
-  width: 340px;
-  height: 22px;
-  accent-color: #004E38;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-.s2-speed__range::-webkit-slider-runnable-track {
-  height: 8px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #0A7D5A, #004E38);
-}
-.s2-speed__range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  margin-top: -8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #FFDE00;
-  border: 3px solid #004E38;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
-}
-.s2-speed__range::-moz-range-track {
-  height: 8px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #0A7D5A, #004E38);
-}
-.s2-speed__range::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #FFDE00;
-  border: 3px solid #004E38;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
-}
 .s2-speed__box {
   display: inline-flex;
   align-items: baseline;
@@ -816,22 +780,6 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
   text-align: right;
 }
 .s2-speed__unit { font-size: 11px; font-weight: 700; color: #0A7D5A; }
-
-/* ── Movedor manual del cambio ── */
-.s2-mover { display: flex; align-items: center; gap: 8px; }
-.s2-mover__label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: #676E69;
-}
-.s2-mover__label .ms { font-size: 16px; color: #C98B2E; }
-.s2-mover__range { width: 180px; accent-color: #C98B2E; }
-.s2-mover__range:disabled { opacity: .35; cursor: not-allowed; }
 
 /* ── Botón + panel de reportes (hora real por cambio y equipo) ── */
 .s2-reports-btn {
@@ -1346,6 +1294,63 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
 }
 .s2-hmi__btn:hover { background: #E3F1E8; border-color: #0A7D5A; }
 .s2-hmi__btn .ms { font-size: 16px; }
+/* El botón lleva el estado de la conexión: apagado (invita a conectar),
+   conectado (verde + la dirección de la que lee) o copia manual (ámbar). */
+.s2-hmi__btn-txt { display: inline-flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+.s2-hmi__btn-label { font-weight: 700; }
+.s2-hmi__btn-addr {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: .78;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s2-hmi__btn-addr[hidden] { display: none; }
+.s2-hmi__btn.is-on { background: #E3F1E8; border-color: #0A7D5A; color: #14532D; }
+.s2-hmi__btn.is-on .ms { color: #0A7D5A; }
+.s2-hmi__btn.is-manual { background: #FFF3E0; border-color: #E0B080; color: #8A4300; }
+.s2-hmi__btn.is-manual .ms { color: #B36200; }
+
+/* ── Frescura del CSV: de cuándo es el dato, no cuándo se leyó ── */
+.s2-fresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, .28);
+  border: 2px solid rgba(255, 255, 255, .35);
+  border-radius: 12px;
+  padding: 6px 14px;
+  min-width: 190px;
+  color: #fff;
+}
+.s2-fresh .ms { font-size: 20px; opacity: .9; }
+.s2-fresh__txt {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  line-height: 1.25;
+  opacity: .9;
+}
+.s2-fresh__txt strong {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: .01em;
+  opacity: 1;
+}
+.s2-fresh__at { font-variant-numeric: tabular-nums; opacity: .8; }
+.s2-fresh.is-ok    { border-color: #7BD69B; }
+.s2-fresh.is-ok    strong { color: #9FF0BC; }
+.s2-fresh.is-warn  { border-color: #FFDE00; }
+.s2-fresh.is-warn  strong { color: #FFDE00; }
+/* Dato viejo o reloj desincronizado: se ve desde el otro lado de la nave. */
+.s2-fresh.is-old,
+.s2-fresh.is-skew  { border-color: #FF8A80; background: rgba(120, 0, 0, .45); }
+.s2-fresh.is-old   strong,
+.s2-fresh.is-skew  strong { color: #FFB4AC; }
+.s2-fresh.is-none  { opacity: .65; }
 
 .s2-csv-banner {
   display: flex;
@@ -1425,15 +1430,15 @@ body.onepage .s2-header__meta { display: none; }
 body.onepage .s2-clock { padding: 3px 12px; min-width: 128px; border-width: 1.5px; }
 body.onepage .s2-clock__time { font-size: 22px; }
 body.onepage .s2-clock__pct { font-size: 9px; margin-top: 1px; }
+body.onepage .s2-fresh { padding: 3px 11px; min-width: 165px; border-width: 1.5px; }
+body.onepage .s2-fresh__txt strong { font-size: 15px; }
+body.onepage .s2-fresh .ms { font-size: 17px; }
 
 /* toolbar en una sola fila compacta */
 body.onepage .s2-toolbar { padding: 5px 12px; gap: 10px; }
 body.onepage .s2-linea-controls { gap: 10px; }
 body.onepage .s2-speed { padding: 3px 10px; gap: 8px; }
-body.onepage .s2-speed__range { width: 170px; }
-body.onepage .s2-speed__box input { font-size: 16px; width: 52px; }
-body.onepage .s2-mover__range { width: 130px; }
-body.onepage .s2-mover__label span:last-child { display: none; }
+body.onepage body.onepage .s2-speed__box input { font-size: 16px; width: 52px; }
 
 /* canvas: el SVG recompuesto llena el alto disponible, sin scroll */
 body.onepage .s2-canvas { overflow: hidden; display: flex; }

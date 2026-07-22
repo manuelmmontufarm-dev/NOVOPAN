@@ -303,6 +303,42 @@ export const TAG_BY_KEY = (() => {
   return out;
 })();
 
+/* ══ ¿Ese "HMI" es de verdad? ══════════════════════════════════════════════
+   `kind: 'hmi'` en TAG_MAP declara la INTENCIÓN («este número debería venir de
+   planta»). No dice si HOY llega: hay tags declarados HMI que ningún servidor
+   publica todavía, y su valor sale de `datos/hmi.csv` — nuestro propio archivo
+   de valores por defecto. Sellarlos «HMI» es afirmar que vienen de planta un
+   supuesto que escribimos nosotros; es justo el sello que hay que no poner.
+
+   Casos vivos hoy (22-jul-2026): masas de los esparcidores (12,5 / 40 / 15 kg,
+   se calibran con `H_*_Filling_PV` + `H_*_Empty_ON`, que YA vienen en el
+   archivo de Sistemas pero aún sin mapear), PCT_SL2 (52,9 % supuesto, falta
+   que IT publique `H_SL2_Total_Flakes`) y toda la Sección 1, cuyos CSV por
+   servidor todavía llegan vacíos.
+
+   La verdad NO se declara en una tabla que hay que acordarse de actualizar:
+   se lee del propio CSV. `parseHmiCsv` devuelve qué origen escribió cada
+   clave, y `DEFAULTS_LABEL` significa «lo pusimos nosotros». El día que IT
+   publique el tag, el sello vuelve a «HMI» solo. */
+const origenVivoPorClave = new Map();
+
+/** Registra de dónde salió cada valor del último CSV aplicado. */
+export function registrarOrigenes(origenPorClave) {
+  origenVivoPorClave.clear();
+  for (const [key, origen] of Object.entries(origenPorClave ?? {})) {
+    origenVivoPorClave.set(key, origen);
+  }
+}
+
+/** true = declarado HMI pero HOY nadie de planta lo está escribiendo. */
+export function esSupuesto(key) {
+  if (KIND_BY_KEY[key] !== 'hmi') return false;
+  const origen = origenVivoPorClave.get(key);
+  // Sin CSV leído todavía no se acusa a nadie: se asume la declaración.
+  if (!origenVivoPorClave.size) return false;
+  return origen === undefined || origen === DEFAULTS_LABEL;
+}
+
 function unquote(s) {
   const t = String(s ?? '').trim();
   return t.length >= 2 && t[0] === '"' && t[t.length - 1] === '"' ? t.slice(1, -1).trim() : t;
@@ -391,7 +427,11 @@ export function parseHmiCsv(text) {
       count += 1;
     }
   }
-  return { updates, vPrensa, warnings, count };
+  /* `origenPorClave` es la respuesta a "¿este número lo puso planta o lo
+     pusimos nosotros?": DEFAULTS_LABEL = salió de datos/hmi.csv (nuestro
+     archivo de valores por defecto), cualquier otra etiqueta = lo escribió un
+     servidor en vivo. La UI lo usa para no sellar como HMI un supuesto. */
+  return { updates, vPrensa, warnings, count, origenPorClave: setByOrigin };
 }
 
 /* ============================================================
@@ -566,6 +606,27 @@ export function clavarInstante(fecha, hora, diaPrimero = false) {
   const mi = t ? +t[2] : 0;
   const ss = t && t[3] ? +t[3] : 0;
   return ((((Y * 100 + Mo) * 100 + D) * 100 + hh) * 100 + mi) * 100 + ss;
+}
+
+/* Clave ordenable (YYYYMMDDhhmmss) → instante real, en ms epoch.
+   ------------------------------------------------------------
+   La fecha del CSV la escribe el servidor de planta, que corre en hora de
+   Quito, y la pantalla muestra hora de Quito: se reconstruye el instante EN
+   ESA zona (America/Guayaquil = UTC−5 fijo, sin horario de verano) para que el
+   widget muestre exactamente los dígitos que trae el archivo aunque el
+   navegador esté configurado en otra zona. */
+const QUITO_UTC_OFFSET_H = 5;
+export function fechaDeClave(clave) {
+  if (!Number.isFinite(clave) || clave <= 0) return null;
+  const ss = clave % 100;
+  const mi = Math.floor(clave / 1e2) % 100;
+  const hh = Math.floor(clave / 1e4) % 100;
+  const D = Math.floor(clave / 1e6) % 100;
+  const Mo = Math.floor(clave / 1e8) % 100;
+  const Y = Math.floor(clave / 1e10);
+  if (Y < 1970 || Y > 9999 || Mo < 1 || Mo > 12 || D < 1 || D > 31) return null;
+  if (hh > 23 || mi > 59 || ss > 59) return null;
+  return Date.UTC(Y, Mo - 1, D, hh + QUITO_UTC_OFFSET_H, mi, ss);
 }
 
 /* ¿El primer número de la fecha es el día? Se decide mirando TODAS las filas:
@@ -781,6 +842,14 @@ export function normalizar(texto, perfil) {
   let malas = 0;
   let repetidos = 0;
   let seq = 0;
+  /* Instante MÁS RECIENTE visto en el archivo: es "de cuándo son los datos",
+     que no es lo mismo que "cuándo los leímos". Lo consume el widget de
+     frescura de la barra. Null = el formato no trae marca de tiempo. */
+  let instanteMax = null;
+  const marcarInstante = (clave) => {
+    if (clave == null) return;
+    if (instanteMax == null || clave > instanteMax) instanteMax = clave;
+  };
 
   const poner = (nombreRaw, bruto, calidad, orden = null) => {
     const nombre = unquote(nombreRaw);
@@ -789,6 +858,9 @@ export function normalizar(texto, perfil) {
     /* Un tag que el modelo no conoce se junta en UN aviso, no en uno por fila:
        un export de 800 tags dejaría el tooltip del pill ilegible justo cuando
        más se lo necesita. */
+    /* El instante se marca ANTES de filtrar por tag conocido: la edad del
+       archivo no depende de que el modelo entienda ese tag. */
+    marcarInstante(orden);
     if (!LOOKUP.has(clave)) { desconocidos.add(nombre); return; }
     seq += 1;
     const k = orden ?? seq; // las claves de fecha (~1e13) dominan a las posicionales
@@ -836,6 +908,7 @@ export function normalizar(texto, perfil) {
       }
       if (mejor != null) {
         cuando = `${unquote(elegida[colF])}${iHora >= 0 ? ` ${unquote(elegida[iHora])}` : ''}`;
+        marcarInstante(mejor);
       }
     }
 
@@ -895,17 +968,19 @@ export function normalizar(texto, perfil) {
   }
   const cuerpo = [`# adaptado · perfil ${perfil.perfil} · ${salida.size} tags · ${perfil.detalle}`,
     ...[...salida.values()].map((v) => v.linea)];
-  return { texto: `${cuerpo.join('\n')}\n`, avisos };
+  return { texto: `${cuerpo.join('\n')}\n`, avisos, instante: fechaDeClave(instanteMax) };
 }
 
-/** Punto de entrada: texto crudo de IT → texto canónico + perfil + avisos. */
+/** Punto de entrada: texto crudo de IT → texto canónico + perfil + avisos.
+    `instante` = fecha/hora que trae el PROPIO archivo (ms epoch) o null si el
+    formato no la declara — es la edad real del dato, no la de la lectura. */
 export function adaptarCsv(texto, cfg = null) {
   const perfil = detectarPerfil(texto, cfg);
-  const { texto: salida, avisos, error = false } = normalizar(texto, perfil);
+  const { texto: salida, avisos, error = false, instante = null } = normalizar(texto, perfil);
   if (perfil.perfil !== 'desconocido' && perfil.confianza < 0.6) {
     avisos.unshift(`perfil "${perfil.perfil}" detectado con confianza baja (${Math.round(perfil.confianza * 100)} %) — se puede fijar en datos/adaptador.json`);
   }
-  return { texto: salida, perfil: perfil.perfil, confianza: perfil.confianza, detalle: perfil.detalle, avisos, error };
+  return { texto: salida, perfil: perfil.perfil, confianza: perfil.confianza, detalle: perfil.detalle, avisos, error, instante };
 }
 
 function escapeRegExp(value) {
@@ -924,7 +999,34 @@ function fmtTime(d) {
   return d.toLocaleTimeString('es-EC', { timeZone: 'America/Guayaquil', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
+function fmtFechaHora(ms) {
+  const d = new Date(ms);
+  const hoy = new Date().toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil' });
+  const dia = d.toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil' });
+  return dia === hoy ? fmtTime(d) : `${d.toLocaleDateString('es-EC', { timeZone: 'America/Guayaquil', day: '2-digit', month: '2-digit' })} ${fmtTime(d)}`;
+}
+
+/** "hace 8 s" · "hace 3 min 20 s" · "hace 1 h 5 min" · "hace 2 d". */
+export function fmtEdad(segundos) {
+  const s = Math.max(0, Math.round(segundos));
+  if (s < 60) return `hace ${s} s`;
+  const min = Math.floor(s / 60);
+  if (min < 60) return `hace ${min} min${s % 60 ? ` ${s % 60} s` : ''}`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h${min % 60 ? ` ${min % 60} min` : ''}`;
+  const d = Math.floor(h / 24);
+  return `hace ${d} d${h % 24 ? ` ${h % 24} h` : ''}`;
+}
+
+/* Umbrales de frescura (s). El HMI de planta reescribe cada ~2 s; una consulta
+   al Historian puede tardar un minuto. Por encima de 5 min el dato ya no
+   describe lo que está pasando en la línea. */
+const EDAD_OK_S = 60;
+const EDAD_AVISO_S = 300;
+
+export function initHmiCsv({
+  applyData, statusEl, connectBtn, fileInput, freshEl, connectLabelEl, connectAddrEl,
+}) {
   let lastText = null;
   let currentText = '';
   let mode = 'off'; // off | server | live-file | manual-file | edited
@@ -953,6 +1055,92 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     statusEl.title = title ?? '';
   }
 
+  /* ══ Frescura: DE CUÁNDO ES EL DATO, no cuándo lo leímos ═══════════════
+     El pill de estado dice la hora de la última LECTURA — con un CSV que no
+     cambia, esa hora avanza cada 2 s aunque el dato sea de ayer. Este widget
+     responde la otra pregunta, que es la que importa en planta: ¿de cuándo es
+     la versión del archivo que estoy viendo?
+
+     Se toma la mejor evidencia disponible, en este orden:
+       1 · `dato`      — la columna de fecha del propio CSV (Datetime del
+                         Historian, Date/Time de un export de tendencias). Es
+                         la verdad: la estampa quien produce el dato.
+       2 · `archivo`   — cabecera Last-Modified de la respuesta HTTP, o
+                         file.lastModified del archivo local conectado. Es
+                         cuándo se ESCRIBIÓ el archivo.
+       3 · `contenido` — ninguna de las dos existe: solo sabemos cuándo vimos
+                         cambiar el contenido. Se muestra con "≥" porque el
+                         archivo puede ser mucho más viejo que eso. */
+  let fresh = { ms: null, fuente: 'ninguna', detalle: '' };
+  const RANGO_FUENTE = { dato: 3, archivo: 2, contenido: 1, ninguna: 0 };
+  const FUENTE_TITULO = {
+    dato: 'Fecha que trae el propio CSV (su columna de tiempo): es de cuándo son los datos.',
+    archivo: 'Fecha de última escritura del archivo (Last-Modified): cuándo lo generó el servidor.',
+    contenido: 'El archivo no declara fecha: solo se sabe cuándo cambió su contenido. La versión real puede ser más vieja.',
+  };
+
+  function setFresh(ms, fuente, detalle = '') {
+    if (!Number.isFinite(ms)) return;
+    // Una fuente mejor siempre gana; entre iguales, gana la más reciente.
+    if (fresh.fuente === fuente ? ms <= (fresh.ms ?? -Infinity) : RANGO_FUENTE[fuente] < RANGO_FUENTE[fresh.fuente]) return;
+    fresh = { ms, fuente, detalle };
+    renderFresh();
+  }
+
+  function renderFresh() {
+    if (!freshEl) return;
+    if (fresh.ms == null) {
+      freshEl.className = 's2-fresh is-none';
+      freshEl.innerHTML = '<span class="ms">schedule</span><span class="s2-fresh__txt">CSV · sin datos</span>';
+      freshEl.title = 'Todavía no se ha leído ningún CSV.';
+      return;
+    }
+    const edadS = (Date.now() - fresh.ms) / 1000;
+    /* Reloj del CSV por delante del de la pantalla: es un problema real de
+       planta (servidor y PC desincronizados) y se dice, no se disimula con un
+       "hace 0 s". */
+    const adelantado = edadS < -90;
+    const cls = adelantado ? 'is-skew' : edadS <= EDAD_OK_S ? 'is-ok' : edadS <= EDAD_AVISO_S ? 'is-warn' : 'is-old';
+    const prefijo = fresh.fuente === 'contenido' ? '≥ ' : '';
+    const cuando = fmtFechaHora(fresh.ms);
+    freshEl.className = `s2-fresh ${cls}`;
+    freshEl.innerHTML = `<span class="ms">schedule</span>`
+      + `<span class="s2-fresh__txt">CSV actualizado <strong>${adelantado ? 'en el futuro' : `${prefijo}${fmtEdad(edadS)}`}</strong>`
+      + `<span class="s2-fresh__at">${cuando}</span></span>`;
+    freshEl.title = `${FUENTE_TITULO[fresh.fuente]}\nÚltima versión del CSV: ${cuando}${fresh.detalle ? `\n${fresh.detalle}` : ''}`
+      + (adelantado ? '\n⚠ La fecha del CSV está adelantada respecto al reloj de esta pantalla: revisar la hora del servidor.' : '');
+  }
+
+  /* El "hace cuánto" envejece solo aunque no llegue ningún CSV nuevo: ese es
+     justamente el caso que hay que ver (el archivo dejó de actualizarse). */
+  if (freshEl) { renderFresh(); setInterval(renderFresh, 1000); }
+
+  /* ══ Estado del botón de conexión ═════════════════════════════════════ */
+  const ESTADO_CONEXION = {
+    off: { cls: 'is-off', label: 'Conectar CSV', icon: 'upload_file' },
+    servidor: { cls: 'is-on', label: 'Conectado', icon: 'link' },
+    archivo: { cls: 'is-on', label: 'Conectado · archivo local', icon: 'link' },
+    manual: { cls: 'is-manual', label: 'Copia cargada a mano', icon: 'description' },
+  };
+
+  function setConnected(estado, dir, titulo = '') {
+    const e = ESTADO_CONEXION[estado] ?? ESTADO_CONEXION.off;
+    if (connectBtn) {
+      connectBtn.className = `s2-hmi__btn ${e.cls}`;
+      connectBtn.title = titulo || (estado === 'off'
+        ? 'Elegir un CSV local del HMI (respaldo si no hay servidor)'
+        : `${dir}\nClick para conectar otro archivo.`);
+    }
+    if (connectLabelEl) connectLabelEl.textContent = e.label;
+    if (connectAddrEl) {
+      connectAddrEl.textContent = dir ?? '';
+      connectAddrEl.hidden = !dir;
+    }
+    const icon = connectBtn?.querySelector('.ms');
+    if (icon) icon.textContent = e.icon;
+  }
+  setConnected('off', '');
+
   /* Devuelve true = aplicado · false = sin cambios · 'error' = formato
      inválido (se conserva el último CSV bueno y el estado muestra el error;
      pollServer NO debe pisar ese estado con el pill "en vivo").
@@ -968,6 +1156,10 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
       setStatus('error', `● CSV · error de formato${when}`, tooltip(parsed.warnings));
       return 'error';
     }
+    /* Respaldo de frescura (el más flojo): el contenido acaba de cambiar, así
+       que la versión es de AHORA como muy tarde. Solo manda si el archivo no
+       trajo fecha propia ni Last-Modified. */
+    setFresh(Date.now(), 'contenido', `Contenido distinto al anterior (${sourceLabel}).`);
     lastText = text;
     currentText = text;
     lastGood = new Date();
@@ -1040,7 +1232,11 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
         const res = await fetch(`${src.file}?t=${stamp}`, { cache: 'no-store' });
         if (!res.ok) return null;
         const text = await res.text();
-        return text.trim() ? { src, text } : null;
+        /* Last-Modified = cuándo se ESCRIBIÓ el archivo en el servidor. Lo
+           sirven tanto http.server como Vercel; si falta (o el proxy lo
+           borra), simplemente no se usa esta evidencia. */
+        const lm = Date.parse(res.headers.get('Last-Modified') ?? '');
+        return text.trim() ? { src, text, lm: Number.isFinite(lm) ? lm : null } : null;
       } catch {
         return null; // fuente ausente u offline: no es un error, es opcional
       }
@@ -1048,19 +1244,44 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     const parts = fetched.filter(Boolean);
     if (parts.length === 0) { if (mode === 'server') markServerDown(); return false; }
     mode = 'server';
+    /* Dirección visible = el archivo que MANDA (el de mayor precedencia que
+       no sea el de defaults), porque es el que trae el dato vivo y el que hay
+       que revisar cuando algo no cuadra. Las rutas completas de todos los
+       archivos van en el tooltip, para poder dictárselas a IT por teléfono. */
+    const urls = parts.map(({ src }) => {
+      try { return new URL(src.file, window.location.href).href; } catch { return src.file; }
+    });
+    const vivos = parts.filter(({ src }) => src.label !== DEFAULTS_LABEL);
+    const manda = (vivos.length ? vivos : parts)[Math.max(0, (vivos.length ? vivos : parts).length - 1)];
+    const otros = parts.length - 1;
+    setConnected('servidor',
+      `${manda.src.file}${otros > 0 ? ` (+${otros})` : ''}`,
+      `Leyendo cada ${POLL_MS / 1000} s de:\n${urls.join('\n')}`);
     /* Cada archivo se adapta POR SEPARADO: un servidor puede exportar tabla y
        otro seguir en `TAG: valor;`, y el mapeo manual se declara por archivo. */
     const avisos = cfgAviso ? [cfgAviso] : [];
     const perfiles = [];
     const bloques = [];
     const fallos = [];
-    for (const { src, text } of parts) {
+    const evidencias = [];
+    for (const { src, text, lm } of parts) {
       const base = src.file.split('/').pop();
       const ad = adaptarCsv(text, cfgAll?.[base] ?? cfgAll?.[src.file] ?? null);
       perfiles.push(ad.perfil);
       for (const a of ad.avisos) avisos.push(`${base}: ${a}`);
       if (ad.error) fallos.push(base);
       if (ad.texto.trim()) bloques.push(`# @origen: ${src.label}\n${ad.texto.replace(/\s*$/, '')}\n`);
+      /* Evidencia de frescura por archivo, para decidirla DESPUÉS del bucle. */
+      if (ad.instante != null) evidencias.push({ ms: ad.instante, fuente: 'dato', base, label: src.label });
+      if (lm != null) evidencias.push({ ms: lm, fuente: 'archivo', base, label: src.label });
+    }
+    /* El archivo de defaults (`hmi.csv`) es una plantilla versionada en git,
+       no un dato vivo: su fecha solo se usa si NO hay ninguna otra fuente.
+       Si contara siempre, un `git checkout` (que le pone mtime de hoy) diría
+       "actualizado hace 2 s" con el HMI caído. */
+    const vivas = evidencias.filter((e) => e.label !== DEFAULTS_LABEL);
+    for (const e of (vivas.length ? vivas : evidencias)) {
+      setFresh(e.ms, e.fuente, e.fuente === 'dato' ? `Columna de tiempo de ${e.base}.` : `Last-Modified de ${e.base}.`);
     }
     const combined = bloques.join('\n');
     const label = `HMI CSV${parts.length > 1 ? ` · ${parts.length} servidores` : ''}${etiquetaPerfil(perfiles)}`;
@@ -1092,8 +1313,12 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
       const ad = adaptarCsv(await file.text(), adapterCfg?.[file.name] ?? null);
       livePerfil = ad.perfil;
       applyText(ad.texto, `CSV local${etiquetaPerfil([ad.perfil])}`, true, ad.avisos, ad.error ? [file.name] : []);
+      setFresh(file.lastModified, 'archivo', `Última escritura de ${file.name}.`);
+      if (ad.instante != null) setFresh(ad.instante, 'dato', `Columna de tiempo de ${file.name}.`);
+      setConnected('archivo', file.name, `Archivo local en vivo: ${file.name}\nSe relee cada ${POLL_MS / 1000} s y se aplica en cuanto cambie.\nClick para conectar otro.`);
     } catch {
       setStatus('error', '● CSV local · no accesible', 'Vuelve a conectar el archivo.');
+      setConnected('off', '');
     }
   }
 
@@ -1202,18 +1427,33 @@ export function initHmiCsv({ applyData, statusEl, connectBtn, fileInput }) {
     lastText = null;
     const ad = adaptarCsv(await file.text(), adapterCfg?.[file.name] ?? null);
     applyText(ad.texto, `CSV manual${etiquetaPerfil([ad.perfil])}`, true, ad.avisos, ad.error ? [file.name] : []);
+    setFresh(file.lastModified, 'archivo', `Última escritura de ${file.name}.`);
+    if (ad.instante != null) setFresh(ad.instante, 'dato', `Columna de tiempo de ${file.name}.`);
+    /* Copia estática: el navegador no puede volver a leerla sola. Se dice, para
+       que nadie crea que está viendo la línea en vivo. */
+    setConnected('manual', file.name, `Copia cargada a mano: ${file.name}\nNO se actualiza sola — vuelve a cargarla para ver datos nuevos.`);
     fileInput.value = '';
   });
   connectBtn?.addEventListener('click', connectFile);
 
   (async () => {
     const ok = await pollServer();
-    if (!ok) setStatus('idle', '● CSV · sin conexión', 'Conecta un archivo CSV o verifica datos/hmi.csv.');
+    if (!ok) {
+      setStatus('idle', '● CSV · sin conexión', 'Conecta un archivo CSV o verifica datos/hmi.csv.');
+      setConnected('off', '');
+    }
     setInterval(() => {
       if (mode === 'server' || mode === 'off') pollServer();
       else if (mode === 'live-file') pollFile();
     }, POLL_MS);
   })();
 
-  return { updateKey, downloadCsv, reloadServer, getText: () => currentText, getTagForKey: (key) => TAG_BY_KEY[key] ?? null };
+  return {
+    updateKey,
+    downloadCsv,
+    reloadServer,
+    getText: () => currentText,
+    getTagForKey: (key) => TAG_BY_KEY[key] ?? null,
+    getFreshness: () => ({ ...fresh }),
+  };
 }

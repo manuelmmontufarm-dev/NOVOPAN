@@ -12,7 +12,10 @@
      · datos/adaptador.json fija el mapeo cuando el sniffer no acierta
    ============================================================ */
 
-import { adaptarCsv, detectarPerfil, parseHmiCsv, repararFilaAncha, clavarInstante } from './hmi-csv.js';
+import {
+  adaptarCsv, detectarPerfil, parseHmiCsv, repararFilaAncha, clavarInstante,
+  fechaDeClave, esSupuesto, registrarOrigenes, DEFAULTS_LABEL, fmtEdad,
+} from './hmi-csv.js';
 
 /* ── mini-harness (mismo de route-model.test.js) ── */
 const results = [];
@@ -415,6 +418,71 @@ test('si mañana agregan columnas o cambian el orden, sigue entrando', () => {
   const p = correr(csv).updates;
   approx(p['v_prensa'], 14.77, 'columnas localizadas por nombre, no por posición');
   assert(!('_global:F_CL' in p), 'la fila BAD queda pendiente, no entra');
+});
+
+/* ══ Frescura: DE CUÁNDO es el dato ══════════════════════════════════════
+   El widget de la cabecera responde "¿de cuándo es esta versión del CSV?".
+   Su insumo es el instante que trae el propio archivo — si eso miente, el
+   widget miente, y es peor que no tenerlo. */
+group('Frescura del CSV (instante del dato)');
+test('la tabla del Historian entrega su instante más reciente', () => {
+  const csv = 'Datetime,Tagname,Value\n'
+    + '7/22/2026 11:36,H_PressSpeed_PV,14.10\n'
+    + '7/22/2026 12:36,H_CL_Total_Flakes,292.8\n'
+    + '7/22/2026 09:12,H_Act_SL1_SP,47.1\n';
+  const ad = adaptarCsv(csv);
+  const d = new Date(ad.instante);
+  const hhmm = d.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false, hour: '2-digit', minute: '2-digit' });
+  assert(hhmm === '12:36', `debe ganar el más reciente, no la última fila: ${hhmm}`);
+});
+test('un tag desconocido también cuenta para la edad del archivo', () => {
+  // La antigüedad del CSV no depende de que el modelo entienda sus tags.
+  const csv = 'Datetime,Tagname,Value\n'
+    + '7/22/2026 08:00,H_PressSpeed_PV,14.10\n'
+    + '7/22/2026 15:45,TAG_QUE_NO_EXISTE,1\n';
+  const d = new Date(adaptarCsv(csv).instante);
+  const hh = d.toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false, hour: '2-digit' });
+  assert(hh === '15', `debe ganar 15:45 aunque su tag no esté mapeado: ${hh}`);
+});
+test('el formato TAG: valor; no inventa fecha (instante null)', () => {
+  const ad = adaptarCsv('V_PRENSA_M_MIN: 14.5;\n');
+  assert(ad.instante == null, 'sin columna de tiempo NO se puede afirmar una fecha');
+});
+test('fechaDeClave reconstruye la hora de Quito exacta', () => {
+  const ms = fechaDeClave(20260722123600);
+  const txt = new Date(ms).toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false, hour: '2-digit', minute: '2-digit' });
+  assert(txt === '12:36', `los dígitos del archivo deben verse tal cual: ${txt}`);
+});
+test('fechaDeClave rechaza claves imposibles en vez de inventar una fecha', () => {
+  assert(fechaDeClave(null) === null, 'null');
+  assert(fechaDeClave(20260732123600) === null, 'día 32');
+  assert(fechaDeClave(20261322123600) === null, 'mes 13');
+  assert(fechaDeClave(20260722993600) === null, 'hora 99');
+});
+test('fmtEdad se lee como lo diría un operador', () => {
+  assert(fmtEdad(8) === 'hace 8 s', fmtEdad(8));
+  assert(fmtEdad(200) === 'hace 3 min 20 s', fmtEdad(200));
+  assert(fmtEdad(3900) === 'hace 1 h 5 min', fmtEdad(3900));
+  assert(fmtEdad(-3) === 'hace 0 s', 'nunca negativo');
+});
+
+/* ══ Sello HMI: solo si planta lo escribió de verdad ═════════════════════ */
+group('Sello HMI vs Supuesto');
+test('un valor que solo sale de los defaults NO lleva sello HMI', () => {
+  const { origenPorClave } = parseHmiCsv('# @origen: ' + DEFAULTS_LABEL + '\nM_ESP1_KG: 12.5;\n');
+  registrarOrigenes(origenPorClave);
+  assert(esSupuesto('mass:esp1-zone'), 'salió de nuestro archivo de defaults ⇒ supuesto');
+});
+test('en cuanto un servidor vivo lo escribe, vuelve a ser HMI', () => {
+  const { origenPorClave } = parseHmiCsv('# @origen: Sistemas\nM_ESP1_KG: 13.9;\n');
+  registrarOrigenes(origenPorClave);
+  assert(!esSupuesto('mass:esp1-zone'), 'lo escribió Sistemas ⇒ dato de planta');
+});
+test('una constante local nuestra nunca se marca como supuesto-HMI', () => {
+  const { origenPorClave } = parseHmiCsv('# @origen: Sistemas\nH_PressSpeed_PV: 14.77;\n');
+  registrarOrigenes(origenPorClave);
+  // len:white es kind 'measured': su sello es «Medido», no entra en esta lógica.
+  assert(!esSupuesto('len:white'), 'measured no es HMI');
 });
 
 /* ── reporte ── */

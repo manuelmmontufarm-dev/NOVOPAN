@@ -52,6 +52,11 @@ find "$PUBLIC/simulador-seccion-2" -type f \( -name '*.md' -o -name 'CLAUDE_*' -
 mkdir -p "$PUBLIC/simulador-final"
 cp -R "$DECK/simulador-final/." "$PUBLIC/simulador-final/"
 find "$PUBLIC/simulador-final" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -name '*.dc.html' \) -delete
+# El CSV de la demo local (scripts/hmi-sim.py) JAMÁS sale a producción: en planta
+# ese mismo archivo lo escribe Sistemas con datos reales, y una copia simulada
+# mostraría flujos inventados con cara de dato de planta. Está en .gitignore,
+# así que Vercel (checkout limpio) no lo ve; esto cubre el build local.
+rm -f "$PUBLIC/simulador-final/datos/hmi-sistemas.csv"
 
 # Design system tokens — CSS imports ../../_ds/... from trazabilidad/css/
 mkdir -p "$PUBLIC/_ds"

@@ -52,6 +52,8 @@ body {
 .badge--ok      { background: var(--ok-bg); color: var(--ok-ink); }
 .badge--derived { background: #fff4d6; color: #7a5d00; }
 .badge--est     { background: var(--surface-card); color: var(--text-muted); border: 1px solid var(--line-100); }
+/* Declarado HMI pero sin tag vivo que lo publique: es supuesto nuestro. */
+.badge--assumed { background: #FFF3E0; color: #8A4300; border: 1px solid #E0B080; }
 
 .ms {
   font-family: 'Material Symbols Rounded';
