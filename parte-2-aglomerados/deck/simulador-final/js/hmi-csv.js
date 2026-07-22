@@ -45,6 +45,12 @@ export const CSV_SOURCES = [
   { file: 'datos/hmi-preparacion.csv', label: 'Preparación' }, // servidor C — WETS/WETB/DRYR/BRNR/SCRN
   { file: 'datos/hmi-encolado.csv',    label: 'Encolado' },    // servidor B — Gluing/PLC_GE
   { file: 'datos/hmi-formacion.csv',   label: 'Formación' },   // servidor A — Forming/PLC_L/Press/POF
+  /* El archivo REAL de Sistemas (22-jul-2026): su consulta al Historian junta
+     los tres servidores en UN solo CSV `Datetime,Tagname,Value` (origen
+     D:\CSV-simulador_cambios_PB1\DatosCSV). Va al final a propósito: es dato
+     vivo consolidado y le gana a los archivos por servidor si conviven.
+     Contrato congelado en datos/fixtures/sistemas-historian.csv. */
+  { file: 'datos/hmi-sistemas.csv',    label: 'Sistemas' },
 ];
 
 const entry = (keys, kind, unit) => ({ keys: Array.isArray(keys) ? keys : [keys], kind, unit });
@@ -114,11 +120,16 @@ export const TAG_MAP = {
   SILO5_RHO_KGM3:      entry('p1:s5_rho', 'hmi', 'kg/m³'),
   SILO5_V_M3:          entry('p1:s5_V', 'measured', 'm³'),   // 100 m³ confirmado en planta 21-jul-2026
   SILO5_L_PCT:         entry('p1:s5_L', 'hmi', '%'),
-  SILO5_FOUT_KGMIN:    entry('p1:s5_Fmin', 'hmi', 'kg/min'),
+  /* La descarga del silo alimenta TAMBIÉN el flujo de la dosificadora: no hay
+     tag propio de caudal dosificado (F_*_DosBin_Speed_SP es velocidad de banda,
+     no kg/min) y en régimen estable lo que sale del silo ES lo que dosifica el
+     bin. Si algún día aparece un tag propio, DOSING_*_F_KGMIN sigue existiendo
+     y cualquier discrepancia entre ambos quedará avisada como conflicto. */
+  SILO5_FOUT_KGMIN:    entry(['p1:s5_Fmin', 'p1:dosG_F', 'flow:dosing-thick'], 'hmi', 'kg/min'),
   SILO6_RHO_KGM3:      entry('p1:s6_rho', 'hmi', 'kg/m³'),
   SILO6_V_M3:          entry('p1:s6_V', 'measured', 'm³'),   // 100 m³ confirmado en planta 21-jul-2026
   SILO6_L_PCT:         entry('p1:s6_L', 'hmi', '%'),
-  SILO6_FOUT_KGMIN:    entry('p1:s6_Fmin', 'hmi', 'kg/min'),
+  SILO6_FOUT_KGMIN:    entry(['p1:s6_Fmin', 'p1:dosF_F', 'flow:dosing-fine'], 'hmi', 'kg/min'),
   SILO4_RHO_KGM3:      entry('p1:s4_rho', 'hmi', 'kg/m³'),
   SILO4_V_M3:          entry('p1:s4_V', 'est', 'm³'),
   SILO4_L_PCT:         entry('p1:s4_L', 'hmi', '%'),
@@ -203,9 +214,13 @@ export const WINCC_ALIAS = {
      revisar colisiones — `H_PressSpeed_PV` y `H_SL_FlakeDens_SP` existen en los
      dos con Access Name distinto (`Forming` vs `Form`). */
   // "CL dosing bin weight" · Access Name: Gluing · grupo CL_DosBin
-  'F_CL_DosBin_Weight':   'DOSING_CL_M_KG',
+  // En la pantalla del HMI el tag aparece SIN `_PV`; el Historian de Sistemas
+  // lo entrega CON `_PV` (archivo real, 22-jul-2026). Se aceptan ambos.
+  'F_CL_DosBin_Weight':    'DOSING_CL_M_KG',
+  'F_CL_DosBin_Weight_PV': 'DOSING_CL_M_KG',
   // "SL dosing bin weight" · Access Name: Gluing · grupo SL_DosBin
-  'F_SL_DosBin_Weight':   'DOSING_SL_M_KG',
+  'F_SL_DosBin_Weight':    'DOSING_SL_M_KG',
+  'F_SL_DosBin_Weight_PV': 'DOSING_SL_M_KG',
   /* "SL flake flow" · el comentario del HMI no declara unidad. DECISIÓN
      21-jul-2026: se asume kg/min, por simetría con su gemelo de Formación
      `H_CL_Total_Flakes` ("CL total flakes kg/min") y con los tags hermanos del
@@ -757,13 +772,17 @@ export function normalizar(texto, perfil) {
   const filas = lineasUtiles(texto).map((l) => partirFila(l, perfil.delim));
   const cab = perfil.encabezado ? (filas[0] ?? []) : [];
   const datos = perfil.encabezado ? filas.slice(1) : filas;
-  /* Map por tag: un export histórico repite el mismo tag en muchos instantes y
-     la fila más reciente (la última) es la que vale. Así no se dispara el aviso
-     de conflicto de `parseHmiCsv` por un archivo perfectamente normal. */
+  /* Map por tag: un export histórico repite el mismo tag en muchos instantes.
+     Gana el de `orden` MÁS ALTO: si la fila trae fecha legible, el orden es la
+     fecha (el Historian de Sistemas no ordena por tiempo, foto 22-jul-2026);
+     sin fecha, el orden es la posición en el archivo — la última línea, como
+     siempre. Una fila con fecha le gana SIEMPRE a una sin fecha. */
   const salida = new Map();
   let malas = 0;
+  let repetidos = 0;
+  let seq = 0;
 
-  const poner = (nombreRaw, bruto, calidad) => {
+  const poner = (nombreRaw, bruto, calidad, orden = null) => {
     const nombre = unquote(nombreRaw);
     if (!nombre) return;
     const clave = nombre.toUpperCase();
@@ -771,15 +790,21 @@ export function normalizar(texto, perfil) {
        un export de 800 tags dejaría el tooltip del pill ilegible justo cuando
        más se lo necesita. */
     if (!LOOKUP.has(clave)) { desconocidos.add(nombre); return; }
+    seq += 1;
+    const k = orden ?? seq; // las claves de fecha (~1e13) dominan a las posicionales
+    const previo = salida.get(clave);
+    if (previo) { repetidos += 1; if (k < previo.orden) return; }
+    let linea;
     if (calidad !== undefined && !calidadBuena(calidad, perfil.calidadOk)) {
       malas += 1;
-      salida.set(clave, `${nombre}:;`); // pendiente: conserva el último bueno
-      return;
+      linea = `${nombre}:;`; // pendiente: conserva el último bueno
+    } else {
+      const num = celdaNumero(bruto);
+      if (num.empty) linea = `${nombre}:;`;
+      else if (num.nan) linea = `${nombre}: ${limpiar(bruto)};`;
+      else linea = `${nombre}: ${fmtNum(num.val)};`;
     }
-    const num = celdaNumero(bruto);
-    if (num.empty) salida.set(clave, `${nombre}:;`);
-    else if (num.nan) salida.set(clave, `${nombre}: ${limpiar(bruto)};`);
-    else salida.set(clave, `${nombre}: ${fmtNum(num.val)};`);
+    salida.set(clave, { orden: k, linea });
   };
 
   if (perfil.perfil === 'ancho') {
@@ -829,10 +854,27 @@ export function normalizar(texto, perfil) {
       poner(cab[i], elegida[i] ?? '');
     }
   } else {
+    /* Columna de tiempo en la tabla (`Datetime` en el Historian de Sistemas):
+       si existe, el instante de la fila decide quién gana por tag. La fecha y
+       la hora pueden venir juntas en una celda (`7/22/2026 12:36`) o en dos
+       columnas separadas. */
+    const iTiempo = perfil.encabezado ? cab.findIndex((c) => COL_TIEMPO.has(norma(c))) : -1;
+    const iHora = perfil.encabezado ? cab.findIndex((c, i) => i !== iTiempo && ['time', 'hora', '$time'].includes(norma(c))) : -1;
+    const diaPrimero = iTiempo >= 0
+      ? detectarDiaPrimero(datos.map((f) => String(f[iTiempo] ?? '').split(/[ T]/)[0]))
+      : false;
     for (const f of datos) {
       if (perfil.colTag < 0 || perfil.colTag >= f.length) continue;
+      let orden = null;
+      if (iTiempo >= 0) {
+        const [fecha, horaCelda] = String(f[iTiempo] ?? '').trim().split(/[ T]+/);
+        orden = clavarInstante(fecha, iHora >= 0 ? f[iHora] : horaCelda, diaPrimero);
+      }
       poner(f[perfil.colTag], f[perfil.colValor] ?? '',
-        perfil.colCalidad >= 0 ? (f[perfil.colCalidad] ?? '') : undefined);
+        perfil.colCalidad >= 0 ? (f[perfil.colCalidad] ?? '') : undefined, orden);
+    }
+    if (repetidos && iTiempo >= 0) {
+      avisos.push(`tags repetidos en ${repetidos} fila(s): se usó el instante más reciente de cada tag (columna ${cab[iTiempo]})`);
     }
   }
 
@@ -851,7 +893,8 @@ export function normalizar(texto, perfil) {
       avisos: [...avisos, `no se pudo sacar ningún tag (perfil "${perfil.perfil}" · ${perfil.detalle}). Si el formato es correcto pero las columnas no, fíjalas en datos/adaptador.json`],
     };
   }
-  const cuerpo = [`# adaptado · perfil ${perfil.perfil} · ${salida.size} tags · ${perfil.detalle}`, ...salida.values()];
+  const cuerpo = [`# adaptado · perfil ${perfil.perfil} · ${salida.size} tags · ${perfil.detalle}`,
+    ...[...salida.values()].map((v) => v.linea)];
   return { texto: `${cuerpo.join('\n')}\n`, avisos };
 }
 

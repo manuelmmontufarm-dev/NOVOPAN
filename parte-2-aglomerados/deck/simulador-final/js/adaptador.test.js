@@ -44,6 +44,7 @@ const FIXTURES = [
   'kv-actual.csv', 'kv-clasico.csv', 'tabla-wincc.csv', 'tabla-columnas-extra.csv',
   'taglogging-validity.csv', 'ancho.csv', 'tabla-sin-encabezado.csv',
   'tabla-nombres-raros.csv', 'miles-comillas.csv', 'basura.csv', 'tendencia-metso.csv',
+  'sistemas-historian.csv',
 ];
 const REALES = ['hmi.csv', 'hmi-preparacion.csv', 'hmi-encolado.csv', 'hmi-formacion.csv'];
 
@@ -72,6 +73,7 @@ const PERFIL_ESPERADO = {
   'tabla-nombres-raros.csv': 'tabla',
   'miles-comillas.csv': 'tabla',
   'basura.csv': 'desconocido',
+  'sistemas-historian.csv': 'tabla',
 };
 
 /** Camino completo del simulador: texto de IT → adaptador → parser de siempre. */
@@ -128,7 +130,7 @@ for (const linea of [
 /* ── 2 · el contrato: mismo updates{} desde cualquier formato ── */
 group('mismo updates{} desde cualquier formato');
 for (const f of FIXTURES) {
-  if (f === 'basura.csv' || f === 'tabla-nombres-raros.csv') continue; // casos propios, ver abajo
+  if (['basura.csv', 'tabla-nombres-raros.csv', 'sistemas-historian.csv'].includes(f)) continue; // casos propios, ver abajo
   test(`${f} ⇒ updates canónicos`, () => igualA(correr(FX[f]).updates, ESPERADO, f));
 }
 
@@ -350,6 +352,69 @@ test('reconoce el formato por su forma aunque no conozca ningún tag', () => {
   const a = adaptarCsv('$Date,$Time,TAG_QUE_NO_EXISTE,OTRO_TAG_RARO\n07/20/26,10:00:00,1,5,2,5\n');
   assert(a.perfil === 'ancho', a.perfil);
   assert(a.avisos.some((w) => /no existen en el modelo/.test(w)), 'falta aviso de desconocidos');
+});
+
+/* ── 11 · EL CONTRATO: el archivo real de Sistemas (22-jul-2026) ── */
+group('contrato · Historian de Sistemas');
+test('se detecta como tabla Datetime,Tagname,Value', () => {
+  const a = adaptarCsv(FX['sistemas-historian.csv']);
+  assert(a.perfil === 'tabla', a.perfil);
+  assert(a.detalle.includes('Tagname') && a.detalle.includes('Value'), a.detalle);
+  assert(a.error === false, 'no debe marcar error');
+});
+test('los 13 tags conocidos alimentan el modelo con sus valores exactos', () => {
+  const p = correr(FX['sistemas-historian.csv']).updates;
+  approx(p['v_prensa'], 14.76851845, 'v_prensa (H_PressSpeed_PV)');
+  approx(p['_global:peso_manta'], 11.60000038, 'peso manta');
+  approx(p['_global:F_CL'], 292.7554016, 'F_CL (H_CL_Total_Flakes)');
+  approx(p['_global:F_SL'], 96.78607941, 'F_SL (F_SL_FlakeFlow_PV, kg/min confirmado)');
+  approx(p['_global:pctSL1'], 46.99999988, 'PCT_SL1');
+  approx(p['p1:s5_rho'], 125.3954391, 'silo5 ρ');
+  approx(p['p1:s5_L'], 52.81966019, 'silo5 nivel');
+  approx(p['p1:s5_Fmin'], 17273.62695 / 60, 'silo5 descarga kg/h → kg/min');
+  approx(p['p1:s6_rho'], 154.8154449, 'silo6 ρ');
+  approx(p['p1:s6_L'], 35.81180954, 'silo6 nivel');
+  approx(p['p1:s6_Fmin'], 3802.490234 / 60, 'silo6 descarga kg/h → kg/min');
+  approx(p['p1:dosG_M'], 44.17129898, 'masa dosing CL (F_CL_DosBin_Weight_PV, con _PV)');
+  approx(p['p1:dosF_M'], 35.14930344, 'masa dosing SL (F_SL_DosBin_Weight_PV, con _PV)');
+});
+test('la descarga del silo alimenta también el flujo de la dosificadora', () => {
+  const p = correr(FX['sistemas-historian.csv']).updates;
+  approx(p['p1:dosG_F'], 17273.62695 / 60, 'dosing CL flujo = descarga silo 5');
+  approx(p['flow:dosing-thick'], 17273.62695 / 60, 'clave S2 gruesa');
+  approx(p['p1:dosF_F'], 3802.490234 / 60, 'dosing SL flujo = descarga silo 6');
+  approx(p['flow:dosing-fine'], 3802.490234 / 60, 'clave S2 fina');
+});
+test('21 tags aún sin mapear ⇒ UN aviso agregado, sin error', () => {
+  const r = correr(FX['sistemas-historian.csv']);
+  assert(r.avisos.some((a) => /21 tag\(s\)/.test(a)), `avisos: ${r.avisos.join(' | ')}`);
+  assert(!r.avisos.some((a) => /conflicto/i.test(a)), 'no debe haber conflictos');
+});
+test('P_Act_LineSpeed_SP (14.30) NO pisa a H_PressSpeed_PV (14.77)', () => {
+  approx(correr(FX['sistemas-historian.csv']).updates['v_prensa'], 14.76851845, 'v_prensa');
+});
+test('varios instantes del mismo tag DESORDENADOS ⇒ gana el más reciente por fecha', () => {
+  const csv = 'Datetime,Tagname,Value\n'
+    + '7/22/2026 07:00,H_PressSpeed_PV,13.1\n'
+    + '7/22/2026 12:36,H_PressSpeed_PV,14.77\n'
+    + '7/22/2026 09:15,H_PressSpeed_PV,13.9\n'; // la más reciente va en el MEDIO
+  const r = correr(csv);
+  approx(r.updates['v_prensa'], 14.77, 'debe elegir por Datetime, no por posición');
+  assert(r.avisos.some((a) => /más reciente/.test(a)), `avisos: ${r.avisos.join(' | ')}`);
+});
+test('fecha DD/MM también ordena bien (22/7 vs 7/22)', () => {
+  const csv = 'Datetime,Tagname,Value\n'
+    + '22/7/2026 12:36,H_PressSpeed_PV,14.77\n'
+    + '22/7/2026 07:00,H_PressSpeed_PV,13.1\n';
+  approx(correr(csv).updates['v_prensa'], 14.77, 'día-primero detectado por el 22');
+});
+test('si mañana agregan columnas o cambian el orden, sigue entrando', () => {
+  const csv = 'Quality,Value,Extra,Tagname,Datetime\n'
+    + 'GOOD,14.77,x,H_PressSpeed_PV,7/22/2026 12:36\n'
+    + 'BAD,99.9,x,H_CL_Total_Flakes,7/22/2026 12:36\n';
+  const p = correr(csv).updates;
+  approx(p['v_prensa'], 14.77, 'columnas localizadas por nombre, no por posición');
+  assert(!('_global:F_CL' in p), 'la fila BAD queda pendiente, no entra');
 });
 
 /* ── reporte ── */

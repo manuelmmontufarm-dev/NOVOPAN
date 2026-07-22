@@ -21,6 +21,7 @@ En este orden; **el último gana** y toda colisión queda avisada en el pill de 
 | 2 | `datos/hmi-preparacion.csv` | Preparación |
 | 3 | `datos/hmi-encolado.csv` | Encolado |
 | 4 | `datos/hmi-formacion.csv` | Formación |
+| 5 | `datos/hmi-sistemas.csv` | Sistemas |
 
 ## Dato vivo del HMI — 44
 
@@ -53,19 +54,19 @@ En este orden; **el último gana** y toda colisión queda avisada en el pill de 
 | `BUNKER_FHUM_KGH` | kg/h | — | — | `p1:bk_F` |
 | `SILO5_RHO_KGM3` | kg/m³ | `F_CL_FlakeDens_PV` | Encolado | `p1:s5_rho` |
 | `SILO5_L_PCT` | % | `066_C_Dry_Material_CL_Level` | Preparación | `p1:s5_L` |
-| `SILO5_FOUT_KGMIN` | kg/min | `066_C_Dry_Material_CL_discharge (×0.0167)` | — | `p1:s5_Fmin` |
+| `SILO5_FOUT_KGMIN` | kg/min | `066_C_Dry_Material_CL_discharge (×0.0167)` | — | `p1:s5_Fmin`<br>`p1:dosG_F`<br>`flow:dosing-thick` |
 | `SILO6_RHO_KGM3` | kg/m³ | `F_SL_FlakeDens_PV` | Encolado | `p1:s6_rho` |
 | `SILO6_L_PCT` | % | `066_C_Dry_Material_SL_Level` | Preparación | `p1:s6_L` |
-| `SILO6_FOUT_KGMIN` | kg/min | `066_C_Dry_Material_SL_discharge (×0.0167)` | — | `p1:s6_Fmin` |
+| `SILO6_FOUT_KGMIN` | kg/min | `066_C_Dry_Material_SL_discharge (×0.0167)` | — | `p1:s6_Fmin`<br>`p1:dosF_F`<br>`flow:dosing-fine` |
 | `SILO4_RHO_KGM3` | kg/m³ | — | — | `p1:s4_rho` |
 | `SILO4_L_PCT` | % | — | — | `p1:s4_L` |
 | `SILO4_FOUT_KGMIN` | kg/min | — | — | `p1:s4_Fmin` |
 | `SILO8_RHO_KGM3` | kg/m³ | — | — | `p1:s8_rho` |
 | `SILO8_L_PCT` | % | — | — | `p1:s8_L` |
 | `SILO8_FOUT_KGMIN` | kg/min | — | — | `p1:s8_Fmin` |
-| `DOSING_CL_M_KG` | kg | `F_CL_DosBin_Weight` | Encolado | `p1:dosG_M`<br>`mass:dosing-thick` |
+| `DOSING_CL_M_KG` | kg | `F_CL_DosBin_Weight`<br>`F_CL_DosBin_Weight_PV` | Encolado | `p1:dosG_M`<br>`mass:dosing-thick` |
 | `DOSING_CL_F_KGMIN` | kg/min | — | — | `p1:dosG_F`<br>`flow:dosing-thick` |
-| `DOSING_SL_M_KG` | kg | `F_SL_DosBin_Weight` | Encolado | `p1:dosF_M`<br>`mass:dosing-fine` |
+| `DOSING_SL_M_KG` | kg | `F_SL_DosBin_Weight`<br>`F_SL_DosBin_Weight_PV` | Encolado | `p1:dosF_M`<br>`mass:dosing-fine` |
 | `DOSING_SL_F_KGMIN` | kg/min | — | — | `p1:dosF_F`<br>`flow:dosing-fine` |
 | `M_ESP1_KG` | kg | — | — | `mass:esp1-zone` |
 | `M_ESP2_KG` | kg | — | — | `mass:esp2-zone` |

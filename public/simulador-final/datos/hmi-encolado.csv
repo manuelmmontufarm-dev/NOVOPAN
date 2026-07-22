@@ -11,23 +11,30 @@
 # Formación: si ambos traen el tag, gana Formación y queda avisado.
 # NO agregar `H_PressSpeed_PV` a este archivo.
 # ============================================================
+#
+# ⚠ 22-jul-2026 — Sistemas entrega TODO en UN solo archivo consolidado
+# (`datos/hmi-sistemas.csv`, formato Datetime,Tagname,Value del Historian).
+# Este archivo queda como DOCUMENTACIÓN del servidor: sus tags están con valor
+# VACÍO (= pendiente) para no chocar con el dato vivo de Sistemas. La demo sin
+# Sistemas sigue completa gracias a los defaults de `datos/hmi.csv`.
+#
 
 # ── Confirmados por el campo Comment del propio HMI ──
 # "CL dosing bin weight"
-F_CL_DosBin_Weight: 25;
+F_CL_DosBin_Weight: ;
 # "SL dosing bin weight"
-F_SL_DosBin_Weight: 20;
+F_SL_DosBin_Weight: ;
 # "SL flake flow" · el Comment del HMI no declara unidad. DECISIÓN 21-jul-2026:
 # se asume kg/min, igual que su gemelo H_CL_Total_Flakes ("CL total flakes
 # kg/min") y que los tags hermanos del grupo SL_DosBin. Mandar el valor crudo.
-F_SL_FlakeFlow_PV: 147.6;
+F_SL_FlakeFlow_PV: ;
 
 # ── Densidad de flakes medida en las dosing bins (kg/m³) ──
 # El bin se llena directo del silo final con el mismo material → su densidad
 # es la del silo 5 (gruesa/core) y silo 6 (fina). Unidad confirmada por los
 # tags _SP gemelos de Formación: "CL flake density (kg/m3)".
-F_CL_FlakeDens_PV: 135;
-F_SL_FlakeDens_PV: 188;
+F_CL_FlakeDens_PV: ;
+F_SL_FlakeDens_PV: ;
 
 # ── Pendientes: existen en el HMI pero aún no están mapeados ──
 #

@@ -19,6 +19,13 @@
 # Confirmar esa correspondencia en planta y descomentar las líneas de abajo.
 # Ver MAPEO-WINCC.md §1c.
 # ============================================================
+#
+# ⚠ 22-jul-2026 — Sistemas entrega TODO en UN solo archivo consolidado
+# (`datos/hmi-sistemas.csv`, formato Datetime,Tagname,Value del Historian).
+# Este archivo queda como DOCUMENTACIÓN del servidor: sus tags están con valor
+# VACÍO (= pendiente) para no chocar con el dato vivo de Sistemas. La demo sin
+# Sistemas sigue completa gracias a los defaults de `datos/hmi.csv`.
+#
 
 # ── Bunker dosificador húmedo (Access: WETB) — listo salvo unidades ──
 # 051_D_Bunker_Level     "Bunker dosificador, nivel calculado"  → BUNKER_L_PCT (¿% o m³?)
@@ -54,10 +61,10 @@
 # interna (core → silo 5) y SL a la externa (fina → silo 6), igual que el
 # modelo. La descarga va en kg/h tal como la publica el servidor; el
 # simulador la convierte a kg/min. NO dividir entre 60 al escribir.
-066_C_Dry_Material_CL_Level: 44;         # Nivel silo capa interna %
-066_C_Dry_Material_CL_discharge: 18120;  # Descarga capa interna kg/h → 302 kg/min
-066_C_Dry_Material_SL_Level: 31;         # Nivel silo capa externa %
-066_C_Dry_Material_SL_discharge: 6480;   # Descarga capa externa kg/h → 108 kg/min
+066_C_Dry_Material_CL_Level: ;         # Nivel silo capa interna %
+066_C_Dry_Material_CL_discharge: ;  # Descarga capa interna kg/h → 302 kg/min
+066_C_Dry_Material_SL_Level: ;         # Nivel silo capa externa %
+066_C_Dry_Material_SL_discharge: ;   # Descarga capa externa kg/h → 108 kg/min
 
 # 066_56_*  "Extractor Silo CE" (807T1/T2 temp, 807T3 presión, 735Y1 válvula)
 # 051_T_Madera_Cons_3T  "Total madera, consumo x turno"

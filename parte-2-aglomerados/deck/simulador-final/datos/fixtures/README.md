@@ -25,6 +25,9 @@ decimal en cada formato (`1.234,56`, `"1.234,56"`, `1234.56`).
 | `tabla-nombres-raros.csv` | `tabla` | encabezado inútil (`Col1…`) + `datos/adaptador.json` |
 | `miles-comillas.csv` | `tabla` | celdas entre comillas con decimal alemán |
 | `basura.csv` | `desconocido` | página de error HTML — no debe romper nada |
+| `sistemas-historian.csv` | `tabla` | **EL CONTRATO** — archivo real de Sistemas 22-jul (ver README-sistemas.md) |
+| `tendencia-metso.csv` | `ancho` | Save To File real del HMI (ver README-tendencia.md) |
 
-Cuando IT mande su primer archivo real, ese archivo se congela aquí como fixture
-y se convierte en el contrato.
+**El primer archivo real de IT llegó el 22-jul-2026** y quedó congelado como
+`sistemas-historian.csv`: ese es el contrato. Los demás fixtures se conservan
+como red de seguridad por si Sistemas cambia el formato sin avisar.

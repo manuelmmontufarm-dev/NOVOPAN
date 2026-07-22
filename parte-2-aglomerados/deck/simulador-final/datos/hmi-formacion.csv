@@ -12,16 +12,23 @@
 # Este archivo PISA a datos/hmi.csv y se lee de último (ver CSV_SOURCES),
 # porque Formación es el dueño de la prensa.
 # ============================================================
+#
+# ⚠ 22-jul-2026 — Sistemas entrega TODO en UN solo archivo consolidado
+# (`datos/hmi-sistemas.csv`, formato Datetime,Tagname,Value del Historian).
+# Este archivo queda como DOCUMENTACIÓN del servidor: sus tags están con valor
+# VACÍO (= pendiente) para no chocar con el dato vivo de Sistemas. La demo sin
+# Sistemas sigue completa gracias a los defaults de `datos/hmi.csv`.
+#
 
 # ── Confirmados por el campo Comment del propio HMI ──
 # "Press speed (m/min)"
-H_PressSpeed_PV: 14.5;
+H_PressSpeed_PV: ;
 # "Mat weight after forming (kg/m2)"
-H_Act_MatWeight_SP: 11.5;
+H_Act_MatWeight_SP: ;
 # "CL total flakes kg/min"
-H_CL_Total_Flakes: 118;
+H_CL_Total_Flakes: ;
 # "SL1 % Set value (%)"
-H_Act_SL1_SP: 47.1;
+H_Act_SL1_SP: ;
 
 # ── Pendientes: existen en el HMI pero aún no están mapeados ──
 # Descomentar cuando se confirmen unidad y correspondencia. Ver MAPEO-WINCC.md §4.
