@@ -63,28 +63,19 @@
       <input type="file" id="hmiFileInput" accept=".csv,.txt" hidden />
     </div>
     <div class="s2-linea-controls" id="lineaControls">
-    <div class="s2-speed">
+    <!-- PRODUCCIÓN: la velocidad es dato vivo del HMI — SOLO LECTURA.
+         El slider se conserva como indicador visual (se mueve con el CSV). -->
+    <div class="s2-speed s2-speed--readonly" title="Dato vivo del HMI (H_PressSpeed_PV) · solo lectura">
       <span class="s2-speed__label"><span class="ms">speed</span> Velocidad de prensa</span>
-      <input type="range" class="s2-speed__range" id="speedRange" min="8" max="22" step="0.1" value="14.5" />
+      <input type="range" class="s2-speed__range" id="speedRange" min="8" max="22" step="0.1" value="14.5" disabled />
       <span class="s2-speed__box">
-        <input type="number" id="speedInput" min="8" max="22" step="0.1" value="14.5" aria-label="Velocidad de prensa" />
+        <input type="number" id="speedInput" min="8" max="22" step="0.1" value="14.5" disabled aria-label="Velocidad de prensa (dato vivo del HMI, solo lectura)" />
         <span class="s2-speed__unit">m/min</span>
       </span>
     </div>
-    <span class="s2-toolbar__label s2-toolbar__label--p1">Inyectar P1</span>
-    <div class="s2-preinject">
-      <button type="button" class="s2-preinject__btn" data-pre-trigger="patios" data-label="Patios · cambio receta">
-        <span class="ms">yard</span> Patios
-      </button>
-      <button type="button" class="s2-preinject__btn" data-pre-trigger="silo5" data-label="Silo 5 · CL/core">
-        <span class="ms">inventory_2</span> Silo 5
-      </button>
-      <button type="button" class="s2-preinject__btn" data-pre-trigger="silo6" data-label="Silo 6 · SL/capas">
-        <span class="ms">inventory_2</span> Silo 6
-      </button>
-    </div>
     <div class="s2-toolbar__spacer"></div>
-    <label class="s2-time-scale">
+    <!-- Herramienta interna: oculta en producción. Se muestra con ?tiempo en la URL. -->
+    <label class="s2-time-scale" id="timeScaleWrap" hidden>
       <span class="ms">timer</span>
       <span>Tiempo</span>
       <input type="number" id="timeScaleInput" min="1" max="100000" step="1" value="1"
@@ -99,9 +90,7 @@
     <button type="button" class="s2-pause-btn s2-sound-btn" id="soundBtn" title="Sonidos silenciados · click para activar" aria-label="Activar o silenciar sonidos">
       <span class="ms">volume_off</span>
     </button>
-    <button type="button" class="s2-pause-btn" id="pauseBtn" title="Pausar la simulación (los cambios se congelan)">
-      <span class="ms">pause</span> Pausa
-    </button>
+    <!-- PRODUCCIÓN: sin botón de pausa — la línea real no se pausa. -->
     <button type="button" class="s2-reports-btn" id="reportsToggle">
       <span class="ms">receipt_long</span> Reportes <span class="s2-reports-btn__count" id="reportsCount">0</span>
     </button>

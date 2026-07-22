@@ -668,6 +668,9 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
   flex: 1;
   min-width: 12px;
 }
+/* PRODUCCIÓN: `display:inline-flex` le ganaría al atributo `hidden` del UA —
+   sin esta regla el control "oculto" se vería igual. */
+.s2-time-scale[hidden] { display: none !important; }
 .s2-time-scale {
   display: inline-flex;
   align-items: center;

@@ -292,16 +292,23 @@ function renderEquation(card, equation) {
 
 function fieldHtml({ key, label, unit, unknown = false, kind }) {
   const tag = TAG_BY_KEY[key];
-  const disabled = !tag;
+  /* PRODUCCIÓN: lo que viene VIVO del HMI no se edita desde el panel — se
+     muestra tal cual llega del CSV de Sistemas. Editable queda solo lo local
+     (constantes 'est'/'measured', que no tocan el CSV). OJO: el candado se
+     decide por KIND_BY_KEY (la autoridad), NO por el `kind` recibido, que en
+     las tarjetas de Sección 2 es solo la etiqueta visual ('hmi-live'…). */
+  const hmiLock = KIND_BY_KEY[key] === 'hmi';
+  const disabled = !tag || hmiLock;
   return `
-    <label class="equation-field">
+    <label class="equation-field${hmiLock ? ' equation-field--hmi-lock' : ''}"${hmiLock ? ' title="Dato vivo del HMI · solo lectura"' : ''}>
       <span class="equation-field__label">${label} ${badgeHtml(kind ?? KIND_BY_KEY[key])}</span>
       <span class="equation-field__control">
         <input type="number" step="any" min="0" data-key="${key}" data-csv-tag="${tag ?? ''}"
           ${unknown ? 'data-unknown="1"' : ''} ${disabled ? 'disabled' : ''}>
         <span>${unit}</span>
       </span>
-      ${tag ? `<code>${tag}</code>` : '<small>Valor derivado</small>'}
+      ${hmiLock ? `<code>${tag ?? ''}</code><small class="equation-field__lock"><span class="ms">lock</span> dato vivo del HMI · solo lectura</small>`
+    : (tag ? `<code>${tag}</code>` : '<small>Valor derivado</small>')}
     </label>`;
 }
 
@@ -635,8 +642,13 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     root.querySelectorAll('input[data-key]').forEach((input) => {
       const key = input.dataset.key;
       input.value = params[key] ?? '';
+      // PRODUCCIÓN: los campos HMI son solo lectura — se muestran, no se atan.
+      if (input.disabled) return;
       const commitToCsv = () => {
         if (input.value.trim() === '') return;
+        // Cinturón y tirantes: aunque alguien re-habilite el input a mano,
+        // un dato vivo del HMI jamás se escribe desde el panel.
+        if (KIND_BY_KEY[key] === 'hmi') { input.value = params[key] ?? ''; return; }
         const value = Number(input.value);
         if (!Number.isFinite(value) || value < 0) {
           input.value = params[key] ?? '';

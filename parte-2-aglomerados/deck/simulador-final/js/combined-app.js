@@ -606,6 +606,15 @@ function initSimulation() {
   const speedRange = document.getElementById('speedRange');
   const speedInput = document.getElementById('speedInput');
   const timeScaleInput = document.getElementById('timeScaleInput');
+  /* PRODUCCIÓN: el multiplicador de tiempo es herramienta interna de
+     verificación — sin uso en operación. Oculto salvo `?tiempo` en la URL;
+     sin ese parámetro la escala queda CLAVADA en 1× (tampoco se restaura una
+     escala vieja guardada en localStorage). */
+  const timeToolEnabled = (() => {
+    try { return new URLSearchParams(window.location.search).has('tiempo'); }
+    catch { return false; }
+  })();
+  if (timeToolEnabled) document.getElementById('timeScaleWrap')?.removeAttribute('hidden');
   const moverRange = document.getElementById('moverRange');
   const canvas = document.getElementById('canvasScroll');
   const tracersLayer = document.getElementById('tracers');
@@ -1705,7 +1714,7 @@ function initSimulation() {
     if (!saved || !Number.isFinite(saved.savedAt)) return;
     try {
       changeSeq = saved.changeSeq ?? 0;
-      if (Number.isFinite(saved.timeScale) && timeScaleInput) {
+      if (timeToolEnabled && Number.isFinite(saved.timeScale) && timeScaleInput) {
         timeScale = clamp(saved.timeScale, 1, 100000);
         timeScaleInput.value = timeScale;
       }
@@ -1753,7 +1762,8 @@ function initSimulation() {
         changes.push(ch);
       }
       selectedId = saved.selectedId && changes.some((c) => c.id === saved.selectedId) ? saved.selectedId : (changes[changes.length - 1]?.id ?? null);
-      if (saved.paused) setPaused(true);
+      /* PRODUCCIÓN: sin botón de pausa no hay forma de reanudar, así que un
+         estado guardado en pausa (de una versión anterior) arranca corriendo. */
 
       // Avance offline: lo que de verdad pasó mientras el tab estuvo cerrado,
       // en pasos de ~1 s real con el cursor de hora interpolado (máx 600 pasos).

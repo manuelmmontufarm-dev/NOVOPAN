@@ -657,3 +657,12 @@ body {
 .btn .ms { font-size: 18px; }
 .btn--primary { background: #004E38; color: #fff; }
 .btn--secondary { background: #F6F7F4; border-color: #D9DDD9; color: #1A1D1B; }
+
+/* ── PRODUCCIÓN · velocidad de prensa = dato vivo del HMI, solo lectura ── */
+.s2-speed--readonly .s2-speed__range { pointer-events: none; opacity: .85; }
+.s2-speed--readonly .s2-speed__box input:disabled {
+  color: inherit;                /* se lee como dato vivo, no como control apagado */
+  opacity: 1;
+  -webkit-text-fill-color: currentColor;
+  cursor: default;
+}
