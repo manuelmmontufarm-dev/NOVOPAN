@@ -21,6 +21,7 @@
     { "source": "/simulador-seccion-2", "destination": "/simulador-seccion-2/index.html" },
     { "source": "/simulador-final", "destination": "/simulador-final/index.html" },
     { "source": "/patios", "destination": "/patios/index.html" },
-    { "source": "/patios-interactivo", "destination": "/patios-interactivo/index.html" }
+    { "source": "/patios-interactivo", "destination": "/patios-interactivo/index.html" },
+    { "source": "/hmi-tanque", "destination": "/hmi-tanque/index.html" }
   ]
 }

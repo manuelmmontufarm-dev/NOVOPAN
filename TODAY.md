@@ -15,6 +15,21 @@
 
 ## Historial reciente
 
+### 2026-07-23 · HMI demo: tanque + motor + flujómetros (entrada/salida de agua)
+
+Nuevo HMI simple y autónomo en `parte-2-aglomerados/deck/hmi-tanque/index.html`,
+publicado en la ruta `/hmi-tanque`. Un solo `index.html` sin recursos externos:
+
+- **Tanque TK-01** con nivel en vivo (sube/baja por balance de masa entrada−salida).
+- **Flujómetro de entrada (FT-01)** y **de salida (FT-02)** con aguja y partículas de flujo animadas.
+- **Motor/bomba M-01** con impulsor girando; la bomba no descarga si el tanque está vacío.
+- Controles: válvula de entrada, velocidad de bomba, arranque/paro de motor, reinicio.
+- Alarmas simples de tanque LLENO / VACÍO. Marca Novopan (verde/amarillo).
+
+Cableado de despliegue: tarjeta en la landing (`vercel/index.html`), copia en
+`scripts/build-vercel-public.sh` y rewrite en `vercel.json`. Datos simulados en
+el navegador — es una demo, no consume el CSV de planta.
+
 ### 2026-07-22 (tarde) · Ronda de pantalla: frescura del CSV, paro real y sellos honestos
 
 Nueve pedidos del recorrido por la pantalla de planta. Los tres de fondo:

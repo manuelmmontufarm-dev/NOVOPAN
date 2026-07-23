@@ -58,6 +58,11 @@ find "$PUBLIC/simulador-final" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -n
 # así que Vercel (checkout limpio) no lo ve; esto cubre el build local.
 rm -f "$PUBLIC/simulador-final/datos/hmi-sistemas.csv"
 
+# HMI tanque — demo autónoma (tanque + motor + flujómetros entrada/salida).
+# Un solo index.html sin recursos externos: se copia tal cual.
+mkdir -p "$PUBLIC/hmi-tanque"
+cp "$DECK/hmi-tanque/index.html" "$PUBLIC/hmi-tanque/index.html"
+
 # Design system tokens — CSS imports ../../_ds/... from trazabilidad/css/
 mkdir -p "$PUBLIC/_ds"
 cp -R "$DECK/_ds/." "$PUBLIC/_ds/"
@@ -113,5 +118,6 @@ echo "  /trazabilidad-linea  → parte-2-aglomerados/deck/trazabilidad-linea (Se
 echo "  /trazabilidad-preparacion → parte-1-preparacion-madera/html-app/trazabilidad-preparacion"
 echo "  /trazabilidad-total → Parte 1 + Sección 2 conectadas"
 echo "  /simulador-seccion-2 → Sección 2 operativa (motor del simulador total)"
+echo "  /hmi-tanque          → HMI tanque + motor + flujómetros (demo autónoma)"
 echo "  /patios              → parte-1-preparacion-madera (guía estática)"
 echo "  /patios-interactivo  → parte-1-preparacion-madera/html-app (React/Babel)"

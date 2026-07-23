@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>HMI · Tanque, Motor y Flujómetros</title>
+<style>
+  :root{
+    --green:#004e38; --green-2:#00694c; --yellow:#f5c518;
+    --bg:#0e1613; --panel:#13201b; --panel-2:#182a23;
+    --line:#264036; --text:#eaf3ef; --muted:#8fb0a4;
+    --water:#2fa4e6; --water-2:#1e7fc0;
+    --ok:#43d17a; --warn:#f5c518; --bad:#ff5a5a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--text);min-height:100vh;
+    line-height:1.4;-webkit-tap-highlight-color:transparent;
+  }
+  header{
+    background:var(--green);border-bottom:4px solid var(--yellow);
+    padding:1rem 1.25rem;padding-top:calc(1rem + env(safe-area-inset-top,0px));
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  }
+  header h1{font-size:1.15rem;font-weight:800;letter-spacing:.02em}
+  header .sub{font-size:.8rem;color:#bfe4d6;font-weight:500}
+  .clock{font-variant-numeric:tabular-nums;font-weight:700;color:var(--yellow);font-size:.95rem}
+  main{max-width:1000px;margin:0 auto;padding:1.25rem}
+  .stage{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:1rem;overflow:hidden;
+  }
+  svg{width:100%;height:auto;display:block}
+  /* readouts */
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:.75rem;margin-top:1rem;
+  }
+  .card{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
+    padding:.75rem .9rem;
+  }
+  .card .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .card .val{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;margin-top:.15rem}
+  .card .unit{font-size:.8rem;color:var(--muted);font-weight:600}
+  .card.in .val{color:var(--water)}
+  .card.out .val{color:var(--yellow)}
+  .card.lvl .val{color:var(--ok)}
+  .dot{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;margin-right:.35rem;vertical-align:middle}
+  .controls{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;align-items:center}
+  button{
+    font:inherit;font-weight:700;cursor:pointer;border-radius:10px;
+    padding:.6rem 1.1rem;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--text);transition:.15s;
+  }
+  button:hover{border-color:var(--yellow)}
+  button.primary{background:var(--green);border-color:var(--green-2);color:#fff}
+  button.primary.on{background:var(--bad);border-color:var(--bad)}
+  .slider{display:flex;align-items:center;gap:.5rem;flex:1;min-width:220px}
+  .slider label{font-size:.8rem;color:var(--muted);white-space:nowrap}
+  input[type=range]{flex:1;accent-color:var(--yellow)}
+  .status{margin-left:auto;font-weight:700;font-size:.85rem}
+  .foot{margin-top:1rem;font-size:.75rem;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>HMI · Tanque · Motor · Flujómetros</h1>
+    <div class="sub">NOVOPAN — Entrada y salida de agua</div>
+  </div>
+  <div class="clock" id="clock">--:--:--</div>
+</header>
+
+<main>
+  <div class="stage">
+    <svg viewBox="0 0 800 420" role="img" aria-label="Diagrama del tanque con motor y flujómetros">
+      <!-- ===== ENTRADA (arriba izq) ===== -->
+      <!-- tubería entrada -->
+      <rect x="40" y="70" width="230" height="26" rx="6" fill="#1c2f28" stroke="#2f4a40"/>
+      <!-- flujo animado entrada -->
+      <g id="flowIn"></g>
+      <text x="55" y="55" fill="#2fa4e6" font-size="15" font-weight="700">FLUJÓMETRO ENTRADA</text>
+      <!-- flujómetro entrada -->
+      <circle cx="150" cy="83" r="26" fill="#0f1c17" stroke="#2fa4e6" stroke-width="3"/>
+      <line id="needleIn" x1="150" y1="83" x2="150" y2="63" stroke="#2fa4e6" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="150" cy="83" r="4" fill="#2fa4e6"/>
+
+      <!-- ===== TANQUE ===== -->
+      <rect x="300" y="60" width="220" height="300" rx="18" fill="#0f1c17" stroke="#33544a" stroke-width="4"/>
+      <!-- agua (rect que sube/baja) -->
+      <clipPath id="tankClip"><rect x="306" y="66" width="208" height="288" rx="14"/></clipPath>
+      <g clip-path="url(#tankClip)">
+        <rect id="water" x="306" y="330" width="208" height="30" fill="#2fa4e6"/>
+        <rect id="waterTop" x="306" y="328" width="208" height="6" fill="#7ecbf2" opacity=".5"/>
+      </g>
+      <!-- marcas de nivel -->
+      <g stroke="#3a5c50" stroke-width="1" font-size="10" fill="#8fb0a4">
+        <line x1="514" y1="90" x2="528" y2="90"/><text x="532" y="94">100%</text>
+        <line x1="514" y1="210" x2="528" y2="210"/><text x="532" y="214">50%</text>
+        <line x1="514" y1="330" x2="528" y2="330"/><text x="532" y="334">0%</text>
+      </g>
+      <text x="410" y="45" fill="#eaf3ef" font-size="15" font-weight="800" text-anchor="middle">TANQUE TK-01</text>
+      <text id="lvlPct" x="410" y="210" fill="#fff" font-size="34" font-weight="800" text-anchor="middle">0%</text>
+
+      <!-- ===== MOTOR / BOMBA (abajo der) ===== -->
+      <!-- tubería salida desde fondo tanque -->
+      <rect x="520" y="334" width="90" height="24" rx="6" fill="#1c2f28" stroke="#2f4a40"/>
+      <rect x="586" y="240" width="24" height="118" rx="6" fill="#1c2f28" stroke="#2f4a40"/>
+      <rect x="610" y="240" width="150" height="24" rx="6" fill="#1c2f28" stroke="#2f4a40"/>
+      <!-- flujo salida -->
+      <g id="flowOut"></g>
+      <!-- bomba/motor -->
+      <g id="pump">
+        <circle cx="598" cy="252" r="30" fill="#152621" stroke="#f5c518" stroke-width="3"/>
+        <g id="impeller">
+          <path d="M598 232 L598 272 M578 252 L618 252 M584 238 L612 266 M612 238 L584 266"
+                stroke="#f5c518" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <circle cx="598" cy="252" r="5" fill="#f5c518"/>
+      </g>
+      <rect x="560" y="292" width="76" height="30" rx="6" fill="#152621" stroke="#3a5c50"/>
+      <text x="598" y="312" fill="#8fb0a4" font-size="12" font-weight="700" text-anchor="middle">MOTOR M-01</text>
+
+      <!-- flujómetro salida -->
+      <text x="640" y="228" fill="#f5c518" font-size="15" font-weight="700">FLUJÓMETRO SALIDA</text>
+      <circle cx="700" cy="252" r="26" fill="#0f1c17" stroke="#f5c518" stroke-width="3"/>
+      <line id="needleOut" x1="700" y1="252" x2="700" y2="232" stroke="#f5c518" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="700" cy="252" r="4" fill="#f5c518"/>
+    </svg>
+  </div>
+
+  <div class="grid">
+    <div class="card in">
+      <div class="lbl">Flujo entrada · FT-01</div>
+      <div class="val"><span id="qIn">0.0</span> <span class="unit">m³/h</span></div>
+    </div>
+    <div class="card lvl">
+      <div class="lbl">Nivel tanque · LT-01</div>
+      <div class="val"><span id="qLvl">0</span> <span class="unit">%</span></div>
+    </div>
+    <div class="card out">
+      <div class="lbl">Flujo salida · FT-02</div>
+      <div class="val"><span id="qOut">0.0</span> <span class="unit">m³/h</span></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Estado motor</div>
+      <div class="val" style="font-size:1.15rem"><span class="dot" id="mDot" style="background:var(--muted)"></span><span id="mTxt">PARO</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="btnMotor">▶ Arrancar motor</button>
+    <div class="slider">
+      <label>Válvula entrada</label>
+      <input type="range" id="valveIn" min="0" max="100" value="60"/>
+      <span id="valveInV" style="font-variant-numeric:tabular-nums;min-width:3ch">60</span>
+    </div>
+    <div class="slider">
+      <label>Vel. bomba</label>
+      <input type="range" id="pumpSpd" min="0" max="100" value="70"/>
+      <span id="pumpSpdV" style="font-variant-numeric:tabular-nums;min-width:3ch">70</span>
+    </div>
+    <button id="btnReset">Reiniciar</button>
+    <div class="status" id="status">● En simulación</div>
+  </div>
+
+  <div class="foot">HMI de demostración · datos simulados en el navegador · NOVOPAN Línea&nbsp;1</div>
+</main>
+
+<script>
+(function(){
+  // ---- estado ----
+  var level = 20;          // % nivel del tanque
+  var motorOn = false;
+  var qIn = 0, qOut = 0;   // m³/h
+  var angle = 0;
+
+  var el = function(id){return document.getElementById(id);};
+  var valveIn = el('valveIn'), pumpSpd = el('pumpSpd');
+
+  // ---- geometría del agua en el tanque ----
+  var TANK_TOP = 66, TANK_BOT = 354, TANK_H = TANK_BOT - TANK_TOP; // 288
+  function drawWater(){
+    var h = TANK_H * (level/100);
+    var y = TANK_BOT - h;
+    el('water').setAttribute('y', y);
+    el('water').setAttribute('height', h);
+    el('waterTop').setAttribute('y', y-2);
+    // color según nivel
+    var c = level > 90 || level < 8 ? '#ff8a5a' : (level>75||level<20 ? '#f5c518' : '#2fa4e6');
+    el('water').setAttribute('fill', level>90||level<8 ? '#c26' : (level>75||level<20?'#2f88d6':'#2fa4e6'));
+    el('lvlPct').textContent = Math.round(level) + '%';
+  }
+
+  // ---- partículas de flujo ----
+  function makeFlow(gid, x0, x1, y, color){
+    var g = el(gid); g.innerHTML='';
+    for(var i=0;i<4;i++){
+      var c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('r',5); c.setAttribute('fill',color);
+      c.setAttribute('cx', x0 + (x1-x0)*(i/4));
+      c.setAttribute('cy', y);
+      c.dataset.x0=x0; c.dataset.x1=x1; c.dataset.y=y;
+      g.appendChild(c);
+    }
+  }
+  makeFlow('flowIn', 45, 265, 83, '#2fa4e6');
+  makeFlow('flowOut', 615, 755, 252, '#f5c518');
+
+  function moveFlow(gid, speed){
+    var g = el(gid); if(!g.children.length) return;
+    for(var i=0;i<g.children.length;i++){
+      var c = g.children[i];
+      var x0=+c.dataset.x0, x1=+c.dataset.x1;
+      var x = +c.getAttribute('cx') + speed;
+      if(x>x1) x = x0;
+      c.setAttribute('cx', x);
+      c.setAttribute('opacity', speed>0.1 ? 1 : 0.15);
+    }
+  }
+
+  // ---- agujas de los flujómetros (0..max -> -120°..+120°) ----
+  function needle(id, q, qmax, cx, cy){
+    var t = Math.max(0, Math.min(1, q/qmax));
+    var a = (-120 + 240*t) * Math.PI/180;
+    var len = 20;
+    el(id).setAttribute('x2', cx + len*Math.sin(a));
+    el(id).setAttribute('y2', cy - len*Math.cos(a));
+  }
+
+  // ---- reloj ----
+  function tick(){
+    var d = new Date();
+    el('clock').textContent = d.toLocaleTimeString('es-EC',{hour12:false});
+  }
+
+  // ---- controles ----
+  el('btnMotor').addEventListener('click', function(){
+    motorOn = !motorOn;
+    this.textContent = motorOn ? '■ Detener motor' : '▶ Arrancar motor';
+    this.classList.toggle('on', motorOn);
+    el('mTxt').textContent = motorOn ? 'MARCHA' : 'PARO';
+    el('mDot').style.background = motorOn ? 'var(--ok)' : 'var(--muted)';
+  });
+  el('btnReset').addEventListener('click', function(){
+    level=20; motorOn=false; valveIn.value=60; pumpSpd.value=70;
+    el('valveInV').textContent=60; el('pumpSpdV').textContent=70;
+    el('btnMotor').textContent='▶ Arrancar motor';
+    el('btnMotor').classList.remove('on');
+    el('mTxt').textContent='PARO'; el('mDot').style.background='var(--muted)';
+  });
+  valveIn.addEventListener('input',function(){el('valveInV').textContent=this.value;});
+  pumpSpd.addEventListener('input',function(){el('pumpSpdV').textContent=this.value;});
+
+  // ---- bucle de simulación ----
+  var last = 0;
+  function loop(ts){
+    if(!last) last = ts;
+    var dt = Math.min(0.1,(ts-last)/1000); last = ts;
+
+    // caudales objetivo
+    qIn  = (+valveIn.value/100) * 12;                      // hasta 12 m³/h
+    qOut = motorOn ? (+pumpSpd.value/100) * 14 : 0;        // hasta 14 m³/h
+    // la bomba no puede sacar agua de un tanque vacío
+    if(level<=0.5) qOut = 0;
+
+    // balance de masa -> nivel (factor de escala para que sea visible)
+    var dLevel = (qIn - qOut) * dt * 3.2;
+    level = Math.max(0, Math.min(100, level + dLevel));
+
+    // animaciones
+    drawWater();
+    moveFlow('flowIn', qIn>0 ? 1.5 + qIn*0.25 : 0);
+    moveFlow('flowOut', qOut>0 ? 1.5 + qOut*0.25 : 0);
+    needle('needleIn', qIn, 12, 150, 83);
+    needle('needleOut', qOut, 14, 700, 252);
+
+    // impulsor del motor
+    if(motorOn && qOut>0){
+      angle += (0.5 + (+pumpSpd.value/100)*2.5) * dt * 60;
+      el('impeller').setAttribute('transform','rotate('+angle+' 598 252)');
+    }
+
+    // lecturas
+    el('qIn').textContent  = qIn.toFixed(1);
+    el('qOut').textContent = qOut.toFixed(1);
+    el('qLvl').textContent = Math.round(level);
+    el('lvlPct').textContent = Math.round(level)+'%';
+
+    // alarmas simples
+    var s = el('status');
+    if(level>=100){ s.textContent='⚠ Tanque LLENO — reboce'; s.style.color='var(--bad)'; }
+    else if(level<=1){ s.textContent='⚠ Tanque VACÍO'; s.style.color='var(--warn)'; }
+    else { s.textContent='● En simulación'; s.style.color='var(--ok)'; }
+
+    requestAnimationFrame(loop);
+  }
+
+  drawWater();
+  tick(); setInterval(tick,1000);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
