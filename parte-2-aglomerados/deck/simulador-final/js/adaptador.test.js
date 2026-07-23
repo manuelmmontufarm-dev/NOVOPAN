@@ -478,14 +478,23 @@ test('en cuanto un servidor vivo lo escribe, vuelve a ser HMI', () => {
   registrarOrigenes(origenPorClave);
   assert(!esSupuesto('p1:s1_rho'), 'lo escribió Sistemas ⇒ dato de planta');
 });
-test('masa de esparcidor: kind `falta` (no `hmi`) ⇒ nunca sella «Supuesto», queda editable', () => {
-  // El HMI publica el % de llenado de la tolva, no los kg: la masa es un dato
-  // pendiente de planta, no un supuesto-HMI. Se marca `falta` para que la
-  // tarjeta salga «Falta dato» y editable (hmiLock solo bloquea kind `hmi`).
+test('masa de esparcidor: kind `hmi` (báscula de capa) · sello «Supuesto» hasta que planta la escriba', () => {
+  // Desde 23-jul-2026 la masa viene de la báscula de capa (H_*_Scale_PV,
+  // kg/m sobre 1 m ≡ kg). Con solo el default → «Supuesto»; con dato vivo → HMI.
   const { origenPorClave } = parseHmiCsv('# @origen: ' + DEFAULTS_LABEL + '\nM_ESP1_KG: 12.5;\n');
   registrarOrigenes(origenPorClave);
-  assert(KIND_BY_KEY['mass:esp1-zone'] === 'falta', `kind debe ser 'falta', fue ${KIND_BY_KEY['mass:esp1-zone']}`);
-  assert(!esSupuesto('mass:esp1-zone'), 'kind falta ⇒ esSupuesto=false (no lleva sello HMI/Supuesto)');
+  assert(KIND_BY_KEY['mass:esp1-zone'] === 'hmi', `kind debe ser 'hmi', fue ${KIND_BY_KEY['mass:esp1-zone']}`);
+  assert(esSupuesto('mass:esp1-zone'), 'solo defaults ⇒ sello «Supuesto»');
+  const vivo = parseHmiCsv('# @origen: Sistemas\nH_CC_Scale_PV: 76.55;\n');
+  registrarOrigenes(vivo.origenPorClave);
+  assert(!esSupuesto('mass:esp2-zone'), 'báscula viva ⇒ sello «HMI»');
+});
+test('básculas de capa: H_*_Scale_PV y los nombres cortos *_KGM alimentan mass:esp*-zone', () => {
+  const { updates } = parseHmiCsv(
+    'H_SL1_Scale_PV: 23.36;\nH_CC_Scale_PV: 76.55;\nSL2_KGM: 27.79;\n');
+  approx(updates['mass:esp1-zone'], 23.36, 'SL1 báscula → mass:esp1-zone');
+  approx(updates['mass:esp2-zone'], 76.55, 'CC báscula → mass:esp2-zone');
+  approx(updates['mass:esp3-zone'], 27.79, 'alias corto SL2_KGM → mass:esp3-zone');
 });
 test('una constante local nuestra nunca se marca como supuesto-HMI', () => {
   const { origenPorClave } = parseHmiCsv('# @origen: Sistemas\nH_PressSpeed_PV: 14.77;\n');

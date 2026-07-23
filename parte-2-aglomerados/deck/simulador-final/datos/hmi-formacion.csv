@@ -29,6 +29,12 @@ H_Act_MatWeight_SP: ;
 H_CL_Total_Flakes: ;
 # "SL1 % Set value (%)"
 H_Act_SL1_SP: ;
+# ── Básculas de capa (23-jul-2026): "mat weight scale measured value" ──
+# kg/m sobre 1 m de referencia = kg en el esparcidor → τ_esp = báscula/F×60.
+# El core es H_CC_ aquí (báscula) aunque el flujo sea H_CL_ — así está en WinCC.
+H_SL1_Scale_PV: ;
+H_CC_Scale_PV: ;
+H_SL2_Scale_PV: ;
 
 # ── Pendientes: existen en el HMI pero aún no están mapeados ──
 # Descomentar cuando se confirmen unidad y correspondencia. Ver MAPEO-WINCC.md §4.

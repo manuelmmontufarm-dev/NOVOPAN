@@ -178,22 +178,21 @@ export const ROUTE_PARAMS = [
   { key: 'inclCL.length', label: 'Banda inclinada gruesa · L', equipment: 'Banda inclinada gruesa', layer: LAYER.COARSE, value: 68.5, unit: 'm', source: 'measured', min: 0, max: null, editable: true, description: 'Total banda transportadora gruesa hasta fin del brazo E2 (CL): inclinada 39.2 + banda flap→esparcidor 17.7 + brazo ≈11.6 = 68.5 m (medición 25-jun; tramos del plano DXF jul-2026). HMI CSV INCL_CL_L_M.' },
   { key: 'inclCL.speed', label: 'Banda inclinada gruesa · v', equipment: 'Banda inclinada gruesa', layer: LAYER.COARSE, value: 96.5, unit: 'm/min', source: 'measured', min: 0, max: null, editable: true, description: 'Velocidad FIJA HMI. HMI CSV INCL_CL_V_MMIN.' },
 
-  /* ── Esparcidores · τ = M_hopper / F_capa × 60 ── */
-  /* Masa retenida en la tolva del esparcidor. El HMI NO publica la masa en kg;
-     publica el % de llenado de cada tolva (H_SL1/CC/SL2_Filling_PV, ~60 %).
-     Convertir % → kg necesita la CAPACIDAD de cada tolva (kg al 100 %), que aún
-     no tenemos (preguntar en planta). Hasta entonces se usa un valor de arranque
-     EDITABLE; en el panel de parámetros sale marcado «Falta dato», no «HMI»
-     (kind `falta` en hmi-csv). Aquí el `source` se deja neutro (no `estimated`
-     ni `not-calibrated`) A PROPÓSITO: τ_esparcidor = M/F es corto (~6-20 s de
-     ~3300 s) y no debe contaminar el registro —que hereda solo la incertidumbre
-     de las DISTANCIAS de sensores— con un «sin calibrar» que taparía lo que sí
-     importa. El «falta» vive donde el operador lo edita: el panel. */
-  { key: 'spreader1.mass', label: 'Esparcidor 1 (SL1) · masa M', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 12.5, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'FALTA capacidad de tolva SL1 (kg) para convertir H_SL1_Filling_PV (% llenado) a masa. Valor de arranque editable. Preguntar en planta.' },
+  /* ── Esparcidores · τ = M / F_capa × 60 ── */
+  /* Masa en el esparcidor = BÁSCULA DE CAPA (23-jul-2026): el HMI publica el
+     peso medido por la báscula de cada capa en kg/m (H_SL1/CC/SL2_Scale_PV,
+     "mat weight scale measured value"), medido sobre 1 m de referencia →
+     kg/m ≡ kg. Ya está mapeado en hmi-csv (kind `hmi`); estos valores son de
+     arranque y los pisa el CSV vivo apenas IT publique las básculas. Aquí el
+     `source` se deja neutro (no `estimated` ni `not-calibrated`) A PROPÓSITO:
+     τ_esparcidor = M/F es corto (~6-20 s de ~3300 s) y no debe contaminar el
+     registro —que hereda solo la incertidumbre de las DISTANCIAS de
+     sensores— con un «sin calibrar» que taparía lo que sí importa. */
+  { key: 'spreader1.mass', label: 'Esparcidor 1 (SL1) · masa M', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 12.5, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'Báscula de capa SL1: HMI H_SL1_Scale_PV (kg/m sobre 1 m ≡ kg). Valor de arranque hasta que el CSV vivo la publique.' },
   { key: 'spreader1.flow', label: 'Esparcidor 1 (SL1) · flujo F', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 69.76, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'F_SL × PCT_SL1/100.' },
-  { key: 'spreader2.mass', label: 'Esparcidor 2 (CL) · masa M', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 40, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'FALTA capacidad de tolva CL (kg) para convertir H_CC_Filling_PV (% llenado) a masa. Valor de arranque editable. Preguntar en planta.' },
+  { key: 'spreader2.mass', label: 'Esparcidor 2 (CL) · masa M', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 40, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'Báscula de capa CL: HMI H_CC_Scale_PV (kg/m sobre 1 m ≡ kg; báscula usa prefijo CC, flujo usa CL — así está en WinCC). Valor de arranque hasta que el CSV vivo la publique.' },
   { key: 'spreader2.flow', label: 'Esparcidor 2 (CL) · flujo F', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 118, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV F_CL_KGMIN.' },
-  { key: 'spreader3.mass', label: 'Esparcidor 3 (SL2) · masa M', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 15, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'FALTA capacidad de tolva SL2 (kg) para convertir H_SL2_Filling_PV (% llenado) a masa. Valor de arranque editable. Preguntar en planta.' },
+  { key: 'spreader3.mass', label: 'Esparcidor 3 (SL2) · masa M', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 15, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'Báscula de capa SL2: HMI H_SL2_Scale_PV (kg/m sobre 1 m ≡ kg). Valor de arranque hasta que el CSV vivo la publique.' },
   { key: 'spreader3.flow', label: 'Esparcidor 3 (SL2) · flujo F', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 77.84, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'F_SL × PCT_SL2/100.' },
 
   /* ── Velocidad de línea (máster downstream) ── */
