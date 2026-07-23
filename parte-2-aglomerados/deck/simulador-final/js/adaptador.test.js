@@ -14,7 +14,7 @@
 
 import {
   adaptarCsv, detectarPerfil, parseHmiCsv, repararFilaAncha, clavarInstante,
-  fechaDeClave, esSupuesto, registrarOrigenes, DEFAULTS_LABEL, fmtEdad,
+  fechaDeClave, esSupuesto, registrarOrigenes, DEFAULTS_LABEL, fmtEdad, KIND_BY_KEY,
 } from './hmi-csv.js';
 
 /* ── mini-harness (mismo de route-model.test.js) ── */
@@ -469,14 +469,23 @@ test('fmtEdad se lee como lo diría un operador', () => {
 /* ══ Sello HMI: solo si planta lo escribió de verdad ═════════════════════ */
 group('Sello HMI vs Supuesto');
 test('un valor que solo sale de los defaults NO lleva sello HMI', () => {
-  const { origenPorClave } = parseHmiCsv('# @origen: ' + DEFAULTS_LABEL + '\nM_ESP1_KG: 12.5;\n');
+  const { origenPorClave } = parseHmiCsv('# @origen: ' + DEFAULTS_LABEL + '\nSILO1_RHO_KGM3: 150;\n');
   registrarOrigenes(origenPorClave);
-  assert(esSupuesto('mass:esp1-zone'), 'salió de nuestro archivo de defaults ⇒ supuesto');
+  assert(esSupuesto('p1:s1_rho'), 'salió de nuestro archivo de defaults ⇒ supuesto');
 });
 test('en cuanto un servidor vivo lo escribe, vuelve a ser HMI', () => {
-  const { origenPorClave } = parseHmiCsv('# @origen: Sistemas\nM_ESP1_KG: 13.9;\n');
+  const { origenPorClave } = parseHmiCsv('# @origen: Sistemas\nSILO1_RHO_KGM3: 150;\n');
   registrarOrigenes(origenPorClave);
-  assert(!esSupuesto('mass:esp1-zone'), 'lo escribió Sistemas ⇒ dato de planta');
+  assert(!esSupuesto('p1:s1_rho'), 'lo escribió Sistemas ⇒ dato de planta');
+});
+test('masa de esparcidor: kind `falta` (no `hmi`) ⇒ nunca sella «Supuesto», queda editable', () => {
+  // El HMI publica el % de llenado de la tolva, no los kg: la masa es un dato
+  // pendiente de planta, no un supuesto-HMI. Se marca `falta` para que la
+  // tarjeta salga «Falta dato» y editable (hmiLock solo bloquea kind `hmi`).
+  const { origenPorClave } = parseHmiCsv('# @origen: ' + DEFAULTS_LABEL + '\nM_ESP1_KG: 12.5;\n');
+  registrarOrigenes(origenPorClave);
+  assert(KIND_BY_KEY['mass:esp1-zone'] === 'falta', `kind debe ser 'falta', fue ${KIND_BY_KEY['mass:esp1-zone']}`);
+  assert(!esSupuesto('mass:esp1-zone'), 'kind falta ⇒ esSupuesto=false (no lleva sello HMI/Supuesto)');
 });
 test('una constante local nuestra nunca se marca como supuesto-HMI', () => {
   const { origenPorClave } = parseHmiCsv('# @origen: Sistemas\nH_PressSpeed_PV: 14.77;\n');

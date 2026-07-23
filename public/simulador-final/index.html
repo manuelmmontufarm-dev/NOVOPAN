@@ -988,12 +988,11 @@
       <h3>Parámetros y ecuaciones · Patios → Sensores</h3>
       <div class="s2-csv-banner" id="csvBanner">
         <span class="ms">sync</span>
-        <span>El <strong>CSV activo es la única fuente editable</strong>. Cada cambio modifica el documento CSV, lo vuelve a parsear y recién entonces actualiza ecuaciones y simulación. Un archivo local conectado puede guardarse; el CSV servido se descarga para persistirlo.</span>
+        <span>El <strong>CSV del HMI es la fuente de verdad</strong>. La calibración con candado permite fijar a mano los valores que aún no llegan del HMI; el dato en vivo del CSV siempre manda.</span>
         <span class="s2-hmi-status is-idle" id="hmiStatus2">● —</span>
       </div>
       <div class="s2-params__actions">
         <button type="button" class="btn btn--secondary" id="hmiConnectBtn2"><span class="ms">upload_file</span> Conectar CSV local</button>
-        <button type="button" class="btn btn--secondary" id="downloadCsvBtn"><span class="ms">download</span> Descargar CSV editado</button>
         <button type="button" class="btn btn--secondary" id="resetParamsBtn"><span class="ms">restart_alt</span> Recargar CSV del servidor</button>
         <button type="button" class="btn btn--secondary" id="lockParamsBtn"><span class="ms">lock</span> Bloquear</button>
         <span class="param-save-feedback" id="saveFeedback" aria-live="polite"></span>

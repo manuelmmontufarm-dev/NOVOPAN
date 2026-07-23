@@ -155,9 +155,15 @@ export const TAG_MAP = {
   INCL_SL_L_M:         entry(['p1:inclF_L', 'len:incl-fine'], 'measured', 'm'),
   INCL_SL_V_MMIN:      entry(['p1:inclF_v', 'speed:incl-fine'], 'measured', 'm/min'),
 
-  M_ESP1_KG:           entry('mass:esp1-zone', 'hmi', 'kg'),
-  M_ESP2_KG:           entry('mass:esp2-zone', 'hmi', 'kg'),
-  M_ESP3_KG:           entry('mass:esp3-zone', 'hmi', 'kg'),
+  /* Masa retenida en la tolva del esparcidor. `falta`, NO `hmi`: el HMI publica
+     el % de llenado de la tolva (H_SL1/CC/SL2_Filling_PV), no los kg. Sin la
+     capacidad de tolva (kg al 100 %) no se puede convertir % → kg, así que el
+     valor es un supuesto de arranque, no un dato de planta. `falta` hace que la
+     tarjeta NO lleve sello «HMI» y quede EDITABLE (ver hmiLock) para poder fijar
+     el valor a mano hasta que se sepa la capacidad. */
+  M_ESP1_KG:           entry('mass:esp1-zone', 'falta', 'kg'),
+  M_ESP2_KG:           entry('mass:esp2-zone', 'falta', 'kg'),
+  M_ESP3_KG:           entry('mass:esp3-zone', 'falta', 'kg'),
   L_BANDA_BLANCA_M:    entry('len:white', 'measured', 'm'),
   L_BANDA_ROJA_M:      entry('len:red', 'measured', 'm'),
   L_PRENSA_M:          entry('len:press', 'measured', 'm'),
@@ -1024,6 +1030,57 @@ export function fmtEdad(segundos) {
 const EDAD_OK_S = 60;
 const EDAD_AVISO_S = 300;
 
+/* ══ Memoria del CSV local conectado (sobrevive al refresco) ═══════════════
+   Un FileSystemFileHandle se puede guardar en IndexedDB (structured clone) y
+   recuperar tras un F5. El permiso de lectura puede seguir vigente (se reanuda
+   solo) o el navegador pedir re-confirmarlo (un clic, sin re-elegir archivo).
+   Todo entre try/catch: sin IndexedDB (o en navegador viejo) el simulador
+   sigue igual que antes, solo que la conexión no persiste. */
+const IDB_DB = 'novopan-hmi';
+const IDB_STORE = 'handles';
+const IDB_KEY = 'csv-local';
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSaveHandle(handle) {
+  try {
+    const db = await idbOpen();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(handle, IDB_KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch { /* sin IndexedDB: la conexión simplemente no persiste */ }
+}
+async function idbLoadHandle() {
+  try {
+    const db = await idbOpen();
+    return await new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const rq = tx.objectStore(IDB_STORE).get(IDB_KEY);
+      rq.onsuccess = () => resolve(rq.result ?? null);
+      rq.onerror = () => resolve(null);
+    });
+  } catch { return null; }
+}
+async function idbClearHandle() {
+  try {
+    const db = await idbOpen();
+    await new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(IDB_KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+    });
+  } catch { /* nada que limpiar */ }
+}
+
 export function initHmiCsv({
   applyData, statusEl, connectBtn, fileInput, freshEl, connectLabelEl, connectAddrEl,
 }) {
@@ -1031,6 +1088,9 @@ export function initHmiCsv({
   let currentText = '';
   let mode = 'off'; // off | server | live-file | manual-file | edited
   let fileHandle = null;
+  /* Handle guardado de un refresco anterior cuyo permiso el navegador pide
+     re-confirmar: se reconecta al MISMO archivo con un clic, sin re-elegirlo. */
+  let pendingHandle = null;
   let lastGood = null;
   let failStreak = 0;
   let lastCount = 0;
@@ -1121,6 +1181,9 @@ export function initHmiCsv({
     servidor: { cls: 'is-on', label: 'Conectado', icon: 'link' },
     archivo: { cls: 'is-on', label: 'Conectado · archivo local', icon: 'link' },
     manual: { cls: 'is-manual', label: 'Copia cargada a mano', icon: 'description' },
+    // Había un archivo conectado antes del refresco; el navegador pide un clic
+    // para re-confirmar el acceso. No se perdió la conexión, solo el permiso.
+    reconnect: { cls: 'is-manual', label: 'Reconectar CSV', icon: 'link_off' },
   };
 
   function setConnected(estado, dir, titulo = '') {
@@ -1304,35 +1367,76 @@ export function initHmiCsv({
 
   let lastModified = 0;
   let livePerfil = 'kv'; // perfil del archivo local conectado (ver persistConnectedFile)
+  /* El HMI reescribe el CSV cada pocos minutos. En el instante de la escritura,
+     una lectura puede caer vacía o a medias: eso NO es una desconexión, es el
+     archivo cambiando. Un solo fallo se ignora y se reintenta al próximo sondeo,
+     conservando el último dato bueno (el pill NO parpadea a rojo). Solo un fallo
+     SOSTENIDO (varios sondeos seguidos) se reporta como problema real. */
+  let fileFailStreak = 0;
+  const FILE_FAIL_AVISO = 3; // sondeos seguidos fallando antes de avisar (~6 s)
   async function pollFile() {
     if (!fileHandle) return;
     try {
       const file = await fileHandle.getFile();
       if (file.lastModified === lastModified) return;
+      const text = await file.text();
+      const ad = text.trim() ? adaptarCsv(text, adapterCfg?.[file.name] ?? null) : null;
+      /* Archivo vacío / a medio escribir / ilegible → transitorio: no se toca
+         el último dato bueno ni el pill; se reintenta en el siguiente sondeo.
+         Tampoco se avanza lastModified, para releerlo cuando termine de escribir. */
+      if (!ad || ad.error || !ad.texto.trim()) {
+        fileFailStreak += 1;
+        if (fileFailStreak >= FILE_FAIL_AVISO && lastGood) {
+          setStatus('error', `● CSV local · reintentando… (último ${fmtTime(lastGood)})`,
+            'El archivo está vacío o a medio escribir hace varios segundos. Se conserva la última lectura buena.');
+        }
+        return;
+      }
       lastModified = file.lastModified;
-      const ad = adaptarCsv(await file.text(), adapterCfg?.[file.name] ?? null);
+      fileFailStreak = 0;
       livePerfil = ad.perfil;
       applyText(ad.texto, `CSV local${etiquetaPerfil([ad.perfil])}`, true, ad.avisos, ad.error ? [file.name] : []);
       setFresh(file.lastModified, 'archivo', `Última escritura de ${file.name}.`);
       if (ad.instante != null) setFresh(ad.instante, 'dato', `Columna de tiempo de ${file.name}.`);
       setConnected('archivo', file.name, `Archivo local en vivo: ${file.name}\nSe relee cada ${POLL_MS / 1000} s y se aplica en cuanto cambie.\nClick para conectar otro.`);
     } catch {
-      setStatus('error', '● CSV local · no accesible', 'Vuelve a conectar el archivo.');
-      setConnected('off', '');
+      /* getFile() puede fallar si el HMI tiene el archivo abierto en exclusiva
+         mientras lo reescribe: mismo criterio, se tolera un fallo puntual. */
+      fileFailStreak += 1;
+      if (fileFailStreak >= FILE_FAIL_AVISO) {
+        setStatus('error', '● CSV local · no accesible', 'No se pudo leer el archivo varias veces seguidas. Vuelve a conectarlo si el problema sigue.');
+      }
     }
   }
 
+  async function resumeHandle(handle) {
+    fileHandle = handle;
+    pendingHandle = null;
+    mode = 'live-file';
+    lastModified = 0;
+    lastText = null;
+    fileFailStreak = 0;
+    await idbSaveHandle(handle);
+    await pollFile();
+  }
+
   async function connectFile() {
+    /* Reconexión de un clic: hay un archivo recordado de antes del refresco cuyo
+       permiso el navegador pidió re-confirmar. Se re-pide el permiso sobre ESE
+       mismo handle (no se re-elige archivo). */
+    if (pendingHandle) {
+      try {
+        const perm = await pendingHandle.requestPermission?.({ mode: 'read' });
+        if (perm === 'granted') { await resumeHandle(pendingHandle); return; }
+      } catch { /* cae al selector normal */ }
+      pendingHandle = null;
+    }
     if ('showOpenFilePicker' in window) {
       try {
         const [handle] = await window.showOpenFilePicker({
           types: [{ description: 'CSV del modelo NOVOPAN', accept: { 'text/csv': ['.csv'], 'text/plain': ['.txt'] } }],
         });
-        fileHandle = handle;
-        mode = 'live-file';
-        lastModified = 0;
-        lastText = null;
-        await pollFile();
+        await resumeHandle(handle);
       } catch { /* cancelado por el usuario */ }
     } else if (fileInput) {
       fileInput.click();
@@ -1342,11 +1446,12 @@ export function initHmiCsv({
   async function persistConnectedFile() {
     if (!fileHandle?.createWritable || !currentText) return;
     /* El documento en memoria está en canónico. Si el archivo conectado venía
-       en otro formato, sobrescribirlo le cambiaría el formato al archivo de IT
-       (y el próximo export lo pisaría igual): se edita en memoria y se descarga. */
+       en otro formato (el export real de IT), NO se reescribe: cambiarle el
+       formato al archivo de IT lo rompería y el próximo export lo pisaría igual.
+       El cambio queda solo en pantalla (simulación), no toca el archivo. */
     if (livePerfil !== 'kv') {
-      setStatus('manual', `● CSV editado en memoria · descarga para guardar`,
-        `El archivo conectado viene en formato "${livePerfil}"; no se reescribe para no cambiarle el formato al archivo original. Usa Descargar para conservar la edición.`);
+      setStatus('manual', `● Cambio solo en pantalla · el archivo de IT no se toca`,
+        `El archivo conectado viene en formato "${livePerfil}" (export de IT); no se reescribe para no cambiarle el formato. El valor editado es una simulación en pantalla y se pierde cuando el HMI vuelva a escribir el CSV.`);
       return;
     }
     try {
@@ -1357,7 +1462,7 @@ export function initHmiCsv({
       lastModified = file.lastModified;
       setStatus('manual', `● CSV local guardado · ${fmtTime(new Date())} · ${lastCount} tags`, 'El modelo fue actualizado únicamente a través del CSV conectado.');
     } catch {
-      setStatus('manual', '● CSV editado en memoria · descarga para guardar', 'El navegador no obtuvo permiso para sobrescribir el archivo local.');
+      setStatus('manual', '● Cambio solo en pantalla', 'El navegador no obtuvo permiso para sobrescribir el archivo local; el valor editado queda solo en la simulación.');
     }
   }
 
@@ -1399,23 +1504,15 @@ export function initHmiCsv({
     return true;
   }
 
-  function downloadCsv() {
-    if (!currentText) return false;
-    const blob = new Blob([currentText], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'hmi-editado.csv';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
-    return true;
-  }
-
   async function reloadServer() {
     mode = 'off';
     fileHandle = null;
+    pendingHandle = null;
     lastText = null;
     currentText = '';
+    // Desconexión explícita del archivo local: se olvida para que no vuelva a
+    // reconectarse solo al refrescar.
+    await idbClearHandle();
     await pollServer();
   }
 
@@ -1436,21 +1533,56 @@ export function initHmiCsv({
   });
   connectBtn?.addEventListener('click', connectFile);
 
+  /* ¿Había un CSV local conectado antes del refresco? Se recupera su handle y,
+     si el permiso sigue vigente, se reanuda SOLO (no se desconecta al refrescar).
+     Si el navegador pide re-confirmar, se deja el botón en «Reconectar CSV» para
+     un único clic (sin re-elegir el archivo). */
+  async function restoreConnection() {
+    const saved = await idbLoadHandle();
+    if (!saved) return false;
+    try {
+      const perm = await saved.queryPermission?.({ mode: 'read' });
+      if (perm === 'granted') {
+        await resumeHandle(saved);
+        return true;
+      }
+      // Permiso a re-confirmar: se recuerda el handle y se ofrece reconectar.
+      pendingHandle = saved;
+      setConnected('reconnect', saved.name ?? 'CSV local',
+        `Antes tenías conectado «${saved.name ?? 'un CSV local'}». El navegador pide re-confirmar el acceso.\nUn clic para reconectar al MISMO archivo.`);
+      return false;
+    } catch {
+      // Handle inválido (archivo movido/borrado): se olvida y se sigue normal.
+      await idbClearHandle();
+      return false;
+    }
+  }
+
   (async () => {
-    const ok = await pollServer();
-    if (!ok) {
-      setStatus('idle', '● CSV · sin conexión', 'Conecta un archivo CSV o verifica datos/hmi.csv.');
-      setConnected('off', '');
+    const resumed = await restoreConnection();
+    if (!resumed) {
+      const ok = await pollServer();
+      if (!ok && mode !== 'live-file') {
+        setStatus('idle', '● CSV · sin conexión', 'Conecta un archivo CSV o verifica datos/hmi.csv.');
+        if (!pendingHandle) setConnected('off', '');
+      }
+      /* Hay un archivo por reconectar: el botón debe seguir invitando a
+         reconectar aunque el servidor tenga CSV (que sería el de defaults,
+         no el archivo del operador). `pollServer` acaba de pisar el botón con
+         «Conectado (servidor)», así que se re-afirma el estado de reconexión. */
+      if (pendingHandle) {
+        setConnected('reconnect', pendingHandle.name ?? 'CSV local',
+          `Antes tenías conectado «${pendingHandle.name ?? 'un CSV local'}». El navegador pide re-confirmar el acceso.\nUn clic para reconectar al MISMO archivo.`);
+      }
     }
     setInterval(() => {
-      if (mode === 'server' || mode === 'off') pollServer();
-      else if (mode === 'live-file') pollFile();
+      if (mode === 'live-file') pollFile();
+      else if (mode === 'server' || mode === 'off') pollServer();
     }, POLL_MS);
   })();
 
   return {
     updateKey,
-    downloadCsv,
     reloadServer,
     getText: () => currentText,
     getTagForKey: (key) => TAG_BY_KEY[key] ?? null,

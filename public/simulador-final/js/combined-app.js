@@ -1532,7 +1532,6 @@ function initSimulation() {
     onChange: (params) => { modelParams = params; applyGeometry(params); recomputeActivePre(); renderIntakeTaus(); window.__NOVOPAN_ROUTE_MODEL__?.recompute?.(); },
     onCsvEdit: (key, value) => hmiCsvApi?.updateKey(key, value) ?? false,
     onCsvReset: () => hmiCsvApi?.reloadServer(),
-    onCsvDownload: () => hmiCsvApi?.downloadCsv() ?? false,
   });
   // Desde el arranque el motor usa los params CON las constantes locales
   // (antes quedaba en defaults hasta el primer poll del CSV — la restauración

@@ -59,6 +59,17 @@
   anim.parentNode.insertBefore(band1, anim);
   band1.appendChild(anim);
 
+  /* Los trazadores S2 SALEN del grupo que referencia el <use> de la fila 3.
+     Si viajaran DENTRO del <use> (como antes), cada frame que un trazador se
+     mueve —y cada trazador nuevo al inyectar un cambio— obligaba a Chrome a
+     re-clonar toda la instancia recortada: la fila de abajo TITILABA entera,
+     menos justo la estación que acababas de aplastar. Ahora las MÁQUINAS van por
+     un <use> estable (solo cambian al recalibrar) y los TRAZADORES por su propio
+     <use> pequeño (lo único que se repinta por frame). Sigue siendo hermano de
+     `anim` dentro de band1, así que en la fila 2 se ve idéntico que antes. */
+  var tracers = svg.querySelector('#tracers');
+  if (tracers) band1.appendChild(tracers); // encima de las máquinas de la fila 2
+
   // defs + clips
   var defs = svg.querySelector('defs') || svg.insertBefore(el('defs', {}), svg.firstChild);
   var clipA = el('clipPath', { id: 'opClipB1', clipPathUnits: 'userSpaceOnUse' });
@@ -70,12 +81,22 @@
   band1.setAttribute('clip-path', 'url(#opClipB1)');
   if (bridges) bridges.style.display = 'none'; // los puentes aéreos cruzan filas: fuera en una pantalla
 
-  // fila 3: instancia recortada del MISMO grupo (trazadores incluidos)
+  // fila 3: instancia recortada de las MÁQUINAS (sin trazadores → no titila)
   var band2 = el('use', { id: 'bandL2', 'clip-path': 'url(#opClipB2)' });
   band2.setAttribute('href', '#section2Animated');
   band2.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#section2Animated');
   band2.style.cursor = 'pointer';
   band1.parentNode.insertBefore(band2, band1.nextSibling);
+
+  /* fila 3: trazadores en su PROPIO <use>, encima de las máquinas y con el mismo
+     recorte y desplazamiento que band2. Es lo único que se repinta por frame;
+     al contener solo los círculos del trazador, su repintado no arrastra a las
+     máquinas. pointer-events:none → los clics de la fila 3 los maneja band2. */
+  var band2t = el('use', { id: 'bandL2Tracers', 'clip-path': 'url(#opClipB2)' });
+  band2t.setAttribute('href', '#tracers');
+  band2t.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#tracers');
+  band2t.style.pointerEvents = 'none';
+  band2.parentNode.insertBefore(band2t, band2.nextSibling);
 
   // rótulos de continuación entre filas
   var joins = el('g', {
@@ -103,7 +124,7 @@
 
   // Sección 1 a pantalla completa: solo el wireframe, ajustado al viewBox.
   function composeS1() {
-    [intake, band1, band2, joins].forEach(function (g) { if (g) g.style.display = 'none'; });
+    [intake, band1, band2, band2t, joins].forEach(function (g) { if (g) g.style.display = 'none'; });
     wf.style.visibility = 'visible';
     wf.removeAttribute('transform');
     var bb = wf.getBBox();
@@ -120,13 +141,14 @@
 
   function composeS2() {
     if (wf) wf.style.visibility = 'hidden';   // la S1 solo se ve en su vista
-    [intake, band1, band2, joins].forEach(function (g) { if (g) g.style.display = ''; });
+    [intake, band1, band2, band2t, joins].forEach(function (g) { if (g) g.style.display = ''; });
     iY = 0;
     b1Y = iY + STRIP_H + GAP;
     b2Y = b1Y + BAND_H + GAP + 10;
     intake.setAttribute('transform', 'translate(30 ' + iY + ')');
     band1.setAttribute('transform', 'translate(' + (-L0) + ' ' + b1Y + ')');
     band2.setAttribute('transform', 'translate(' + (-CUT) + ' ' + b2Y + ')');
+    band2t.setAttribute('transform', 'translate(' + (-CUT) + ' ' + b2Y + ')'); // mismo recorte/offset que band2
     var W = Math.max(CUT - L0, L1 - CUT) + 10;
     var H = b2Y + BAND_H + 6;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);

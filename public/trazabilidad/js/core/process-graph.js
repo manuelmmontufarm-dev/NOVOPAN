@@ -111,7 +111,7 @@ export const FINE_PREFIX = [
   },
   {
     id: 'incl-fine',
-    label: 'Banda inclinada azul (fina)',
+    label: 'Banda inclinada fina',
     kind: 'transport',
     lengthM: 64.57,
     beltSpeedMperMin: 99.5,
@@ -239,7 +239,7 @@ export const PATHS = {
       },
       {
         id: 'incl-thick',
-        label: 'Banda inclinada azul (gruesa)',
+        label: 'Banda inclinada gruesa',
         kind: 'transport',
         lengthM: 68.5,
         beltSpeedMperMin: 96.5,

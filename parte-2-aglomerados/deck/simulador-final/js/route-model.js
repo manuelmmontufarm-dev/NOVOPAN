@@ -173,17 +173,27 @@ export const ROUTE_PARAMS = [
   { key: 'mixerCI.tau', label: 'Encoladora interna/gruesa (CI) · τ', equipment: 'Encolador gruesa', layer: LAYER.COARSE, value: 40, unit: 's', source: 'fixed', min: 40, max: 40, editable: false, description: 'Retención FIJA de la encoladora interna (capa gruesa/core) = 40 s. No depende de flujo ni de masa.' },
 
   /* ── Bandas inclinadas · t = L / v × 60 ── */
-  { key: 'inclSL.length', label: 'Banda inclinada fina · L', equipment: 'Inclinada azul (fina)', layer: LAYER.FINE, value: 64.57, unit: 'm', source: 'measured', min: 0, max: null, editable: true, description: 'Total banda transportadora fina hasta fin del brazo E3 (SL2): inclinada 39.22 + distribución SL2 16.42 + brazo 8.93 = 64.57 m (plano DXF jul-2026, coincide con medición 25-jun). OJO: la rama SL1 NO recorre la distribución: su total es 39.22 + 8.93 = 48.15 m (pendiente de separar en el modelo). HMI CSV INCL_SL_L_M.' },
-  { key: 'inclSL.speed', label: 'Banda inclinada fina · v', equipment: 'Inclinada azul (fina)', layer: LAYER.FINE, value: 99.5, unit: 'm/min', source: 'measured', min: 0, max: null, editable: true, description: 'Velocidad FIJA HMI (no depende de v_prensa). HMI CSV INCL_SL_V_MMIN.' },
-  { key: 'inclCL.length', label: 'Banda inclinada gruesa · L', equipment: 'Inclinada azul (gruesa)', layer: LAYER.COARSE, value: 68.5, unit: 'm', source: 'measured', min: 0, max: null, editable: true, description: 'Total banda transportadora gruesa hasta fin del brazo E2 (CL): inclinada 39.2 + banda flap→esparcidor 17.7 + brazo ≈11.6 = 68.5 m (medición 25-jun; tramos del plano DXF jul-2026). HMI CSV INCL_CL_L_M.' },
-  { key: 'inclCL.speed', label: 'Banda inclinada gruesa · v', equipment: 'Inclinada azul (gruesa)', layer: LAYER.COARSE, value: 96.5, unit: 'm/min', source: 'measured', min: 0, max: null, editable: true, description: 'Velocidad FIJA HMI. HMI CSV INCL_CL_V_MMIN.' },
+  { key: 'inclSL.length', label: 'Banda inclinada fina · L', equipment: 'Banda inclinada fina', layer: LAYER.FINE, value: 64.57, unit: 'm', source: 'measured', min: 0, max: null, editable: true, description: 'Total banda transportadora fina hasta fin del brazo E3 (SL2): inclinada 39.22 + distribución SL2 16.42 + brazo 8.93 = 64.57 m (plano DXF jul-2026, coincide con medición 25-jun). OJO: la rama SL1 NO recorre la distribución: su total es 39.22 + 8.93 = 48.15 m (pendiente de separar en el modelo). HMI CSV INCL_SL_L_M.' },
+  { key: 'inclSL.speed', label: 'Banda inclinada fina · v', equipment: 'Banda inclinada fina', layer: LAYER.FINE, value: 99.5, unit: 'm/min', source: 'measured', min: 0, max: null, editable: true, description: 'Velocidad FIJA HMI (no depende de v_prensa). HMI CSV INCL_SL_V_MMIN.' },
+  { key: 'inclCL.length', label: 'Banda inclinada gruesa · L', equipment: 'Banda inclinada gruesa', layer: LAYER.COARSE, value: 68.5, unit: 'm', source: 'measured', min: 0, max: null, editable: true, description: 'Total banda transportadora gruesa hasta fin del brazo E2 (CL): inclinada 39.2 + banda flap→esparcidor 17.7 + brazo ≈11.6 = 68.5 m (medición 25-jun; tramos del plano DXF jul-2026). HMI CSV INCL_CL_L_M.' },
+  { key: 'inclCL.speed', label: 'Banda inclinada gruesa · v', equipment: 'Banda inclinada gruesa', layer: LAYER.COARSE, value: 96.5, unit: 'm/min', source: 'measured', min: 0, max: null, editable: true, description: 'Velocidad FIJA HMI. HMI CSV INCL_CL_V_MMIN.' },
 
   /* ── Esparcidores · τ = M_hopper / F_capa × 60 ── */
-  { key: 'spreader1.mass', label: 'Esparcidor 1 (SL1) · masa M', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 12.5, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV M_ESP1_KG.' },
+  /* Masa retenida en la tolva del esparcidor. El HMI NO publica la masa en kg;
+     publica el % de llenado de cada tolva (H_SL1/CC/SL2_Filling_PV, ~60 %).
+     Convertir % → kg necesita la CAPACIDAD de cada tolva (kg al 100 %), que aún
+     no tenemos (preguntar en planta). Hasta entonces se usa un valor de arranque
+     EDITABLE; en el panel de parámetros sale marcado «Falta dato», no «HMI»
+     (kind `falta` en hmi-csv). Aquí el `source` se deja neutro (no `estimated`
+     ni `not-calibrated`) A PROPÓSITO: τ_esparcidor = M/F es corto (~6-20 s de
+     ~3300 s) y no debe contaminar el registro —que hereda solo la incertidumbre
+     de las DISTANCIAS de sensores— con un «sin calibrar» que taparía lo que sí
+     importa. El «falta» vive donde el operador lo edita: el panel. */
+  { key: 'spreader1.mass', label: 'Esparcidor 1 (SL1) · masa M', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 12.5, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'FALTA capacidad de tolva SL1 (kg) para convertir H_SL1_Filling_PV (% llenado) a masa. Valor de arranque editable. Preguntar en planta.' },
   { key: 'spreader1.flow', label: 'Esparcidor 1 (SL1) · flujo F', equipment: 'Esparcidor 1', layer: LAYER.SL1, value: 69.76, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'F_SL × PCT_SL1/100.' },
-  { key: 'spreader2.mass', label: 'Esparcidor 2 (CL) · masa M', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 40, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV M_ESP2_KG.' },
+  { key: 'spreader2.mass', label: 'Esparcidor 2 (CL) · masa M', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 40, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'FALTA capacidad de tolva CL (kg) para convertir H_CC_Filling_PV (% llenado) a masa. Valor de arranque editable. Preguntar en planta.' },
   { key: 'spreader2.flow', label: 'Esparcidor 2 (CL) · flujo F', equipment: 'Esparcidor 2', layer: LAYER.CL, value: 118, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV F_CL_KGMIN.' },
-  { key: 'spreader3.mass', label: 'Esparcidor 3 (SL2) · masa M', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 15, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'HMI CSV M_ESP3_KG.' },
+  { key: 'spreader3.mass', label: 'Esparcidor 3 (SL2) · masa M', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 15, unit: 'kg', source: 'hmi', min: 0, max: null, editable: true, description: 'FALTA capacidad de tolva SL2 (kg) para convertir H_SL2_Filling_PV (% llenado) a masa. Valor de arranque editable. Preguntar en planta.' },
   { key: 'spreader3.flow', label: 'Esparcidor 3 (SL2) · flujo F', equipment: 'Esparcidor 3', layer: LAYER.SL2, value: 77.84, unit: 'kg/min', source: 'hmi', min: 0, max: null, editable: true, description: 'F_SL × PCT_SL2/100.' },
 
   /* ── Velocidad de línea (máster downstream) ── */

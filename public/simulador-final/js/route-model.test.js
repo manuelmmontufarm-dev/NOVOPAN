@@ -190,6 +190,49 @@ test('mayor v ⇒ menor tiempo a sensor', () => {
     < computeRoute({}, { lineSpeed: 7 }).sensors.sensor1.value, 'v↑ ⇒ t↓');
 });
 
+/* ── Física de tiempos por velocidad: banda rápida vs banda lenta ──
+   Garantía pedida en planta: si una banda va a 1000 m/min el trazador la cruza
+   rapidísimo; si la siguiente va a 0.1 m/min se arrastra. El tiempo de CADA
+   tramo = L/v×60 SIEMPRE, sin pisos ni topes ocultos, y ese es EXACTAMENTE el
+   número que la animación reparte por el tramo dibujado (posOnPreRoute cruza el
+   tramo en b.t−a.tLeave, así que la velocidad en píxeles = largo_dibujado /
+   (L/v×60): sube con v y baja con v). Estos tests fijan esa proporción. */
+group('Física de tiempos por velocidad');
+const inclL = PARAM_INDEX['inclSL.length'].value;   // 64.57 m
+const inclV0 = PARAM_INDEX['inclSL.speed'].value;   // 99.5 m/min (default)
+test('t_banda = L/v×60 EXACTO a 1000 m/min (cruza casi instantáneo)', () => {
+  approx(tInclined({ 'inclSL.length': inclL, 'inclSL.speed': 1000 }, 'inclSL').value,
+    inclL / 1000 * 60, 't@1000', 1e-6);
+});
+test('t_banda = L/v×60 EXACTO a 0.1 m/min (se arrastra)', () => {
+  approx(tInclined({ 'inclSL.length': inclL, 'inclSL.speed': 0.1 }, 'inclSL').value,
+    inclL / 0.1 * 60, 't@0.1', 1e-6);
+});
+test('banda 1000 m/min tarda 10 000× menos que a 0.1 m/min (mismo tramo)', () => {
+  const rapida = tInclined({ 'inclSL.length': inclL, 'inclSL.speed': 1000 }, 'inclSL').value;
+  const lenta = tInclined({ 'inclSL.length': inclL, 'inclSL.speed': 0.1 }, 'inclSL').value;
+  approx(lenta / rapida, 1000 / 0.1, 'razón = v_rápida/v_lenta', 1e-3);
+});
+test('la razón de tiempos = razón INVERSA de velocidades (la velocidad se respeta)', () => {
+  const a = tInclined({ 'inclSL.length': inclL, 'inclSL.speed': 50 }, 'inclSL').value;
+  const b = tInclined({ 'inclSL.length': inclL, 'inclSL.speed': 200 }, 'inclSL').value;
+  approx(a / b, 200 / 50, 'v×4 ⇒ t÷4', 1e-6);
+});
+test('cambiar la velocidad de la banda mueve el total EXACTAMENTE su Δτ (nada se pierde)', () => {
+  const base = computeRoute().fine.value;
+  const lento = computeRoute({ 'inclSL.speed': 0.1 }).fine.value;
+  const dtBanda = inclL / 0.1 * 60 - inclL / inclV0 * 60;
+  approx(lento - base, dtBanda, 'Δruta fina = Δτ de la banda', 0.1);
+});
+test('banda a v=0 ⇒ DETENIDA (τ=∞), jamás 0 s de cruce', () => {
+  const q = tInclined({ 'inclSL.length': inclL, 'inclSL.speed': 0 }, 'inclSL');
+  // A nivel de ecuación se agrega como UNAVAILABLE, pero la razón nombra el paro:
+  // el trazador NO cruza el tramo en 0 s (eso sería la banda infinitamente rápida).
+  assert(q.status === STATUS.UNAVAILABLE, `v=0 ⇒ no disponible, fue ${q.status}`);
+  assert(q.value === null, 'sin número: no cruza en 0 s');
+  assert(/detenid/i.test(q.reason ?? ''), `la razón debe nombrar la banda detenida: ${q.reason}`);
+});
+
 /* ── Parámetro faltante ── */
 group('Parámetro faltante');
 test('silo6.flow vacío ⇒ ruta fina UNAVAILABLE (no 0 silencioso)', () => {

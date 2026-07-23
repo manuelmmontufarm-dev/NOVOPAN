@@ -192,6 +192,10 @@ const BADGE = {
   est: { cls: 'est', short: 'Estimado' },
   // Se esperaba del HMI, pero ningún tag de WinCC lo publica todavía.
   assumed: { cls: 'assumed', short: 'Supuesto' },
+  // Dato de planta que FALTA (el HMI no lo publica en forma usable) → editable
+  // a mano hasta conseguirlo. P.ej. masa de tolva del esparcidor: el HMI da el
+  // % de llenado, no los kg, y falta la capacidad de la tolva para convertir.
+  falta: { cls: 'assumed', short: 'Falta dato' },
 };
 
 /* ══ Quién decide si un campo es "HMI": KIND_BY_KEY, nunca la tarjeta ══════
@@ -655,7 +659,7 @@ function loadP1Overrides() {
   catch { return {}; }
 }
 
-export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsvDownload }) {
+export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset }) {
   const speed = speedGetter ?? (() => 14.5);
   const p1Overrides = loadP1Overrides();
   let params = { ...defaultParams(), ...defaultPart1Params(), v_prensa: speed(), ...p1Overrides };
@@ -981,10 +985,6 @@ export function initParams({ speedGetter, onChange, onCsvEdit, onCsvReset, onCsv
     await onCsvReset?.();
     showFeedback('CSV del servidor recargado.');
   });
-  document.getElementById('downloadCsvBtn')?.addEventListener('click', () => {
-    showFeedback(onCsvDownload?.() ? 'CSV descargado.' : 'Aún no hay un CSV activo.');
-  });
-
   function applyExternal({ updates, rawText, count, origenPorClave } = {}) {
     /* Antes de nada: quién escribió cada valor en ESTE CSV. De ahí sale el
        sello «HMI» vs «Supuesto» de las tarjetas (ver kindReal). */
