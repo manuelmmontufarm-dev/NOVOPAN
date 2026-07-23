@@ -16,6 +16,7 @@ import {
   adaptarCsv, detectarPerfil, parseHmiCsv, repararFilaAncha, clavarInstante,
   fechaDeClave, esSupuesto, registrarOrigenes, DEFAULTS_LABEL, fmtEdad, KIND_BY_KEY,
 } from './hmi-csv.js';
+import { cardKindReal } from './combined-params.js';
 
 /* ── mini-harness (mismo de route-model.test.js) ── */
 const results = [];
@@ -501,6 +502,22 @@ test('una constante local nuestra nunca se marca como supuesto-HMI', () => {
   registrarOrigenes(origenPorClave);
   // len:white es kind 'measured': su sello es «Medido», no entra en esta lógica.
   assert(!esSupuesto('len:white'), 'measured no es HMI');
+});
+
+/* ══ Sello de CABECERA de tarjeta: honesto igual que los campos ══════════ */
+group('Sello de tarjeta (cardKindReal)');
+test('cabecera HMI de la tarjeta del esparcidor baja a «Supuesto» si nadie de planta la escribe', () => {
+  registrarOrigenes(parseHmiCsv('# @origen: ' + DEFAULTS_LABEL + '\nM_ESP2_KG: 40;\nF_CL_KGMIN: 118;\n').origenPorClave);
+  // Todos los tags de la tarjeta salen de defaults ⇒ cabecera no debe decir HMI.
+  assert(cardKindReal('hmi', ['mass:esp2-zone', '_global:F_CL']) === 'assumed', 'defaults ⇒ assumed');
+});
+test('cabecera vuelve a «HMI» en cuanto la báscula viva llega', () => {
+  registrarOrigenes(parseHmiCsv('# @origen: Sistemas\nH_CC_Scale_PV: 85.8;\nH_CL_Total_Flakes: 337;\n').origenPorClave);
+  assert(cardKindReal('hmi', ['mass:esp2-zone', '_global:F_CL']) === 'hmi', 'vivo ⇒ hmi');
+});
+test('cardKindReal nunca toca sellos que no son HMI', () => {
+  assert(cardKindReal('estimated', ['p1:tr1']) === 'estimated', 'estimado se respeta');
+  assert(cardKindReal('measured', ['len:white']) === 'measured', 'medido se respeta');
 });
 
 /* ── reporte ── */

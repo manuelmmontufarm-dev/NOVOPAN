@@ -216,6 +216,18 @@ function kindReal(key, fallback) {
   return (key && KIND_BY_KEY[key]) ?? fallback;
 }
 
+/* Sello de CABECERA de una tarjeta. Misma honestidad que kindReal pero a nivel
+   tarjeta: si la fuente dice HMI pero HOY ningún tag de esa tarjeta llega de
+   planta (todos salen de nuestros defaults), la cabecera NO debe decir «HMI» —
+   quedaría un sello «HMI» sobre puros campos «Supuesto». Baja a «Supuesto».
+   Cuando la planta empieza a publicar (esSupuesto=false) vuelve a «HMI» solo. */
+export function cardKindReal(sourceKind, keys) {
+  if (sourceKind !== 'hmi' && sourceKind !== 'hmi-live') return sourceKind;
+  const hmiKeys = (keys ?? []).filter((k) => KIND_BY_KEY[k] === 'hmi');
+  if (hmiKeys.length && hmiKeys.every((k) => esSupuesto(k))) return 'assumed';
+  return sourceKind;
+}
+
 function badgeHtml(kind) {
   const badge = BADGE[kind] ?? BADGE.estimated;
   return `<span class="badge badge--${badge.cls}">${badge.short}</span>`;
@@ -375,7 +387,7 @@ function renderP1Step(step, params) {
   const card = cardShell({
     label: step.label,
     subtitle: step.group,
-    kind: kindForKeys(step.keys),
+    kind: cardKindReal(kindForKeys(step.keys), step.keys),
     stepId: step.id,
     fields,
     note: step.note,
@@ -409,15 +421,19 @@ function renderGraphStage(stage, speed, params) {
   const node = findNode(stage.nodeId);
   if (!node) return null;
   const label = STAGE_SEQUENCE.find((s) => s.id === stage.nodeId)?.label ?? node.label;
-  const fields = nodeFieldDefs(node, stage.params).map((p) => fieldHtml(p));
+  const defs = nodeFieldDefs(node, stage.params);
+  const fields = defs.map((p) => fieldHtml(p));
   const sourceKind = node.source?.kind ?? 'estimated';
-  const sourceNote = ['estimated', 'manual'].includes(sourceKind)
-    ? 'Tiempo estimado pendiente de validar en planta.'
-    : 'Valores actuales leídos del CSV activo; las unidades y el resultado se recalculan automáticamente.';
+  const headerKind = cardKindReal(sourceKind, defs.map((d) => d.key));
+  const sourceNote = headerKind === 'assumed'
+    ? 'Valor supuesto (defaults): ningún tag de planta llega todavía a esta etapa.'
+    : ['estimated', 'manual'].includes(headerKind)
+      ? 'Tiempo estimado pendiente de validar en planta.'
+      : 'Valores actuales leídos del CSV activo; las unidades y el resultado se recalculan automáticamente.';
   const card = cardShell({
     label,
     subtitle: stage.group,
-    kind: sourceKind,
+    kind: headerKind,
     nodeId: node.id,
     fields,
     note: sourceNote,
