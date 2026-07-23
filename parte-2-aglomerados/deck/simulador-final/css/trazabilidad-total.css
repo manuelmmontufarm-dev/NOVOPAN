@@ -1414,6 +1414,29 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
 .s2-fresh.is-skew  strong { color: #FFB4AC; }
 .s2-fresh.is-none  { opacity: .65; }
 
+/* Segundo reloj, pegado al de frescura: "Leído hace X" = última vez que el
+   simulador leyó el CSV (late cada ~2 s si está conectado). Verde = leyendo
+   ahora; amarillo/rojo = dejó de leer. */
+.s2-fresh__read {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, .28);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  opacity: .95;
+}
+.s2-fresh__read .ms { font-size: 14px; }
+.s2-fresh__read.is-read-ok    { color: #B9F0CC; }
+.s2-fresh__read.is-read-ok .ms { color: #7BD69B; }
+.s2-fresh__read.is-read-warn  { color: #FFE680; }
+.s2-fresh__read.is-read-warn .ms { color: #FFDE00; }
+.s2-fresh__read.is-read-old   { color: #FFB4AC; }
+.s2-fresh__read.is-read-old .ms { color: #FF8A80; }
+
 .s2-csv-banner {
   display: flex;
   align-items: center;

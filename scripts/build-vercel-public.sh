@@ -58,6 +58,14 @@ find "$PUBLIC/simulador-final" -type f \( -name '*.md' -o -name 'CLAUDE_*' -o -n
 # así que Vercel (checkout limpio) no lo ve; esto cubre el build local.
 rm -f "$PUBLIC/simulador-final/datos/hmi-sistemas.csv"
 
+# Cache-bust del service worker (PWA): cada build sella una versión de caché
+# nueva, así un deploy no queda servido con el JS/CSS viejo del caché anterior.
+SW_FILE="$PUBLIC/simulador-final/sw.js"
+if [ -f "$SW_FILE" ]; then
+  SW_STAMP="$(date +%Y%m%d%H%M%S)"
+  sed "s/novopan-sim-v2/novopan-sim-$SW_STAMP/" "$SW_FILE" > "$SW_FILE.tmp" && mv "$SW_FILE.tmp" "$SW_FILE"
+fi
+
 # Design system tokens — CSS imports ../../_ds/... from trazabilidad/css/
 mkdir -p "$PUBLIC/_ds"
 cp -R "$DECK/_ds/." "$PUBLIC/_ds/"
@@ -169,7 +177,7 @@ with zipfile.ZipFile(descargar / f"{pkg}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
         rel = p.relative_to(public)
         if p.is_file() and "descargar" not in rel.parts and not skip(rel.parts, p.name):
             add_file(zf, f"{pkg}/sitio/{rel.as_posix()}", p.read_bytes())
-    add_launchers(zf, pkg, "", "HUB COMPLETO - NOVOPAN")
+    add_launchers(zf, pkg, "simulador-final/", "HUB COMPLETO - NOVOPAN")
 
 sizes = ", ".join(f"{f.name} {f.stat().st_size//1024} KB" for f in sorted(descargar.glob("*.zip")))
 print(f"  descargar/ zips: {sizes}")

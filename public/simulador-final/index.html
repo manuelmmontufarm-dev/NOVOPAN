@@ -3,8 +3,17 @@
 <head>
   <base href="/simulador-final/">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SIMULADOR FINAL · Línea 1 · Preparación → tablero · NOVOPAN</title>
+<!-- App instalable (PWA): se puede "Instalar" desde Chrome/Edge y queda como
+     app en el escritorio, en su propia ventana y funcionando sin internet. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#004e38">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Simulador NOVOPAN">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <script>
 /* Estado de la Sección 1 ANTES del primer paint (evita el flash del wireframe y
    de los controles P1 de la toolbar). En este simulador la Sección 1 arranca
@@ -103,6 +112,11 @@
          real; arrastrarlo a mano falseaba las horas del reporte. -->
     <button type="button" class="s2-pause-btn s2-sound-btn" id="soundBtn" title="Sonidos silenciados · click para activar" aria-label="Activar o silenciar sonidos">
       <span class="ms">volume_off</span>
+    </button>
+    <!-- Pantalla completa: ocupa TODA la pantalla, por encima de las pestañas del
+         navegador. Se sale con Esc o volviendo a tocar el botón. -->
+    <button type="button" class="s2-pause-btn s2-fs-btn" id="fullscreenBtn" title="Pantalla completa (Esc para salir)" aria-label="Pantalla completa">
+      <span class="ms">fullscreen</span>
     </button>
     <!-- PRODUCCIÓN: sin botón de pausa — la línea real no se pausa. -->
     <button type="button" class="s2-reports-btn" id="reportsToggle">
@@ -1107,6 +1121,38 @@
 })();
 </script>
 <script type="module" src="js/combined-app.js?v=20260720l"></script>
+<!-- App instalable + offline (service worker) y botón de pantalla completa.
+     Va aparte del módulo para que un fallo aquí nunca rompa el simulador. -->
+<script>
+(function () {
+  // 1) Service worker: instala/actualiza el caché para funcionar sin internet.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* sin SW el simulador sigue igual, solo que no offline */ });
+    });
+  }
+  // 2) Pantalla completa (por encima de las pestañas). Alterna entrar/salir.
+  var btn = document.getElementById('fullscreenBtn');
+  if (btn) {
+    var icon = btn.querySelector('.ms');
+    function enFS() { return document.fullscreenElement || document.webkitFullscreenElement; }
+    btn.addEventListener('click', function () {
+      try {
+        if (!enFS()) {
+          var el = document.documentElement;
+          (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+        } else {
+          (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        }
+      } catch (e) { /* algunos navegadores bloquean FS sin gesto directo */ }
+    });
+    document.addEventListener('fullscreenchange', function () {
+      if (icon) icon.textContent = enFS() ? 'fullscreen_exit' : 'fullscreen';
+      btn.title = enFS() ? 'Salir de pantalla completa (Esc)' : 'Pantalla completa (Esc para salir)';
+    });
+  }
+})();
+</script>
 <script defer src="js/onepage-layout.js?v=20260720l"></script>
 </body>
 </html>

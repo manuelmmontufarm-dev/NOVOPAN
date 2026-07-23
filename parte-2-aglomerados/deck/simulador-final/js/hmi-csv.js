@@ -1181,6 +1181,13 @@ export function initHmiCsv({
                          cambiar el contenido. Se muestra con "≥" porque el
                          archivo puede ser mucho más viejo que eso. */
   let fresh = { ms: null, fuente: 'ninguna', detalle: '' };
+  /* DOS relojes distintos, a propósito:
+       · `fresh.ms`   = de cuándo es EL DATO del CSV (columna de tiempo / mtime).
+       · `lastReadMs` = la última vez que ESTE simulador LEYÓ el CSV (cada ~2 s
+                        mientras esté conectado, cambie o no el archivo).
+     Un CSV viejo pero que seguimos leyendo: "actualizado hace 3 h · Leído hace 2 s".
+     El HMI caído: "Leído hace 40 s" deja de avanzar → se ve al instante. */
+  let lastReadMs = null;
   const RANGO_FUENTE = { dato: 3, archivo: 2, contenido: 1, ninguna: 0 };
   const FUENTE_TITULO = {
     dato: 'Fecha que trae el propio CSV (su columna de tiempo): es de cuándo son los datos.',
@@ -1207,12 +1214,22 @@ export function initHmiCsv({
     renderFresh();
   }
 
+  /* Bloque "Leído hace X" = hace cuánto que el simulador leyó el CSV por última
+     vez (distinto de la fecha del dato). Se pega al lado del de frescura. */
+  function readHtml() {
+    if (lastReadMs == null) return '';
+    const s = (Date.now() - lastReadMs) / 1000;
+    const cls = s <= 10 ? 'is-read-ok' : s <= 30 ? 'is-read-warn' : 'is-read-old';
+    return `<span class="s2-fresh__read ${cls}" title="Última vez que ESTE simulador leyó el CSV (se relee cada ${POLL_MS / 1000} s mientras esté conectado). Si deja de avanzar, se dejó de leer el archivo.">`
+      + `<span class="ms">sync</span>Leído ${fmtEdad(s)}</span>`;
+  }
+
   function renderFresh() {
     if (!freshEl) return;
     if (fresh.ms == null) {
       freshEl.className = 's2-fresh is-none';
-      freshEl.innerHTML = '<span class="ms">schedule</span><span class="s2-fresh__txt">CSV · sin datos</span>';
-      freshEl.title = 'Todavía no se ha leído ningún CSV.';
+      freshEl.innerHTML = '<span class="ms">schedule</span><span class="s2-fresh__txt">CSV · sin datos</span>' + readHtml();
+      freshEl.title = 'Todavía no se ha leído ningún CSV con fecha.';
       return;
     }
     const edadS = (Date.now() - fresh.ms) / 1000;
@@ -1226,7 +1243,8 @@ export function initHmiCsv({
     freshEl.className = `s2-fresh ${cls}`;
     freshEl.innerHTML = `<span class="ms">schedule</span>`
       + `<span class="s2-fresh__txt">CSV actualizado <strong>${adelantado ? 'en el futuro' : `${prefijo}${fmtEdad(edadS)}`}</strong>`
-      + `<span class="s2-fresh__at">${cuando}</span></span>`;
+      + `<span class="s2-fresh__at">${cuando}</span></span>`
+      + readHtml();
     freshEl.title = `${FUENTE_TITULO[fresh.fuente]}\nÚltima versión del CSV: ${cuando}${fresh.detalle ? `\n${fresh.detalle}` : ''}`
       + (adelantado ? '\n⚠ La fecha del CSV está adelantada respecto al reloj de esta pantalla: revisar la hora del servidor.' : '');
   }
@@ -1367,6 +1385,7 @@ export function initHmiCsv({
     const parts = fetched.filter(Boolean);
     if (parts.length === 0) { if (mode === 'server') markServerDown(); return false; }
     mode = 'server';
+    lastReadMs = Date.now(); // leímos el CSV con éxito (cambie o no su contenido)
     /* Dirección visible = el archivo que MANDA (el de mayor precedencia que
        no sea el de defaults), porque es el que trae el dato vivo y el que hay
        que revisar cuando algo no cuadra. Las rutas completas de todos los
@@ -1441,6 +1460,7 @@ export function initHmiCsv({
     if (!fileHandle) return;
     try {
       const file = await fileHandle.getFile();
+      lastReadMs = Date.now(); // accedimos al archivo local con éxito
       if (file.lastModified === lastModified) return;
       const text = await file.text();
       const ad = text.trim() ? adaptarCsv(text, adapterCfg?.[file.name] ?? null) : null;
