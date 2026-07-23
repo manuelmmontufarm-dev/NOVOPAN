@@ -3,7 +3,7 @@
 
 const KEY_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
 const SESSION_KEY = 'novopan-params-unlocked-until';
-const UNLOCK_MS = 15 * 60 * 1000;
+const UNLOCK_MS = 3 * 60 * 1000;
 
 let dialogPromise = null;
 
@@ -35,7 +35,7 @@ function buildDialog() {
       <div>
         <span class="params-auth__eyebrow">ACCESO RESTRINGIDO</span>
         <h2>Parámetros de calibración</h2>
-        <p>Ingresa la clave para modificar metros, velocidades, caudales y tiempos. El acceso se mantiene 15 minutos en esta pestaña.</p>
+        <p>Ingresa la clave para modificar metros, velocidades, caudales y tiempos. El acceso se mantiene 3 minutos en esta pestaña.</p>
       </div>
       <label>Clave
         <input type="password" name="key" autocomplete="current-password" required aria-describedby="paramsAuthFeedback" />

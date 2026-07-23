@@ -62,7 +62,10 @@
       <button type="button" class="s2-viewtab" data-view="params" id="tabParams">Parámetros</button>
     </div>
     <div class="s2-hmi">
-      <span class="s2-hmi-status is-idle" id="hmiStatus" title="Lectura del CSV del HMI">● HMI CSV · —</span>
+      <button type="button" class="s2-hmi-status is-idle" id="hmiStatus" title="Lectura del CSV del HMI · clic para ver el detalle">● HMI CSV · —</button>
+      <!-- Detalle desplegable del estado (avisos/errores del CSV): lo llena
+           hmi-csv.js y se abre al hacer clic en el pill. -->
+      <div class="s2-hmi-pop is-hidden" id="hmiStatusPop" role="status"></div>
       <!-- El botón ES el estado de conexión: dice si hay CSV conectado y de
            dónde sale. Lo reescribe hmi-csv.js (setConnected). -->
       <button type="button" class="s2-hmi__btn is-off" id="hmiConnectBtn" title="Elegir un CSV local del HMI (respaldo si no hay servidor)">
@@ -114,9 +117,10 @@
   <div class="s2-reports-panel is-hidden" id="reportsPanel">
     <div class="s2-reports-panel__hd">
       <h4><span class="ms">receipt_long</span> Reportes de cambios</h4>
+      <button type="button" id="reportsPdfAll" class="s2-reports-panel__pdf" title="Descargar TODOS los cambios del reporte en PDF"><span class="ms">picture_as_pdf</span> Descargar PDF</button>
       <button type="button" id="reportsClose" class="s2-reports-panel__close" aria-label="Cerrar reportes"><span class="ms">close</span></button>
     </div>
-    <p class="s2-reports-panel__hint">Hora real de Quito (Ecuador) en que cada cambio pasó por cada equipo. Nace "en curso" al inyectarlo y se completa al llegar al final.</p>
+    <p class="s2-reports-panel__hint">Hora real de Quito (Ecuador) en que cada cambio pasó por cada equipo. Nace "en curso" al inyectarlo y se completa al llegar al final. Usa <strong>Descargar PDF</strong> para guardar un cambio antes de resetear.</p>
     <div class="s2-reports-panel__list" id="reportsList">
       <p class="report-empty">Aún no hay cambios. Haz clic en un equipo para inyectar uno.</p>
     </div>

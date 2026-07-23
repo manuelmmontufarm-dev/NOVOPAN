@@ -883,6 +883,25 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
   letter-spacing: .03em;
 }
 .s2-reports-panel__hd .ms { font-size: 18px; }
+.s2-reports-panel__pdf {
+  margin-left: auto;
+  border: 1px solid rgba(255, 255, 255, .5);
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+.s2-reports-panel__pdf:hover { background: rgba(255, 255, 255, .26); }
+.s2-reports-panel__pdf .ms { font-size: 15px; }
 .s2-reports-panel__close {
   border: none;
   background: transparent;
@@ -890,6 +909,23 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
   cursor: pointer;
   display: inline-flex;
 }
+.report-card__pdf {
+  margin-left: 6px;
+  border: 1px solid #C9D6CE;
+  background: #fff;
+  color: #004E38;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+.report-card__pdf:hover { background: #EAF3EE; }
+.report-card__pdf .ms { font-size: 13px; }
 .s2-reports-panel__hint {
   margin: 0;
   padding: 8px 12px 0;
@@ -1264,6 +1300,7 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
   align-items: center;
   gap: 8px;
   margin-left: 4px;
+  position: relative;
 }
 .s2-hmi-status {
   font-size: 11px;
@@ -1272,7 +1309,32 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
   border-radius: 999px;
   white-space: nowrap;
   border: 1px solid transparent;
+  font-family: inherit;
+  cursor: default;
 }
+/* Con detalle (avisos/errores) el pill se vuelve clicable y muestra un ▾. */
+.s2-hmi-status.has-detail { cursor: pointer; }
+.s2-hmi-status.has-detail::after { content: ' ▾'; font-size: 9px; opacity: .8; }
+.s2-hmi-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  max-width: 460px;
+  min-width: 260px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #E0A0A0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  font-size: 11px;
+  line-height: 1.5;
+  color: #3A2020;
+  white-space: pre-line;   /* respeta los saltos de línea del detalle */
+}
+.s2-hmi-pop.is-hidden { display: none; }
 .s2-hmi-status.is-idle  { background: #EEF0EB; color: #676E69; border-color: #D9DDD9; }
 .s2-hmi-status.is-live  { background: #E3F1E8; color: #1B5E20; border-color: #9CCFAE; }
 .s2-hmi-status.is-manual{ background: #FFF3E0; color: #9A4A00; border-color: #E0B080; }

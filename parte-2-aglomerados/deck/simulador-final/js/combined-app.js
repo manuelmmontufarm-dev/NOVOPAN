@@ -19,6 +19,7 @@ import { buildAnnotations, geometryFromParams, validateGeometry, mapAbsMToX } fr
 import { initParams, loadParams, loadPart1Params } from './combined-params.js';
 import { initHmiCsv } from './hmi-csv.js';
 import { computeRoute, formatSec, STATUS_LABEL, MIXER_TAU_SEC } from './route-model.js';
+import { downloadTextPdf } from './report-pdf.js';
 import { sound } from './sound.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -1017,7 +1018,83 @@ function initSimulation() {
     more?.addEventListener('toggle', () => {
       if (more.open) openCards.add(item.id); else openCards.delete(item.id);
     });
+    // Botón PDF por cambio: guarda ESTE cambio antes de resetear.
+    const pdfBtn = document.createElement('button');
+    pdfBtn.type = 'button';
+    pdfBtn.className = 'report-card__pdf';
+    pdfBtn.innerHTML = '<span class="ms">picture_as_pdf</span> PDF';
+    pdfBtn.title = 'Descargar este cambio en PDF';
+    pdfBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const stamp = fmtStamp(new Date());
+      downloadTextPdf(`NOVOPAN-cambio-${item.seq}-${stamp.file}.pdf`,
+        reportDocLines([item], `Reporte del Cambio ${item.seq}`, stamp.human));
+    });
+    card.querySelector('.report-card__hd')?.appendChild(pdfBtn);
     return card;
+  }
+
+  /* ── Reporte → texto plano para el PDF ─────────────────────────────
+     Mismos datos que la tarjeta (origen, inicio, registro, predicho y horas
+     reales por equipo), en líneas para `downloadTextPdf`. */
+  const QUITO_DATE = (d) => d.toLocaleDateString('es-EC', { timeZone: QUITO_TZ, day: '2-digit', month: '2-digit', year: 'numeric' });
+  function fmtStamp(d) {
+    const human = `${QUITO_DATE(d)} ${fmtWallTime(d)}`;
+    const file = `${QUITO_DATE(d).replace(/\//g, '-')}_${fmtWallTime(d).replace(/:/g, '')}`;
+    return { human, file };
+  }
+  function changeToLines(item) {
+    const g = item.group ?? groups.get(item.seq) ?? null;
+    const estado = item.arrivals?.some((a) => /Sensor|COMPLET/i.test(a.label)) ? 'COMPLETADO' : (g?.state ?? '—');
+    const capa = item.layerName ?? item.branchLabel ?? '—';
+    const out = [];
+    out.push('');
+    out.push(`CAMBIO ${item.seq}  ·  capa ${capa}  ·  ${estado}`);
+    out.push(`  id: ${item.id}`);
+    out.push(`  Origen: ${g?.origin ?? item.arrivals?.[0]?.label ?? '—'}`);
+    out.push(`  Inicio: ${g ? fmtWallTime(g.wallStart) : (item.arrivals?.[0] ? fmtWallTime(item.arrivals[0].wallTime) : '—')}`);
+    if (g?.registeredAt) out.push(`  Registro observado (colchón): ${fmtWallTime(g.registeredAt)}`);
+    const p = g?.predictions;
+    if (p) {
+      out.push(`  Predicho · modelo (${p.vAtInjection} m/min):`);
+      const pr = (label, sec, q) => out.push(`     ${label.padEnd(34)} ${fmtT(sec)}${q && q !== 'OK' ? `  [${q}]` : ''}`);
+      if (p.layers?.SL1 != null) pr('SL1 · llegada al colchón', p.layers.SL1, p.quality.registro);
+      if (p.layers?.CL != null) pr('CL · llegada al colchón', p.layers.CL, p.quality.registro);
+      if (p.layers?.SL2 != null) pr('SL2 · llegada al colchón', p.layers.SL2, p.quality.registro);
+      if (p.tReg != null) pr(`Registro ${p.completeBoard ? 'COMPLETO' : 'parcial'}`, p.tReg, p.quality.registro);
+      pr('Sensor 1', p.sensors.sensor1, p.quality.sensor1);
+      pr('Sensor 2', p.sensors.sensor2, p.quality.sensor2);
+      pr('Sensor 3', p.sensors.sensor3, p.quality.sensor3);
+    }
+    out.push('  Observado · hora real de Quito:');
+    for (const a of (item.arrivals ?? [])) {
+      out.push(`     ${String(a.label).slice(0, 46).padEnd(48)} ${fmtWallTime(a.wallTime instanceof Date ? a.wallTime : new Date(a.wallTime))}`);
+    }
+    return out;
+  }
+  function reportDocLines(items, titulo, humanStamp) {
+    const lines = [
+      'NOVOPAN · Línea 1 · Sección 2',
+      titulo,
+      `Descargado: ${humanStamp} (hora de Quito, Ecuador)`,
+      `Cambios en el reporte: ${items.length}`,
+      '='.repeat(72),
+    ];
+    for (const it of items) lines.push(...changeToLines(it));
+    lines.push('');
+    lines.push('='.repeat(72));
+    lines.push('Predicho = modelo de ruta (HMI + mediciones). Observado = simulación.');
+    return lines;
+  }
+
+  /* Todos los cambios visibles en el reporte, orden natural: upstream, activos
+     (en curso) y completados. */
+  function allReportItems() {
+    return [
+      ...preChanges.filter((c) => c.branch === 'cl' || c.branch === 'sl'),
+      ...changes,
+      ...reports,
+    ];
   }
 
   /* Escribe countdown de próxima etapa + total a Sensores + hora estimada de
@@ -1504,6 +1581,13 @@ function initSimulation() {
   // Panel de reportes: hora real de Quito por cada equipo y cada cambio completado.
   reportsToggle?.addEventListener('click', () => reportsPanel?.classList.toggle('is-hidden'));
   reportsClose?.addEventListener('click', () => reportsPanel?.classList.add('is-hidden'));
+  document.getElementById('reportsPdfAll')?.addEventListener('click', () => {
+    const items = allReportItems();
+    if (!items.length) return; // el panel ya muestra "Aún no hay cambios"
+    const stamp = fmtStamp(new Date());
+    downloadTextPdf(`NOVOPAN-reporte-${stamp.file}.pdf`,
+      reportDocLines(items, 'Reporte de cambios (todos)', stamp.human));
+  });
 
   // Reiniciar demo: borra todos los cambios activos y los reportes acumulados.
   function resetAll() {
@@ -1579,6 +1663,7 @@ function initSimulation() {
   const hmiStatus2 = document.getElementById('hmiStatus2');
   hmiCsvApi = initHmiCsv({
     statusEl: hmiStatusEl,
+    statusPopEl: document.getElementById('hmiStatusPop'),
     connectBtn: document.getElementById('hmiConnectBtn'),
     fileInput: document.getElementById('hmiFileInput'),
     // Widget de la cabecera: antigüedad de la VERSIÓN del CSV (no de la lectura).

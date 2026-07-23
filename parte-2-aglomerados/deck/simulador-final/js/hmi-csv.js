@@ -1082,7 +1082,7 @@ async function idbClearHandle() {
 }
 
 export function initHmiCsv({
-  applyData, statusEl, connectBtn, fileInput, freshEl, connectLabelEl, connectAddrEl,
+  applyData, statusEl, statusPopEl, connectBtn, fileInput, freshEl, connectLabelEl, connectAddrEl,
 }) {
   let lastText = null;
   let currentText = '';
@@ -1108,12 +1108,32 @@ export function initHmiCsv({
     return cabeza.join('\n');
   }
 
+  let statusDetail = '';
   function setStatus(cls, msg, title) {
     if (!statusEl) return;
-    statusEl.className = `s2-hmi-status is-${cls}`;
+    statusDetail = (title ?? '').trim();
+    const hasDetail = statusDetail.length > 0;
+    statusEl.className = `s2-hmi-status is-${cls}${hasDetail ? ' has-detail' : ''}`;
     statusEl.textContent = msg;
-    statusEl.title = title ?? '';
+    // El título nativo se conserva como respaldo; el detalle real se despliega.
+    statusEl.title = hasDetail ? `${statusDetail}\n(clic para desplegar)` : '';
+    if (statusPopEl) {
+      statusPopEl.textContent = statusDetail;
+      if (!hasDetail) statusPopEl.classList.add('is-hidden'); // sin detalle → cerrado
+    }
   }
+  /* El pill despliega su detalle al clic: avisos/errores del CSV completos, no
+     escondidos en un tooltip que en una pantalla táctil de planta no se ve. */
+  statusEl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!statusPopEl || !statusDetail) return;
+    statusPopEl.classList.toggle('is-hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!statusPopEl || statusPopEl.classList.contains('is-hidden')) return;
+    if (e.target === statusEl || statusEl?.contains(e.target) || statusPopEl.contains(e.target)) return;
+    statusPopEl.classList.add('is-hidden');
+  });
 
   /* ══ Frescura: DE CUÁNDO ES EL DATO, no cuándo lo leímos ═══════════════
      El pill de estado dice la hora de la última LECTURA — con un CSV que no
