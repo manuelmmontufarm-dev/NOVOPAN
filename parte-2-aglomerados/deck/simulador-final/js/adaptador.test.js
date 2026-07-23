@@ -467,6 +467,27 @@ test('fmtEdad se lee como lo diría un operador', () => {
   assert(fmtEdad(-3) === 'hace 0 s', 'nunca negativo');
 });
 
+/* ══ Bug de frescura: hora 12 h AM/PM ═══════════════════════════════════ */
+group('Hora AM/PM (bug frescura 12 h)');
+test('1:16 PM se lee como 13:16, no como 01:16 (evita el "hace 12 h")', () => {
+  assert(clavarInstante('7/23/2026', '1:16:05 PM') === 20260723131605, 'PM suma 12');
+  assert(clavarInstante('7/23/2026', '1:16 p. m.') === 20260723131600, 'p. m. con puntos/espacios');
+});
+test('12 AM y 12 PM se convierten bien', () => {
+  assert(clavarInstante('7/23/2026', '12:30 AM') === 20260723003000, '12 AM → 00:30');
+  assert(clavarInstante('7/23/2026', '12:30 PM') === 20260723123000, '12 PM → 12:30');
+});
+test('24 h sin marcador sigue leyéndose igual', () => {
+  assert(clavarInstante('7/23/2026', '13:16') === 20260723131600, '13:16 intacto');
+  assert(clavarInstante('7/23/2026', '08:00') === 20260723080000, '08:00 intacto');
+});
+test('adaptarCsv: una tarde en 12 h ya NO sale 12 h vieja', () => {
+  const csv = 'Datetime,Tagname,Value\n7/23/2026 1:16:00 PM,H_PressSpeed_PV,14.5\n';
+  const hh = new Date(adaptarCsv(csv).instante)
+    .toLocaleString('es-EC', { timeZone: 'America/Guayaquil', hour12: false, hour: '2-digit' });
+  assert(hh === '13', `1:16 PM debe ser las 13 h de Quito, salió ${hh}`);
+});
+
 /* ══ Sello HMI: solo si planta lo escribió de verdad ═════════════════════ */
 group('Sello HMI vs Supuesto');
 test('un valor que solo sale de los defaults NO lleva sello HMI', () => {

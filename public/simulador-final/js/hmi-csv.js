@@ -622,10 +622,22 @@ export function clavarInstante(fecha, hora, diaPrimero = false) {
     if (Y < 100) Y += 2000;
     if (diaPrimero) { D = +m[1]; Mo = +m[2]; } else { Mo = +m[1]; D = +m[2]; }
   }
-  const t = h.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  const hh = t ? +t[1] : 0;
+  /* La hora puede venir en 24 h (`13:16`) o en 12 h con AM/PM (`1:16:05 PM`,
+     `1:16 p. m.`). SQL Server / Excel exportan seguido en 12 h según la
+     configuración regional del servidor; si se ignora el AM/PM, la tarde
+     (1 PM) se lee como la madrugada (1 AM) → el dato sale 12 h más viejo y el
+     widget de frescura miente «hace 12 h». Se captura el marcador y se
+     convierte a 24 h. */
+  const t = h.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp])\.?\s*[Mm]?\.?)?/);
+  let hh = t ? +t[1] : 0;
   const mi = t ? +t[2] : 0;
   const ss = t && t[3] ? +t[3] : 0;
+  if (t && t[4]) {
+    const esPM = /[Pp]/.test(t[4]);
+    if (esPM && hh < 12) hh += 12;        // 1 PM → 13
+    else if (!esPM && hh === 12) hh = 0;  // 12 AM → 0
+  }
+  if (hh > 23 || mi > 59 || ss > 59) return null;
   return ((((Y * 100 + Mo) * 100 + D) * 100 + hh) * 100 + mi) * 100 + ss;
 }
 
@@ -923,7 +935,7 @@ export function normalizar(texto, perfil) {
     if (colF >= 0) {
       let mejor = null;
       for (const f of filas) {
-        const k = clavarInstante(f[colF], iHora >= 0 ? f[iHora] : (f[colF] ?? '').split(/[ T]/)[1], diaPrimero);
+        const k = clavarInstante(f[colF], iHora >= 0 ? f[iHora] : (f[colF] ?? '').trim().split(/[ T]+/).slice(1).join(' '), diaPrimero);
         if (k == null) continue;
         if (mejor == null || k > mejor) { mejor = k; elegida = f; }
       }
@@ -961,7 +973,9 @@ export function normalizar(texto, perfil) {
       if (perfil.colTag < 0 || perfil.colTag >= f.length) continue;
       let orden = null;
       if (iTiempo >= 0) {
-        const [fecha, horaCelda] = String(f[iTiempo] ?? '').trim().split(/[ T]+/);
+        const partesT = String(f[iTiempo] ?? '').trim().split(/[ T]+/);
+        const fecha = partesT[0];
+        const horaCelda = partesT.slice(1).join(' '); // conserva el AM/PM
         orden = clavarInstante(fecha, iHora >= 0 ? f[iHora] : horaCelda, diaPrimero);
       }
       poner(f[perfil.colTag], f[perfil.colValor] ?? '',
@@ -1174,8 +1188,19 @@ export function initHmiCsv({
     contenido: 'El archivo no declara fecha: solo se sabe cuándo cambió su contenido. La versión real puede ser más vieja.',
   };
 
+  /* La escritura del archivo (Last-Modified) es un ancla confiable del reloj:
+     el dato más nuevo del CSV no puede ser HORAS más viejo que cuándo se
+     escribió el archivo. Si un `dato` viola eso, su hora se leyó mal (formato
+     AM/PM raro, zona, etc.) y NO debe mandar sobre el Last-Modified — si no, el
+     widget miente «hace 12 h» con un archivo recién escrito. */
+  let mejorArchivo = null;
+  const SKEW_DATO_MAX_MS = 60 * 60 * 1000; // 1 h de margen
   function setFresh(ms, fuente, detalle = '') {
     if (!Number.isFinite(ms)) return;
+    if (fuente === 'archivo' && (mejorArchivo == null || ms > mejorArchivo)) mejorArchivo = ms;
+    // Guarda anti-parseo-erróneo: un `dato` mucho más viejo que la escritura
+    // del archivo es una hora mal leída → se descarta (gana el `archivo`).
+    if (fuente === 'dato' && mejorArchivo != null && ms < mejorArchivo - SKEW_DATO_MAX_MS) return;
     // Una fuente mejor siempre gana; entre iguales, gana la más reciente.
     if (fresh.fuente === fuente ? ms <= (fresh.ms ?? -Infinity) : RANGO_FUENTE[fuente] < RANGO_FUENTE[fresh.fuente]) return;
     fresh = { ms, fuente, detalle };
@@ -1378,7 +1403,10 @@ export function initHmiCsv({
        Si contara siempre, un `git checkout` (que le pone mtime de hoy) diría
        "actualizado hace 2 s" con el HMI caído. */
     const vivas = evidencias.filter((e) => e.label !== DEFAULTS_LABEL);
-    for (const e of (vivas.length ? vivas : evidencias)) {
+    /* `archivo` ANTES que `dato`: así la guarda anti-parseo-erróneo de setFresh
+       ya conoce el Last-Modified cuando evalúa la fecha del dato. */
+    const ordenadas = (vivas.length ? vivas : evidencias).slice().sort((a, b) => RANGO_FUENTE[a.fuente] - RANGO_FUENTE[b.fuente]);
+    for (const e of ordenadas) {
       setFresh(e.ms, e.fuente, e.fuente === 'dato' ? `Columna de tiempo de ${e.base}.` : `Last-Modified de ${e.base}.`);
     }
     const combined = bloques.join('\n');
