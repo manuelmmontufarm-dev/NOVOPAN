@@ -53,6 +53,34 @@ export const CSV_SOURCES = [
   { file: 'datos/hmi-sistemas.csv',    label: 'Sistemas' },
 ];
 
+/* ¿Estamos en la APP instalada (PWA en su propia ventana) o en la PLANTA?
+   En ese contexto el CSV de defaults (`hmi.csv`) NO se usa: sin un archivo del
+   HMI conectado, el simulador queda SIN DATOS (pausado) en vez de mostrar los
+   valores viejos de prueba. En una pestaña normal del navegador (el link que se
+   comparte como demo) sí se usa el default, para que se vea animado.
+     · ?planta=1  fuerza modo planta (útil para probar o para un acceso directo).
+     · ?demo=1    fuerza modo demo aunque esté instalada. */
+function esContextoPlanta() {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    if (q.has('planta')) return true;
+    if (q.has('demo')) return false;
+    const standalone = window.matchMedia?.('(display-mode: standalone)').matches
+      || window.matchMedia?.('(display-mode: fullscreen)').matches
+      || window.matchMedia?.('(display-mode: minimal-ui)').matches;
+    return !!standalone || window.navigator.standalone === true;
+  } catch { return false; }
+}
+const OMITIR_DEFAULTS = esContextoPlanta();
+
+/* Fuentes que se leen de verdad. En modo planta NO hay fuentes servidas: el
+   único dato válido es el archivo que el operador CONECTA (File System Access).
+   Sin archivo conectado → sin datos (pausado). En modo demo se leen todas,
+   incluido el default `hmi.csv` que da la animación del link que se comparte. */
+function fuentesActivas() {
+  return OMITIR_DEFAULTS ? [] : CSV_SOURCES;
+}
+
 const entry = (keys, kind, unit) => ({ keys: Array.isArray(keys) ? keys : [keys], kind, unit });
 
 /* Tag CSV → claves del modelo. Algunos tags alimentan tanto el modelo
@@ -1322,7 +1350,7 @@ export function initHmiCsv({
     return true;
   }
 
-  const SOURCE_LIST = CSV_SOURCES.map((s) => s.file).join(', ');
+  const SOURCE_LIST = fuentesActivas().map((s) => s.file).join(', ') || '(conecta el CSV del HMI)';
 
   /* Mapeo manual de respaldo, por si el sniffer no acierta con el export real
      de IT: `datos/adaptador.json` fija perfil y columnas sin tocar código.
@@ -1368,7 +1396,7 @@ export function initHmiCsv({
   async function pollServer() {
     const stamp = Date.now();
     const cfgAll = await loadAdapterCfg();
-    const fetched = await Promise.all(CSV_SOURCES.map(async (src) => {
+    const fetched = await Promise.all(fuentesActivas().map(async (src) => {
       try {
         const res = await fetch(`${src.file}?t=${stamp}`, { cache: 'no-store' });
         if (!res.ok) return null;
@@ -1646,7 +1674,11 @@ export function initHmiCsv({
     if (!resumed) {
       const ok = await pollServer();
       if (!ok && mode !== 'live-file') {
-        setStatus('idle', '● CSV · sin conexión', 'Conecta un archivo CSV o verifica datos/hmi.csv.');
+        setStatus('idle',
+          OMITIR_DEFAULTS ? '● Sin CSV · conéctalo para ver datos' : '● CSV · sin conexión',
+          OMITIR_DEFAULTS
+            ? 'Modo planta/app: conecta el archivo CSV del HMI con el botón «Conectar CSV». Sin archivo conectado el simulador queda en pausa, sin datos (no muestra valores de prueba).'
+            : 'Conecta un archivo CSV o verifica datos/hmi.csv.');
         if (!pendingHandle) setConnected('off', '');
       }
       /* Hay un archivo por reconectar: el botón debe seguir invitando a

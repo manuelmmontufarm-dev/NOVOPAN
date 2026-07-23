@@ -159,8 +159,8 @@ def add_launchers(zf, pkg_root, open_path, title):
         add_file(zf, f"{pkg_root}/{n}", text.encode("utf-8"), executable=n.endswith(".command"))
 
 REDIRECT = ('<!doctype html><meta charset="utf-8"><title>Simulador NOVOPAN</title>\n'
-            '<meta http-equiv="refresh" content="0; url=/simulador-final/">\n'
-            '<p>Abriendo el simulador... <a href="/simulador-final/">entrar</a></p>\n')
+            '<meta http-equiv="refresh" content="0; url=/simulador-final/?planta=1">\n'
+            '<p>Abriendo el simulador... <a href="/simulador-final/?planta=1">entrar</a></p>\n')
 
 # Paquete 1 — Simulador de planta (liviano): simulador-final + su motor core
 pkg = "NOVOPAN-Simulador-planta"
@@ -168,7 +168,7 @@ with zipfile.ZipFile(descargar / f"{pkg}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
     add_tree(zf, public / "simulador-final", f"{pkg}/sitio/simulador-final")
     add_tree(zf, public / "trazabilidad" / "js" / "core", f"{pkg}/sitio/trazabilidad/js/core")
     add_file(zf, f"{pkg}/sitio/index.html", REDIRECT.encode("utf-8"))
-    add_launchers(zf, pkg, "simulador-final/", "SIMULADOR DE PLANTA - Linea 1 - NOVOPAN")
+    add_launchers(zf, pkg, "simulador-final/?planta=1", "SIMULADOR DE PLANTA - Linea 1 - NOVOPAN")
 
 # Paquete 2 — Hub completo (todo el sitio offline)
 pkg = "NOVOPAN-Hub-completo"
@@ -177,7 +177,7 @@ with zipfile.ZipFile(descargar / f"{pkg}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
         rel = p.relative_to(public)
         if p.is_file() and "descargar" not in rel.parts and not skip(rel.parts, p.name):
             add_file(zf, f"{pkg}/sitio/{rel.as_posix()}", p.read_bytes())
-    add_launchers(zf, pkg, "simulador-final/", "HUB COMPLETO - NOVOPAN")
+    add_launchers(zf, pkg, "simulador-final/?planta=1", "HUB COMPLETO - NOVOPAN")
 
 sizes = ", ".join(f"{f.name} {f.stat().st_size//1024} KB" for f in sorted(descargar.glob("*.zip")))
 print(f"  descargar/ zips: {sizes}")
