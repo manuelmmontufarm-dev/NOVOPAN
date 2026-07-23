@@ -106,6 +106,75 @@ for html_path, base in [
     inject_base(html_path, base)
 PY
 
+# Página de descarga + paquetes ZIP para correr en localhost (offline).
+# Los .zip se generan aquí en cada build (NO viven en git); ver .gitignore.
+mkdir -p "$PUBLIC/descargar"
+cp "$ROOT/vercel/descargar/index.html" "$PUBLIC/descargar/index.html"
+
+python3 - "$ROOT" "$PUBLIC" <<'PY'
+import sys, zipfile
+from pathlib import Path
+
+root = Path(sys.argv[1])
+public = Path(sys.argv[2])
+descargar = public / "descargar"
+tmpl_dir = root / "vercel" / "descargar" / "_paquete"
+
+# <base> para servir /descargar sin barra final (trailingSlash: false)
+idx = descargar / "index.html"
+html = idx.read_text(encoding="utf-8")
+if '<base href="/descargar/">' not in html:
+    idx.write_text(html.replace("<head>", '<head>\n  <base href="/descargar/">', 1), encoding="utf-8")
+
+LAUNCHERS = ["servidor.ps1", "ABRIR SIMULADOR (Windows).bat",
+             "ABRIR SIMULADOR (Mac).command", "LEEME.txt"]
+tmpl = {n: (tmpl_dir / n).read_text(encoding="utf-8") for n in LAUNCHERS}
+
+def skip(relparts, name):
+    return name == ".gitignore" or "claude-design-handoff" in relparts
+
+def add_file(zf, arcname, data, executable=False):
+    info = zipfile.ZipInfo(arcname)
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.external_attr = (0o755 << 16) if executable else (0o644 << 16)
+    zf.writestr(info, data)
+
+def add_tree(zf, src_dir, arc_prefix):
+    for p in sorted(src_dir.rglob("*")):
+        rel = p.relative_to(src_dir)
+        if p.is_file() and not skip(rel.parts, p.name):
+            add_file(zf, f"{arc_prefix}/{rel.as_posix()}", p.read_bytes())
+
+def add_launchers(zf, pkg_root, open_path, title):
+    for n in LAUNCHERS:
+        text = tmpl[n].replace("@@OPEN@@", open_path).replace("@@TITLE@@", title)
+        add_file(zf, f"{pkg_root}/{n}", text.encode("utf-8"), executable=n.endswith(".command"))
+
+REDIRECT = ('<!doctype html><meta charset="utf-8"><title>Simulador NOVOPAN</title>\n'
+            '<meta http-equiv="refresh" content="0; url=/simulador-final/">\n'
+            '<p>Abriendo el simulador... <a href="/simulador-final/">entrar</a></p>\n')
+
+# Paquete 1 — Simulador de planta (liviano): simulador-final + su motor core
+pkg = "NOVOPAN-Simulador-planta"
+with zipfile.ZipFile(descargar / f"{pkg}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
+    add_tree(zf, public / "simulador-final", f"{pkg}/sitio/simulador-final")
+    add_tree(zf, public / "trazabilidad" / "js" / "core", f"{pkg}/sitio/trazabilidad/js/core")
+    add_file(zf, f"{pkg}/sitio/index.html", REDIRECT.encode("utf-8"))
+    add_launchers(zf, pkg, "simulador-final/", "SIMULADOR DE PLANTA - Linea 1 - NOVOPAN")
+
+# Paquete 2 — Hub completo (todo el sitio offline)
+pkg = "NOVOPAN-Hub-completo"
+with zipfile.ZipFile(descargar / f"{pkg}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
+    for p in sorted(public.rglob("*")):
+        rel = p.relative_to(public)
+        if p.is_file() and "descargar" not in rel.parts and not skip(rel.parts, p.name):
+            add_file(zf, f"{pkg}/sitio/{rel.as_posix()}", p.read_bytes())
+    add_launchers(zf, pkg, "", "HUB COMPLETO - NOVOPAN")
+
+sizes = ", ".join(f"{f.name} {f.stat().st_size//1024} KB" for f in sorted(descargar.glob("*.zip")))
+print(f"  descargar/ zips: {sizes}")
+PY
+
 echo "✓ public/ ready ($(find "$PUBLIC" -type f | wc -l | tr -d ' ') files)"
 echo "  /                    → index.html"
 echo "  /trazabilidad        → parte-2-aglomerados/deck/trazabilidad + _ds tokens"

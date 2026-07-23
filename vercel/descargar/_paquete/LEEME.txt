@@ -1,0 +1,51 @@
+========================================================
+  @@TITLE@@
+  Cómo abrirlo en tu computadora (localhost)
+========================================================
+
+IMPORTANTE: NO funciona haciendo doble clic en los archivos .html
+directamente. El simulador carga datos (CSV) y usa módulos modernos
+que el navegador bloquea si se abren "sueltos". Por eso se abre con
+un mini-servidor local (los lanzadores de abajo lo hacen por ti).
+No se instala nada ni se necesita internet.
+
+--------------------------------------------------------
+  WINDOWS
+--------------------------------------------------------
+  1. Descomprime esta carpeta (clic derecho > Extraer todo).
+  2. Doble clic en:   ABRIR SIMULADOR (Windows).bat
+  3. Se abre una ventana negra y, enseguida, el navegador con
+     el simulador. DEJA LA VENTANA NEGRA ABIERTA mientras lo usas.
+  4. Para cerrarlo: cierra la ventana negra.
+
+  * Si Windows muestra "Windows protegió tu PC": clic en
+    "Más información" > "Ejecutar de todas formas".
+
+--------------------------------------------------------
+  MAC
+--------------------------------------------------------
+  1. Descomprime la carpeta (doble clic en el .zip).
+  2. Doble clic en:   ABRIR SIMULADOR (Mac).command
+  3. Se abre la Terminal y luego el navegador con el simulador.
+     DEJA LA TERMINAL ABIERTA mientras lo usas.
+  4. Para cerrarlo: cierra la ventana de la Terminal.
+
+  * La primera vez, si dice "no se puede abrir porque es de un
+    desarrollador no identificado": clic derecho sobre el archivo
+    > Abrir > Abrir.
+
+--------------------------------------------------------
+  ¿Y si no quieren instalar/descargar nada?
+--------------------------------------------------------
+  El simulador también está publicado en internet:
+      https://novopan.vercel.app/simulador-final
+  Se abre en cualquier navegador, sin descargar nada
+  (requiere conexión a internet).
+
+--------------------------------------------------------
+  ¿Qué hay dentro?
+--------------------------------------------------------
+  sitio/        -> el sitio (no borrar ni mover)
+  servidor.ps1  -> el mini-servidor de Windows (no tocar)
+  ABRIR SIMULADOR (Windows).bat
+  ABRIR SIMULADOR (Mac).command

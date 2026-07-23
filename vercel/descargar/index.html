@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>NOVOPAN — Descargar e instalar en la computadora</title>
+  <style>
+    :root {
+      --green: #004e38;
+      --yellow: #f5c518;
+      --bg: #f4f6f5;
+      --card: #fff;
+      --text: #1a2e28;
+      --muted: #5a6f66;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--green);
+      color: #fff;
+      padding: 2rem 1.5rem;
+      padding-top: calc(2rem + env(safe-area-inset-top, 0px));
+      border-bottom: 4px solid var(--yellow);
+    }
+    header h1 { font-size: 1.6rem; font-weight: 800; }
+    header p { margin-top: 0.5rem; opacity: 0.92; max-width: 44rem; }
+    header a.back { color: var(--yellow); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+    main { max-width: 760px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+
+    h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 2rem 0 0.9rem; }
+
+    /* Aviso */
+    .warn {
+      background: #fff8e1; border: 1px solid #f0d879; border-left: 5px solid var(--yellow);
+      border-radius: 10px; padding: 0.9rem 1.1rem; margin-top: 1.25rem; font-size: 0.95rem;
+    }
+    .warn strong { color: #7a5c00; }
+
+    /* Descargas */
+    .dl { display: flex; flex-direction: column; gap: 0.9rem; }
+    a.download {
+      display: flex; align-items: center; gap: 1rem;
+      background: var(--card); border: 1px solid #d8e0dc; border-radius: 12px;
+      padding: 1.1rem 1.25rem; text-decoration: none; color: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    a.download:hover, a.download:active { border-color: var(--green); box-shadow: 0 4px 16px rgba(0,78,56,0.08); }
+    a.download .ic { font-size: 1.6rem; line-height: 1; }
+    a.download .tx { flex: 1; }
+    a.download .tx strong { display: block; font-size: 1.05rem; color: var(--green); }
+    a.download .tx span { font-size: 0.875rem; color: var(--muted); }
+    a.download .badge {
+      background: var(--green); color: #fff; font-size: 0.7rem; font-weight: 700;
+      padding: 0.25rem 0.55rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    a.download.alt .badge { background: #8a9a93; }
+
+    /* Pasos */
+    .os { background: var(--card); border: 1px solid #d8e0dc; border-radius: 12px; padding: 1.25rem 1.4rem; margin-bottom: 1rem; }
+    .os h3 { font-size: 1.05rem; color: var(--green); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    ol { margin: 0 0 0 1.1rem; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.95rem; }
+    ol li { padding-left: 0.2rem; }
+    kbd {
+      background: #eef3f1; border: 1px solid #cfdbd6; border-bottom-width: 2px; border-radius: 5px;
+      padding: 0.05em 0.4em; font-size: 0.85em; font-family: inherit; color: var(--text); white-space: nowrap;
+    }
+    .file { font-weight: 700; color: var(--green); }
+    .tip { font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+
+    .online {
+      margin-top: 1.5rem; background: #eaf3ef; border: 1px dashed var(--green); border-radius: 12px;
+      padding: 1rem 1.25rem; font-size: 0.95rem;
+    }
+    .online a { color: var(--green); font-weight: 700; }
+
+    footer { margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid #d8e0dc; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="back" href="/">&larr; Volver al hub</a>
+    <h1 style="margin-top:.4rem">Descargar el simulador para la computadora</h1>
+    <p>Bajas un archivo, lo descomprimes y le das doble clic a un lanzador. No se instala nada ni se necesita internet. Toma menos de un minuto.</p>
+  </header>
+
+  <main>
+    <div class="warn">
+      <strong>Importante:</strong> no funciona abriendo el archivo <code>.html</code> con doble clic
+      (el navegador bloquea los datos). Por eso el paquete trae un lanzador que abre el simulador
+      correctamente en tu navegador. <strong>Usa el lanzador, no el .html.</strong>
+    </div>
+
+    <h2>1 · Descarga el paquete</h2>
+    <div class="dl">
+      <a class="download" href="NOVOPAN-Simulador-planta.zip" download>
+        <span class="ic">📦</span>
+        <span class="tx">
+          <strong>Simulador de planta</strong>
+          <span>Solo el SIMULADOR FINAL de la Línea 1. Liviano (~2 MB). Es el que va en la PC de la planta.</span>
+        </span>
+        <span class="badge">Recomendado</span>
+      </a>
+      <a class="download alt" href="NOVOPAN-Hub-completo.zip" download>
+        <span class="ic">🗂️</span>
+        <span class="tx">
+          <strong>Hub completo (todo offline)</strong>
+          <span>Todas las vistas: simuladores, trazabilidad y patios. Más pesado (~26 MB).</span>
+        </span>
+        <span class="badge">Opcional</span>
+      </a>
+    </div>
+
+    <h2>2 · Ábrelo en tu computadora</h2>
+
+    <div class="os">
+      <h3>🪟 Windows</h3>
+      <ol>
+        <li>Clic derecho en el ZIP descargado &rarr; <kbd>Extraer todo…</kbd> &rarr; <kbd>Extraer</kbd>.</li>
+        <li>Entra a la carpeta y doble clic en <span class="file">ABRIR SIMULADOR (Windows).bat</span>.</li>
+        <li>Se abre una ventana negra y, enseguida, el navegador con el simulador. <strong>Deja la ventana negra abierta</strong> mientras lo usas.</li>
+        <li>Para cerrarlo: cierra la ventana negra.</li>
+      </ol>
+      <p class="tip">Si Windows muestra “Windows protegió tu PC”: clic en <kbd>Más información</kbd> &rarr; <kbd>Ejecutar de todas formas</kbd>. Es seguro: es un archivo local tuyo.</p>
+    </div>
+
+    <div class="os">
+      <h3>🍎 Mac</h3>
+      <ol>
+        <li>Doble clic en el ZIP para descomprimirlo.</li>
+        <li>Doble clic en <span class="file">ABRIR SIMULADOR (Mac).command</span>.</li>
+        <li>Se abre la Terminal y luego el navegador con el simulador. <strong>Deja la Terminal abierta</strong> mientras lo usas.</li>
+        <li>Para cerrarlo: cierra la ventana de la Terminal.</li>
+      </ol>
+      <p class="tip">La primera vez, si dice “no se puede abrir porque es de un desarrollador no identificado”: clic derecho sobre el archivo &rarr; <kbd>Abrir</kbd> &rarr; <kbd>Abrir</kbd>.</p>
+    </div>
+
+    <div class="online">
+      ¿No quieres descargar nada y tienes internet? El simulador también está en vivo:
+      <a href="/simulador-final">novopan.vercel.app/simulador-final</a>
+    </div>
+
+    <footer>
+      <p>El paquete abre el simulador en <code>localhost:8080</code> con un mini-servidor incluido. Dentro del ZIP encontrarás un <code>LEEME.txt</code> con estos mismos pasos.</p>
+    </footer>
+  </main>
+</body>
+</html>
