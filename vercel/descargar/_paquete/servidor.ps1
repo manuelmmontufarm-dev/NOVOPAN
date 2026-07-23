@@ -49,16 +49,17 @@ Start-Process $url
 while ($listener.IsListening) {
   try {
     $ctx = $listener.GetContext()
-    $rel = [Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath)
-    if ($rel -eq "/") { $rel = "/index.html" }
-    $path = Join-Path $root ($rel.TrimStart("/") -replace "/", "\")
+    $rel = [Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath).TrimStart("/")
+    if ($rel -eq "") { $rel = "index.html" }
+    # .NET acepta "/" en rutas tanto en Windows como en macOS/Linux
+    $path = Join-Path $root $rel
 
-    if (Test-Path $path -PathType Container) { $path = Join-Path $path "index.html" }
-    if (-not (Test-Path $path -PathType Leaf)) {
-      if (Test-Path ($path + ".html") -PathType Leaf) { $path = $path + ".html" }
+    if (Test-Path -LiteralPath $path -PathType Container) { $path = Join-Path $path "index.html" }
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+      if (Test-Path -LiteralPath ($path + ".html") -PathType Leaf) { $path = $path + ".html" }
     }
 
-    if (Test-Path $path -PathType Leaf) {
+    if (Test-Path -LiteralPath $path -PathType Leaf) {
       $ext = [System.IO.Path]::GetExtension($path).ToLower()
       $ct = $mime[$ext]; if (-not $ct) { $ct = "application/octet-stream" }
       $bytes = [System.IO.File]::ReadAllBytes($path)
