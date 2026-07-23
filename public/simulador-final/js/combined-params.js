@@ -193,8 +193,8 @@ const BADGE = {
   // Se esperaba del HMI, pero ningún tag de WinCC lo publica todavía.
   assumed: { cls: 'assumed', short: 'Supuesto' },
   // Dato de planta que FALTA (el HMI no lo publica en forma usable) → editable
-  // a mano hasta conseguirlo. P.ej. masa de tolva del esparcidor: el HMI da el
-  // % de llenado, no los kg, y falta la capacidad de la tolva para convertir.
+  // a mano hasta conseguirlo. (Las masas de esparcidor ya NO usan este kind:
+  // desde 23-jul-2026 vienen de las básculas H_SL1/CC/SL2_Scale_PV.)
   falta: { cls: 'assumed', short: 'Falta dato' },
 };
 

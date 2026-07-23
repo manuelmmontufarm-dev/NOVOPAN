@@ -59,7 +59,10 @@ T_SPRAYS_CAIDA_S: 5;
 INCL_CL_L_M: 68.5;    INCL_CL_V_MMIN: 96.5;
 INCL_SL_L_M: 64.57;   INCL_SL_V_MMIN: 99.5;
 
-# ── Esparcidores: τ = M_hopper / F_capa × 60; NO usan un tiempo fijo ──
+# ── Esparcidores: τ = M / F_capa × 60; NO usan un tiempo fijo ──
+# M = báscula de capa en kg/m (≡ kg sobre su metro de referencia). Dato vivo:
+# H_SL1/CC/SL2_Scale_PV (Formación/Sistemas). Estos son valores de ARRANQUE
+# y quedan pisados apenas el CSV vivo publique las básculas.
 M_ESP1_KG: 12.5;      M_ESP2_KG: 40;        M_ESP3_KG: 15;
 
 # ── Longitudes medidas de la línea común ──

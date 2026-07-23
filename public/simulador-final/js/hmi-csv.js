@@ -155,15 +155,17 @@ export const TAG_MAP = {
   INCL_SL_L_M:         entry(['p1:inclF_L', 'len:incl-fine'], 'measured', 'm'),
   INCL_SL_V_MMIN:      entry(['p1:inclF_v', 'speed:incl-fine'], 'measured', 'm/min'),
 
-  /* Masa retenida en la tolva del esparcidor. `falta`, NO `hmi`: el HMI publica
-     el % de llenado de la tolva (H_SL1/CC/SL2_Filling_PV), no los kg. Sin la
-     capacidad de tolva (kg al 100 %) no se puede convertir % → kg, así que el
-     valor es un supuesto de arranque, no un dato de planta. `falta` hace que la
-     tarjeta NO lleve sello «HMI» y quede EDITABLE (ver hmiLock) para poder fijar
-     el valor a mano hasta que se sepa la capacidad. */
-  M_ESP1_KG:           entry('mass:esp1-zone', 'falta', 'kg'),
-  M_ESP2_KG:           entry('mass:esp2-zone', 'falta', 'kg'),
-  M_ESP3_KG:           entry('mass:esp3-zone', 'falta', 'kg'),
+  /* Masa retenida en el esparcidor · AHORA SÍ hay tag de planta (23-jul-2026).
+     La báscula de cada capa publica su peso en kg/m (H_SL1/CC/SL2_Scale_PV,
+     "mat weight scale measured value") medido sobre un ANCHO DE REFERENCIA DE
+     1 METRO de banda → el número en kg/m ES los kg sobre ese metro, y entra al
+     modelo tal cual (scale 1). τ_esparcidor = báscula / F_capa × 60.
+     Antes esto era `falta` (solo existía el % de llenado sin capacidad de
+     tolva); con el tag de báscula confirmado en el HMI pasa a `hmi`. Mientras
+     IT no lo publique en el CSV, el sello dirá «Supuesto» solo (esSupuesto). */
+  M_ESP1_KG:           entry('mass:esp1-zone', 'hmi', 'kg'),
+  M_ESP2_KG:           entry('mass:esp2-zone', 'hmi', 'kg'),
+  M_ESP3_KG:           entry('mass:esp3-zone', 'hmi', 'kg'),
   L_BANDA_BLANCA_M:    entry('len:white', 'measured', 'm'),
   L_BANDA_ROJA_M:      entry('len:red', 'measured', 'm'),
   L_PRENSA_M:          entry('len:press', 'measured', 'm'),
@@ -214,6 +216,19 @@ export const WINCC_ALIAS = {
   'H_CL_Total_Flakes':    'F_CL_KGMIN',
   // "SL1 % Set value (%)" · Access Name: Forming
   'H_Act_SL1_SP':         'PCT_SL1',
+
+  /* Básculas de capa (kg/m sobre 1 m de referencia = kg) · Access Name:
+     Forming · confirmadas por el Comment del HMI "mat weight scale measured
+     value" (fotos Select Tag, 23-jul-2026). Alimentan la masa del esparcidor
+     para τ = M/F. OJO: el core usa prefijo H_CC_ aquí (báscula/rodillos) pero
+     H_CL_ en flujo/arranque — así está en la base de tags real, no es typo. */
+  'H_SL1_Scale_PV':       'M_ESP1_KG',
+  'H_CC_Scale_PV':        'M_ESP2_KG',
+  'H_SL2_Scale_PV':       'M_ESP3_KG',
+  // Nombres cortos equivalentes por si el CSV se escribe a mano (kg/m ≡ kg).
+  'SL1_KGM':              'M_ESP1_KG',
+  'CC_KGM':               'M_ESP2_KG',
+  'SL2_KGM':              'M_ESP3_KG',
 
   /* HMI de encolado / cocina de cola (420 items, servidor `HMI`, 21-jul-2026).
      Es un servidor DISTINTO al de formación: si IT junta ambos en un solo CSV,
@@ -316,11 +331,11 @@ export const TAG_BY_KEY = (() => {
    de valores por defecto. Sellarlos «HMI» es afirmar que vienen de planta un
    supuesto que escribimos nosotros; es justo el sello que hay que no poner.
 
-   Casos vivos hoy (22-jul-2026): masas de los esparcidores (12,5 / 40 / 15 kg,
-   se calibran con `H_*_Filling_PV` + `H_*_Empty_ON`, que YA vienen en el
-   archivo de Sistemas pero aún sin mapear), PCT_SL2 (52,9 % supuesto, falta
-   que IT publique `H_SL2_Total_Flakes`) y toda la Sección 1, cuyos CSV por
-   servidor todavía llegan vacíos.
+   Casos vivos hoy (23-jul-2026): masas de los esparcidores (12,5 / 40 / 15 kg
+   de arranque; los tags de báscula `H_SL1/CC/SL2_Scale_PV` ya están mapeados y
+   el sello pasará a «HMI» solo cuando IT los publique), PCT_SL2 (52,9 %
+   supuesto, falta que IT publique `H_SL2_Total_Flakes`) y toda la Sección 1,
+   cuyos CSV por servidor todavía llegan vacíos.
 
    La verdad NO se declara en una tabla que hay que acordarse de actualizar:
    se lee del propio CSV. `parseHmiCsv` devuelve qué origen escribió cada

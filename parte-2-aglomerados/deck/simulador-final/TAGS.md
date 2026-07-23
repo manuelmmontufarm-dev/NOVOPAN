@@ -3,7 +3,7 @@
 > Archivo **generado**. No editar a mano — correr `node scripts/gen-tags.mjs`
 > desde `simulador-final/`. Sale de `TAG_MAP` + `WINCC_ALIAS` + los CSV desplegados.
 
-**104 parámetros** · 13 con tag real de WinCC ya cableado.
+**104 parámetros** · 16 con tag real de WinCC ya cableado.
 
 | Origen del dato | Cantidad | Qué significa |
 |---|---|---|
@@ -68,9 +68,9 @@ En este orden; **el último gana** y toda colisión queda avisada en el pill de 
 | `DOSING_CL_F_KGMIN` | kg/min | — | — | `p1:dosG_F`<br>`flow:dosing-thick` |
 | `DOSING_SL_M_KG` | kg | `F_SL_DosBin_Weight`<br>`F_SL_DosBin_Weight_PV` | Encolado | `p1:dosF_M`<br>`mass:dosing-fine` |
 | `DOSING_SL_F_KGMIN` | kg/min | — | — | `p1:dosF_F`<br>`flow:dosing-fine` |
-| `M_ESP1_KG` | kg | — | — | `mass:esp1-zone` |
-| `M_ESP2_KG` | kg | — | — | `mass:esp2-zone` |
-| `M_ESP3_KG` | kg | — | — | `mass:esp3-zone` |
+| `M_ESP1_KG` | kg | `H_SL1_Scale_PV`<br>`SL1_KGM` | Formación | `mass:esp1-zone` |
+| `M_ESP2_KG` | kg | `H_CC_Scale_PV`<br>`CC_KGM` | Formación | `mass:esp2-zone` |
+| `M_ESP3_KG` | kg | `H_SL2_Scale_PV`<br>`SL2_KGM` | Formación | `mass:esp3-zone` |
 
 ## Medido en planta (constante) — 27
 
