@@ -12,7 +12,7 @@
      · resto (JS/CSS/vendor/iconos/fuentes) → cache-first (ignora el ?v=) con
        actualización en segundo plano.
    Al cambiar el simulador, sube CACHE_VERSION para invalidar el caché viejo. */
-const CACHE_VERSION = 'novopan-sim-20260724091300';
+const CACHE_VERSION = 'novopan-sim-20260724095027';
 
 /* Shell crítico (rutas relativas al scope /simulador-final/). Se piden SIN el
    sufijo ?v=; en fetch se hace match con ignoreSearch para que las peticiones
@@ -61,7 +61,9 @@ self.addEventListener('activate', (event) => {
 });
 
 function isData(url) {
-  return url.pathname.includes('/datos/');
+  // datos/ (CSV servidos) y el CSV de la nube (Vercel Blob): SIEMPRE a la red,
+  // nunca caché — el dato debe ser el más fresco posible.
+  return url.pathname.includes('/datos/') || url.hostname.endsWith('.blob.vercel-storage.com');
 }
 
 self.addEventListener('fetch', (event) => {

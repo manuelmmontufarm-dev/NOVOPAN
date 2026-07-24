@@ -40,45 +40,22 @@ const WRITE_DEBOUNCE_MS = 420;
    pisados por los servidores en vivo, así que pisarlos NO es un conflicto. */
 export const DEFAULTS_LABEL = 'base';
 
+/* CSV en la NUBE (Vercel Blob). Lo sube el puente (`bridge/`) desde una compu de
+   planta que lee el CSV del HMI cada 2s. Es la fuente por DEFECTO — se ve desde
+   cualquier lado — y reemplaza al viejo placeholder datos/hmi.csv (menos preciso).
+   La sobrescritura se propaga en ~5 s; la frescura sale de la columna Datetime
+   del CSV, así que "actualizado hace X" es exacto aunque el CDN tarde. */
+export const CLOUD_CSV_URL = 'https://xyzlfiff7xtoslpu.public.blob.vercel-storage.com/linea1-seccion2/hmi.csv';
+
 export const CSV_SOURCES = [
-  { file: 'datos/hmi.csv',             label: DEFAULTS_LABEL },
-  { file: 'datos/hmi-preparacion.csv', label: 'Preparación' }, // servidor C — WETS/WETB/DRYR/BRNR/SCRN
-  { file: 'datos/hmi-encolado.csv',    label: 'Encolado' },    // servidor B — Gluing/PLC_GE
-  { file: 'datos/hmi-formacion.csv',   label: 'Formación' },   // servidor A — Forming/PLC_L/Press/POF
-  /* El archivo REAL de Sistemas (22-jul-2026): su consulta al Historian junta
-     los tres servidores en UN solo CSV `Datetime,Tagname,Value` (origen
-     D:\CSV-simulador_cambios_PB1\DatosCSV). Va al final a propósito: es dato
-     vivo consolidado y le gana a los archivos por servidor si conviven.
-     Contrato congelado en datos/fixtures/sistemas-historian.csv. */
-  { file: 'datos/hmi-sistemas.csv',    label: 'Sistemas' },
+  { file: CLOUD_CSV_URL, label: 'Nube · Línea 1 S2' },
 ];
 
-/* ¿Estamos en la APP instalada (PWA en su propia ventana) o en la PLANTA?
-   En ese contexto el CSV de defaults (`hmi.csv`) NO se usa: sin un archivo del
-   HMI conectado, el simulador queda SIN DATOS (pausado) en vez de mostrar los
-   valores viejos de prueba. En una pestaña normal del navegador (el link que se
-   comparte como demo) sí se usa el default, para que se vea animado.
-     · ?planta=1  fuerza modo planta (útil para probar o para un acceso directo).
-     · ?demo=1    fuerza modo demo aunque esté instalada. */
-function esContextoPlanta() {
-  try {
-    const q = new URLSearchParams(window.location.search);
-    if (q.has('planta')) return true;
-    if (q.has('demo')) return false;
-    const standalone = window.matchMedia?.('(display-mode: standalone)').matches
-      || window.matchMedia?.('(display-mode: fullscreen)').matches
-      || window.matchMedia?.('(display-mode: minimal-ui)').matches;
-    return !!standalone || window.navigator.standalone === true;
-  } catch { return false; }
-}
-const OMITIR_DEFAULTS = esContextoPlanta();
-
-/* Fuentes que se leen de verdad. En modo planta NO hay fuentes servidas: el
-   único dato válido es el archivo que el operador CONECTA (File System Access).
-   Sin archivo conectado → sin datos (pausado). En modo demo se leen todas,
-   incluido el default `hmi.csv` que da la animación del link que se comparte. */
+/* Por defecto se lee la NUBE. Si el operador conecta un ARCHIVO LOCAL, ese manda
+   (ver pollFile) y no se desconecta. Sin nube ni archivo local → "sin datos"
+   (nunca se muestran los valores viejos de prueba). */
 function fuentesActivas() {
-  return OMITIR_DEFAULTS ? [] : CSV_SOURCES;
+  return CSV_SOURCES;
 }
 
 const entry = (keys, kind, unit) => ({ keys: Array.isArray(keys) ? keys : [keys], kind, unit });
@@ -1424,8 +1401,10 @@ export function initHmiCsv({
     const vivos = parts.filter(({ src }) => src.label !== DEFAULTS_LABEL);
     const manda = (vivos.length ? vivos : parts)[Math.max(0, (vivos.length ? vivos : parts).length - 1)];
     const otros = parts.length - 1;
+    // Nombre amable para la nube (en vez de la URL larga del Blob).
+    const dirVisible = manda.src.file === CLOUD_CSV_URL ? 'Línea 1 · Sección 2 (nube)' : manda.src.file;
     setConnected('servidor',
-      `${manda.src.file}${otros > 0 ? ` (+${otros})` : ''}`,
+      `${dirVisible}${otros > 0 ? ` (+${otros})` : ''}`,
       `Leyendo cada ${POLL_MS / 1000} s de:\n${urls.join('\n')}`);
     /* Cada archivo se adapta POR SEPARADO: un servidor puede exportar tabla y
        otro seguir en `TAG: valor;`, y el mapeo manual se declara por archivo. */
@@ -1554,6 +1533,49 @@ export function initHmiCsv({
     }
   }
 
+  /* Volver a la NUBE: olvida el archivo local conectado y relee la nube. */
+  async function switchToCloud() {
+    fileHandle = null;
+    pendingHandle = null;
+    lastText = null;
+    mode = 'off';
+    await idbClearHandle(); // que no se reconecte solo al archivo local al refrescar
+    const ok = await pollServer();
+    if (!ok) {
+      setStatus('idle', '● Sin datos · nube no disponible',
+        'No se pudo leer el CSV de la nube. Revisa el internet o conecta un archivo local.');
+      setConnected('off', '');
+    }
+  }
+
+  /* Menú al tocar «Conectar CSV»: elegir Nube (default) o Archivo local. */
+  function openSourceMenu(anchorBtn) {
+    if (!anchorBtn) return connectFile();
+    document.getElementById('csvSourceMenu')?.remove();
+    const menu = document.createElement('div');
+    menu.id = 'csvSourceMenu';
+    menu.className = 's2-source-menu';
+    menu.innerHTML =
+      '<div class="s2-source-menu__hd">¿De dónde leo el CSV?</div>'
+      + '<button type="button" data-src="cloud"><span class="ms">cloud</span><span class="s2-source-menu__tx"><strong>Línea 1 · Sección 2 (nube)</strong><small>en vivo desde la planta · se ve desde cualquier lado</small></span></button>'
+      + '<button type="button" data-src="local"><span class="ms">folder_open</span><span class="s2-source-menu__tx"><strong>Archivo local…</strong><small>elige un CSV de esta compu · no se desconecta</small></span></button>';
+    document.body.appendChild(menu);
+    const r = anchorBtn.getBoundingClientRect();
+    const w = 300;
+    menu.style.top = `${Math.round(r.bottom + 6)}px`;
+    menu.style.left = `${Math.round(Math.min(r.left, window.innerWidth - w - 8))}px`;
+    menu.querySelector('[data-src="cloud"]').addEventListener('click', () => { menu.remove(); switchToCloud(); });
+    menu.querySelector('[data-src="local"]').addEventListener('click', () => { menu.remove(); connectFile(); });
+    setTimeout(() => {
+      const close = (e) => {
+        if (menu.contains(e.target) || anchorBtn.contains(e.target)) return;
+        menu.remove();
+        document.removeEventListener('click', close);
+      };
+      document.addEventListener('click', close);
+    }, 0);
+  }
+
   async function persistConnectedFile() {
     if (!fileHandle?.createWritable || !currentText) return;
     /* El documento en memoria está en canónico. Si el archivo conectado venía
@@ -1642,7 +1664,7 @@ export function initHmiCsv({
     setConnected('manual', file.name, `Copia cargada a mano: ${file.name}\nNO se actualiza sola — vuelve a cargarla para ver datos nuevos.`);
     fileInput.value = '';
   });
-  connectBtn?.addEventListener('click', connectFile);
+  connectBtn?.addEventListener('click', () => openSourceMenu(connectBtn));
 
   /* ¿Había un CSV local conectado antes del refresco? Se recupera su handle y,
      si el permiso sigue vigente, se reanuda SOLO (no se desconecta al refrescar).
@@ -1674,11 +1696,8 @@ export function initHmiCsv({
     if (!resumed) {
       const ok = await pollServer();
       if (!ok && mode !== 'live-file') {
-        setStatus('idle',
-          OMITIR_DEFAULTS ? '● Sin CSV · conéctalo para ver datos' : '● CSV · sin conexión',
-          OMITIR_DEFAULTS
-            ? 'Modo planta/app: conecta el archivo CSV del HMI con el botón «Conectar CSV». Sin archivo conectado el simulador queda en pausa, sin datos (no muestra valores de prueba).'
-            : 'Conecta un archivo CSV o verifica datos/hmi.csv.');
+        setStatus('idle', '● Sin datos · nube no disponible',
+          'No se pudo leer el CSV de la nube (Línea 1·S2). Revisa el internet, o toca «Conectar CSV» → «Archivo local» para leer un CSV de esta compu.');
         if (!pendingHandle) setConnected('off', '');
       }
       /* Hay un archivo por reconectar: el botón debe seguir invitando a

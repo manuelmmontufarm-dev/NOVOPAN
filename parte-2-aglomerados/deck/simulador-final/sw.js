@@ -61,7 +61,9 @@ self.addEventListener('activate', (event) => {
 });
 
 function isData(url) {
-  return url.pathname.includes('/datos/');
+  // datos/ (CSV servidos) y el CSV de la nube (Vercel Blob): SIEMPRE a la red,
+  // nunca caché — el dato debe ser el más fresco posible.
+  return url.pathname.includes('/datos/') || url.hostname.endsWith('.blob.vercel-storage.com');
 }
 
 self.addEventListener('fetch', (event) => {

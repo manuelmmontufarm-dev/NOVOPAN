@@ -1437,6 +1437,34 @@ body.onepage #lineCanvas { visibility: visible; animation: none; }
 .s2-fresh__read.is-read-old   { color: #FFB4AC; }
 .s2-fresh__read.is-read-old .ms { color: #FF8A80; }
 
+/* Menú de fuente del CSV (Nube / Local) que sale al tocar «Conectar CSV». */
+.s2-source-menu {
+  position: fixed;
+  z-index: 9999;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  background: #fff;
+  color: #1a2e28;
+  border: 1px solid #cfdbd6;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .22);
+  padding: 6px;
+}
+.s2-source-menu__hd {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+  color: #5a6f66; padding: 8px 10px 6px;
+}
+.s2-source-menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: none; border: 0; border-radius: 8px; cursor: pointer;
+  padding: 10px; text-align: left; color: inherit; font: inherit;
+}
+.s2-source-menu button:hover { background: #eef5f1; }
+.s2-source-menu button .ms { font-size: 22px; color: #004e38; }
+.s2-source-menu__tx { display: flex; flex-direction: column; line-height: 1.25; }
+.s2-source-menu__tx strong { font-size: 14px; color: #004e38; }
+.s2-source-menu__tx small { font-size: 11px; color: #5a6f66; }
+
 .s2-csv-banner {
   display: flex;
   align-items: center;
