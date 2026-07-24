@@ -86,11 +86,29 @@
 <body>
   <header>
     <a class="back" href="/">&larr; Volver al hub</a>
-    <h1 style="margin-top:.4rem">Descargar el simulador para la computadora</h1>
-    <p>Bajas un archivo, lo descomprimes y le das doble clic a un lanzador. No se instala nada ni se necesita internet. Toma menos de un minuto.</p>
+    <h1 style="margin-top:.4rem">Instalar el simulador en la computadora</h1>
+    <p>La forma recomendada es instalarlo como <strong>app</strong>: queda con logo en el escritorio, se abre con un clic y funciona sin internet. Abajo también está la opción sin instalar (USB).</p>
   </header>
 
   <main>
+    <!-- OPCIÓN A (recomendada): instalar como app (PWA) -->
+    <div class="os" style="border-color: var(--green); border-left: 6px solid var(--green); background:#f1f8f4;">
+      <h3 style="font-size:1.18rem; align-items:center;">🖥️ Instalar como app
+        <span style="background:var(--green); color:#fff; font-size:.62rem; font-weight:700; padding:.2rem .5rem; border-radius:999px; text-transform:uppercase; letter-spacing:.04em; margin-left:.4rem;">Recomendado</span>
+      </h3>
+      <p style="margin:.1rem 0 .9rem; color:var(--muted); font-size:.95rem;">Un <strong>programa de verdad</strong>: un clic para abrir, ventana propia con logo, funciona <strong>sin WiFi</strong> y se queda conectado al CSV. Solo necesita internet <strong>una vez</strong>, para instalarlo.</p>
+      <ol>
+        <li>En la PC de planta, abre <a href="/simulador-final"><strong>novopan.vercel.app/simulador-final</strong></a> en <strong>Chrome</strong> o <strong>Microsoft Edge</strong>.</li>
+        <li>Arriba a la derecha, en la barra de direcciones, clic en el ícono <strong>Instalar</strong> (una pantalla con una flechita ⤓). Si no aparece: menú <kbd>⋮</kbd> &rarr; <kbd>Apps</kbd> &rarr; <kbd>Instalar este sitio como aplicación</kbd> (en Edge: <kbd>Aplicaciones</kbd> &rarr; <kbd>Instalar este sitio</kbd>).</li>
+        <li>Clic en <kbd>Instalar</kbd>. Queda en el <strong>escritorio y en el menú Inicio con el logo verde</strong> «Simulador NOVOPAN».</li>
+        <li>Ábrela con un clic → botón <span class="file">Conectar CSV</span> → elige el archivo del HMI. Listo: conectado y funcionando sin internet.</li>
+      </ol>
+      <p class="tip">Después de instalarla <strong>ya no necesita internet</strong>. Al abrirla exige el CSV conectado (no muestra datos de prueba). Si la PC se reinicia, reconecta el CSV con un clic (recuerda el último archivo).</p>
+    </div>
+
+    <!-- OPCIÓN B: ZIP offline / sin instalar -->
+    <h2>Opción B · sin instalar (o si la PC nunca tiene internet)</h2>
+    <p style="color:var(--muted); font-size:.95rem; margin-bottom:1rem;">Baja este paquete a un USB y córrelo con doble clic. Abre en una ventanita local; no se instala. Útil si la PC no puede conectarse ni una vez a internet.</p>
     <div class="warn">
       <strong>1) Primero descomprime el ZIP completo.</strong> No abras el lanzador desde dentro
       de WinRAR o del ZIP: clic derecho en el archivo <code>.zip</code> &rarr;
@@ -101,7 +119,7 @@
       no funciona: el navegador bloquea los datos. El lanzador lo abre bien por ti.
     </div>
 
-    <h2>1 · Descarga el paquete</h2>
+    <h2>Descarga el paquete (USB)</h2>
     <div class="dl">
       <a class="download" href="NOVOPAN-Simulador-planta.zip" download>
         <span class="ic">📦</span>
@@ -121,7 +139,7 @@
       </a>
     </div>
 
-    <h2>2 · Ábrelo en tu computadora</h2>
+    <h2>Ábrelo en tu computadora</h2>
 
     <div class="os">
       <h3>🪟 Windows</h3>
