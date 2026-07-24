@@ -12,7 +12,7 @@
      · resto (JS/CSS/vendor/iconos/fuentes) → cache-first (ignora el ?v=) con
        actualización en segundo plano.
    Al cambiar el simulador, sube CACHE_VERSION para invalidar el caché viejo. */
-const CACHE_VERSION = 'novopan-sim-20260724090250';
+const CACHE_VERSION = 'novopan-sim-20260724091300';
 
 /* Shell crítico (rutas relativas al scope /simulador-final/). Se piden SIN el
    sufijo ?v=; en fetch se hace match con ignoreSearch para que las peticiones
@@ -21,6 +21,16 @@ const CACHE_VERSION = 'novopan-sim-20260724090250';
 const PRECACHE = [
   './', './index.html', './manifest.webmanifest',
   'css/trazabilidad-total.css', 'css/params.css',
+  'vendor/fonts/fonts.css',
+  'vendor/fonts/material-symbols-rounded.woff2',
+  'vendor/fonts/barlow/barlow-400-latin.woff2',
+  'vendor/fonts/barlow/barlow-500-latin.woff2',
+  'vendor/fonts/barlow/barlow-600-latin.woff2',
+  'vendor/fonts/barlow/barlow-700-latin.woff2',
+  'vendor/fonts/barlow/barlow-800-latin.woff2',
+  'vendor/fonts/barlow/barlowsemicondensed-600-latin.woff2',
+  'vendor/fonts/barlow/barlowsemicondensed-700-latin.woff2',
+  'vendor/fonts/barlow/barlowsemicondensed-800-latin.woff2',
   'vendor/katex/katex.min.css', 'vendor/katex/katex.min.js',
   'js/combined-app.js', 'js/combined-params.js', 'js/hmi-csv.js',
   'js/line-app.js', 'js/line-bridge.js', 'js/line-params.js',
