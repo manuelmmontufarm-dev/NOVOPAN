@@ -1177,7 +1177,10 @@
   if (installBtn) {
     installBtn.addEventListener('click', function () {
       if (!deferredPrompt) {
-        alert('Para instalar: abre el menú ⋮ del navegador (arriba a la derecha) y elige "Instalar Simulador NOVOPAN" o "Instalar este sitio como aplicación". En Edge: menú ⋮ → Aplicaciones → Instalar este sitio.');
+        alert('Chrome no está ofreciendo instalar ahora. Casi siempre es porque YA ESTÁ INSTALADA.\n\n'
+          + '• Si ya la instalaste: ábrela desde el ESCRITORIO o el menú Inicio (ícono verde "Simulador NOVOPAN"). No hace falta instalar de nuevo.\n\n'
+          + '• Si quieres re-instalarla: en Chrome entra a  chrome://apps  → clic derecho en "Simulador NOVOPAN" → Quitar de Chrome. Luego recarga esta página y el botón funcionará solo.\n\n'
+          + '• O usa el ícono de instalar (una pantallita con flecha ⤓) al final de la barra de direcciones, arriba.');
         return;
       }
       deferredPrompt.prompt();
