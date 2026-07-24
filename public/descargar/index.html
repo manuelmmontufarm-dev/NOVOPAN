@@ -178,25 +178,23 @@
       lo modifica ni toca el HMI.
     </p>
     <div class="dl">
-      <a class="download alt" href="NOVOPAN-Bridge.zip" download>
+      <a class="download alt" href="https://xyzlfiff7xtoslpu.public.blob.vercel-storage.com/descargas/novopan-bridge-34b7400e621cffd4.zip" download>
         <span class="ic">🌉</span>
         <span class="tx">
-          <strong>Puente CSV → nube</strong>
-          <span>Programita para la compu de planta. Liviano. Necesita Node.js y el token del Blob (lo tiene Manuel).</span>
+          <strong>Puente CSV → nube (listo para usar)</strong>
+          <span>Ya viene configurado: nada que editar, sin instalar dependencias. Arranca solo.</span>
         </span>
-        <span class="badge">Avanzado</span>
+        <span class="badge">Planta</span>
       </a>
     </div>
     <div class="os">
-      <h3>🪟 Instalar el puente (Windows)</h3>
+      <h3>🪟 Instalar (2 clics)</h3>
       <ol>
-        <li>En la compu de planta (la que ve el CSV del HMI), instala <strong>Node.js</strong> desde <a href="https://nodejs.org">nodejs.org</a> (botón LTS) si no lo tiene.</li>
+        <li>En la compu de planta (la que ve el CSV del HMI), que tenga <strong>Node.js</strong> (<a href="https://nodejs.org">nodejs.org</a>, LTS). Si el puente ya corrió antes, ya lo tiene.</li>
         <li>Baja el ZIP de arriba y <strong>extráelo</strong> (clic derecho → Extraer todo).</li>
-        <li>Copia <span class="file">bridge.config.example.json</span> y renómbralo a <span class="file">bridge.config.json</span>. Ábrelo con el Bloc de notas y llena el <strong>token</strong> del Blob y la <strong>ruta del CSV</strong> del HMI.</li>
-        <li>Doble clic en <span class="file">INSTALAR.bat</span>. Queda corriendo y arranca solo cada vez que se prenda la compu.</li>
-        <li>Listo. Desde ese momento el simulador (desde donde sea) muestra la línea real, refrescándose cada ~2&nbsp;s.</li>
+        <li>Doble clic en <span class="file">INICIAR.bat</span>. Listo — arranca y queda corriendo solo cada vez que se prende la compu (invisible).</li>
       </ol>
-      <p class="tip">El puente ya sabe a qué nube subir (está configurado). Dentro del ZIP hay un <code>LEEME.txt</code> con estos mismos pasos. Para probar que lee bien sin subir nada: <code>set DRY_RUN=1 &amp;&amp; node bridge.mjs</code>.</p>
+      <p class="tip">¿Está funcionando? Abre <a href="http://localhost:9900">http://localhost:9900</a> en esa compu: pantalla de salud (🟢/🔴) con la última subida. Si ya tenías la versión vieja corriendo, cierra su ventana negra primero.</p>
     </div>
 
     <footer>
