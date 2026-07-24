@@ -1,0 +1,9 @@
+{
+  "_README": "Copia este archivo a  bridge.config.json  y llena 'token' y 'csvPath'. El resto puede quedarse igual.",
+  "_token_help": "Token del Blob store de Vercel. Vercel > tu proyecto > Storage > (crea un Blob store) > .env.local / Tokens. Empieza con 'vercel_blob_rw_'.",
+  "token": "vercel_blob_rw_PEGA_AQUI_EL_TOKEN",
+  "_csvPath_help": "Ruta COMPLETA del CSV que escribe el HMI/Sistemas en esta compu. Usa doble backslash en Windows.",
+  "csvPath": "C:\\CSV-simulador_cambios_PB1\\DatosCSV\\hmi.csv",
+  "blobPath": "linea1-seccion2/hmi.csv",
+  "pollMs": 2000
+}

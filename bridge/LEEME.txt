@@ -1,0 +1,45 @@
+========================================================
+  PUENTE NOVOPAN — manda el CSV del HMI a la nube
+  (para ver la Línea 1 · Sección 2 desde cualquier lado)
+========================================================
+
+QUÉ HACE
+  Corre en UNA compu de planta (la que ve el archivo CSV del HMI).
+  Cada 2 segundos lee ese CSV y sube una copia a la nube (Vercel Blob).
+  El simulador, desde donde sea, lee esa copia. Solo LEE el archivo;
+  nunca lo modifica ni toca el HMI.
+
+PASOS (una sola vez)
+
+  1) CREAR EL ALMACÉN EN LA NUBE (lo hace Manuel una vez):
+     Vercel > proyecto "novopan" > pestaña Storage > Create > Blob.
+     Copia el token que empieza con  vercel_blob_rw_...
+
+  2) EN LA COMPU DE PLANTA:
+     - Instala Node.js (https://nodejs.org, botón "LTS") si no lo tiene.
+     - Copia esta carpeta "bridge" a la compu (por USB o red).
+     - Copia  bridge.config.example.json  a  bridge.config.json
+     - Abre  bridge.config.json  con el Bloc de notas y llena:
+         "token"   = el token del paso 1
+         "csvPath" = la ruta COMPLETA del CSV del HMI en esta compu
+                     (ojo: doble backslash \\ en Windows)
+     - Doble clic en  INSTALAR.bat
+
+  3) El puente queda corriendo y arranca solo al prender la compu.
+     La primera vez que suba, imprime la URL pública del CSV:
+     PÁSALE ESA URL A CLAUDE para terminar de conectar el simulador.
+
+PROBAR SIN SUBIR NADA (opcional, para ver que lee bien el CSV):
+     abre una consola en esta carpeta y corre:
+         set DRY_RUN=1 && node bridge.mjs
+     Debe decir "subiría N bytes" cuando el CSV cambia.
+
+APAGARLO
+     Cierra la ventana negra "NOVOPAN Bridge".
+     Para que no vuelva a arrancar solo:  quita la tarea "NOVOPAN Bridge"
+     del Programador de tareas de Windows.
+
+SEGURIDAD
+     El token permite ESCRIBIR en ese almacén de la nube. Vive solo en
+     esta compu de planta. Si se filtra, en Vercel puedes borrar el
+     token y crear otro.
