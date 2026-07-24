@@ -109,6 +109,13 @@
     </label>
     <!-- PRODUCCIÓN: sin movedor manual — un cambio avanza al ritmo de la línea
          real; arrastrarlo a mano falseaba las horas del reporte. -->
+    <!-- Botón de instalar como app (PWA). Oculto por defecto: solo aparece cuando
+         el navegador dice que se puede instalar (Chrome/Edge, aún no instalada). -->
+    <button type="button" class="s2-reports-btn" id="installBtn" hidden
+      style="background:#f5c518; color:#1a2e28; font-weight:700; border-color:#f5c518;"
+      title="Instalar el simulador como app en esta computadora (queda con logo en el escritorio y funciona sin internet)">
+      <span class="ms">install_desktop</span> Instalar app
+    </button>
     <button type="button" class="s2-pause-btn s2-sound-btn" id="soundBtn" title="Sonidos silenciados · click para activar" aria-label="Activar o silenciar sonidos">
       <span class="ms">volume_off</span>
     </button>
@@ -1150,6 +1157,37 @@
       btn.title = enFS() ? 'Salir de pantalla completa (Esc)' : 'Pantalla completa (Esc para salir)';
     });
   }
+  // 3) Botón "Instalar app": el navegador avisa cuándo se puede instalar
+  //    (beforeinstallprompt) y ahí mostramos el botón. Al hacer clic, sale el
+  //    diálogo nativo de instalación. Si ya está instalada, no aparece.
+  var deferredPrompt = null;
+  var installBtn = document.getElementById('installBtn');
+  var yaInstalada = false;
+  try {
+    yaInstalada = window.matchMedia('(display-mode: standalone)').matches
+      || window.matchMedia('(display-mode: fullscreen)').matches
+      || window.navigator.standalone === true;
+  } catch (e) {}
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBtn && !yaInstalada) installBtn.hidden = false;
+  });
+  if (installBtn) {
+    installBtn.addEventListener('click', function () {
+      if (!deferredPrompt) {
+        alert('Para instalar: abre el menú ⋮ del navegador (arriba a la derecha) y elige "Instalar Simulador NOVOPAN" o "Instalar este sitio como aplicación". En Edge: menú ⋮ → Aplicaciones → Instalar este sitio.');
+        return;
+      }
+      deferredPrompt.prompt();
+      var p = deferredPrompt.userChoice;
+      var limpiar = function () { deferredPrompt = null; installBtn.hidden = true; };
+      if (p && p.then) p.then(limpiar, limpiar); else limpiar();
+    });
+  }
+  window.addEventListener('appinstalled', function () {
+    if (installBtn) installBtn.hidden = true;
+  });
 })();
 </script>
 <script defer src="js/onepage-layout.js?v=20260720l"></script>
