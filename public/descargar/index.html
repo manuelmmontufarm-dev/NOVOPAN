@@ -170,6 +170,35 @@
       <a href="/simulador-final">novopan.vercel.app/simulador-final</a>
     </div>
 
+    <h2 style="margin-top:2.6rem;">🌉 Puente a la nube — para ver la línea desde casa</h2>
+    <p style="color:var(--muted); font-size:.95rem; margin-bottom:1rem;">
+      Esto es <strong>aparte</strong> del simulador. Se instala en <strong>UNA</strong> compu de planta:
+      la que ve el archivo CSV del HMI. Sube ese CSV a la nube cada 2&nbsp;segundos para que puedas
+      ver la Línea 1 · Sección 2 desde tu casa o el celular. Solo <strong>lee</strong> el archivo — nunca
+      lo modifica ni toca el HMI.
+    </p>
+    <div class="dl">
+      <a class="download alt" href="NOVOPAN-Bridge.zip" download>
+        <span class="ic">🌉</span>
+        <span class="tx">
+          <strong>Puente CSV → nube</strong>
+          <span>Programita para la compu de planta. Liviano. Necesita Node.js y el token del Blob (lo tiene Manuel).</span>
+        </span>
+        <span class="badge">Avanzado</span>
+      </a>
+    </div>
+    <div class="os">
+      <h3>🪟 Instalar el puente (Windows)</h3>
+      <ol>
+        <li>En la compu de planta (la que ve el CSV del HMI), instala <strong>Node.js</strong> desde <a href="https://nodejs.org">nodejs.org</a> (botón LTS) si no lo tiene.</li>
+        <li>Baja el ZIP de arriba y <strong>extráelo</strong> (clic derecho → Extraer todo).</li>
+        <li>Copia <span class="file">bridge.config.example.json</span> y renómbralo a <span class="file">bridge.config.json</span>. Ábrelo con el Bloc de notas y llena el <strong>token</strong> del Blob y la <strong>ruta del CSV</strong> del HMI.</li>
+        <li>Doble clic en <span class="file">INSTALAR.bat</span>. Queda corriendo y arranca solo cada vez que se prenda la compu.</li>
+        <li>Listo. Desde ese momento el simulador (desde donde sea) muestra la línea real, refrescándose cada ~2&nbsp;s.</li>
+      </ol>
+      <p class="tip">El puente ya sabe a qué nube subir (está configurado). Dentro del ZIP hay un <code>LEEME.txt</code> con estos mismos pasos. Para probar que lee bien sin subir nada: <code>set DRY_RUN=1 &amp;&amp; node bridge.mjs</code>.</p>
+    </div>
+
     <footer>
       <p>El paquete abre el simulador en <code>localhost:8080</code> con un mini-servidor incluido. Dentro del ZIP encontrarás un <code>LEEME.txt</code> con estos mismos pasos.</p>
     </footer>

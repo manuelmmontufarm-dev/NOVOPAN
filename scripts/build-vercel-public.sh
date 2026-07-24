@@ -179,6 +179,20 @@ with zipfile.ZipFile(descargar / f"{pkg}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
             add_file(zf, f"{pkg}/sitio/{rel.as_posix()}", p.read_bytes())
     add_launchers(zf, pkg, "simulador-final/?planta=1", "HUB COMPLETO - NOVOPAN")
 
+# Paquete 3 — Puente CSV -> nube (corre en la compu de planta que ve el HMI).
+# JAMÁS incluye bridge.config.json (trae el token) ni node_modules.
+pkg = "NOVOPAN-Bridge"
+bridge_dir = root / "bridge"
+if bridge_dir.exists():
+    with zipfile.ZipFile(descargar / f"{pkg}.zip", "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in sorted(bridge_dir.rglob("*")):
+            rel = p.relative_to(bridge_dir)
+            if not p.is_file():
+                continue
+            if "node_modules" in rel.parts or p.name in (".gitignore", "bridge.config.json"):
+                continue
+            add_file(zf, f"{pkg}/{rel.as_posix()}", p.read_bytes())
+
 sizes = ", ".join(f"{f.name} {f.stat().st_size//1024} KB" for f in sorted(descargar.glob("*.zip")))
 print(f"  descargar/ zips: {sizes}")
 PY
