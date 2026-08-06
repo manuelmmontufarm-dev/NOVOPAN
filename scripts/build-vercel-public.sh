@@ -19,6 +19,9 @@ mkdir -p "$PUBLIC"
 # Landing page
 cp "$ROOT/vercel/index.html" "$PUBLIC/index.html"
 
+# Favicon — sirve a todas las rutas y es lo que Vercel lee para la tarjeta del proyecto
+cp "$ROOT/vercel/icon.svg" "$PUBLIC/icon.svg"
+
 # Trazabilidad simulator — Línea 1 P&ID clásico (parte-2-aglomerados/deck/trazabilidad)
 mkdir -p "$PUBLIC/trazabilidad"
 cp -R "$DECK/trazabilidad/." "$PUBLIC/trazabilidad/"
@@ -93,12 +96,17 @@ from pathlib import Path
 
 public = Path(sys.argv[1])
 
+ICON = '<link rel="icon" href="/icon.svg" type="image/svg+xml">'
+
 def inject_base(html_path: Path, base_href: str) -> None:
     html = html_path.read_text(encoding="utf-8")
     needle = f'<base href="{base_href}">'
     if needle in html:
         return
-    html = html.replace("<head>", f"<head>\n  {needle}", 1)
+    # el favicon va con ruta absoluta, así que no lo afecta el <base>;
+    # las páginas que ya traen el suyo se dejan como están
+    extra = needle if 'rel="icon"' in html else f"{needle}\n  {ICON}"
+    html = html.replace("<head>", f"<head>\n  {extra}", 1)
     html_path.write_text(html, encoding="utf-8")
 
 for html_path, base in [
