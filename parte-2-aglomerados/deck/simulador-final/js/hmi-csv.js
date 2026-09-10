@@ -1063,6 +1063,12 @@ export function fmtEdad(segundos) {
    describe lo que está pasando en la línea. */
 const EDAD_OK_S = 60;
 const EDAD_AVISO_S = 300;
+/* Por encima de esto la pantalla ya no describe la línea y hay que DECIRLO en
+   grande: 10 min de CSV congelado con la banda moviéndose es una pantalla que
+   miente. Y el "sin datos" solo se grita tras unos segundos, para no asustar
+   con el cartel mientras carga la primera lectura. */
+const EDAD_ALERTA_S = 600;
+const GRACIA_SIN_DATOS_MS = 15_000;
 
 /* ══ Memoria del CSV local conectado (sobrevive al refresco) ═══════════════
    Un FileSystemFileHandle se puede guardar en IndexedDB (structured clone) y
@@ -1117,6 +1123,7 @@ async function idbClearHandle() {
 
 export function initHmiCsv({
   applyData, statusEl, statusPopEl, connectBtn, fileInput, freshEl, connectLabelEl, connectAddrEl,
+  alertaEl,
 }) {
   let lastText = null;
   let currentText = '';
@@ -1229,7 +1236,36 @@ export function initHmiCsv({
       + `<span class="ms">sync</span>Leído ${fmtEdad(s)}</span>`;
   }
 
+  /* ── Cartel grande de dato congelado ────────────────────────────────
+     El pill de la cabecera ya dice la edad del CSV, pero es chico: en planta
+     alguien ve la banda moverse y asume que es la línea de ahora. Cuando el
+     dato se congela, el simulador tiene que decir que lo que se ve es una foto
+     vieja, y qué hacer para arreglarlo, sin que nadie tenga que preguntar. */
+  const abiertoDesde = Date.now();
+  function renderAlerta(edadS) {
+    if (!alertaEl) return;
+    let titulo = null, queja = '', arreglo = '';
+    if (fresh.ms == null) {
+      // Nada todavía: se calla unos segundos por si es solo la primera lectura.
+      if (Date.now() - abiertoDesde < GRACIA_SIN_DATOS_MS) { alertaEl.className = 's2-alerta is-hidden'; return; }
+      titulo = 'Sin datos de la línea';
+      queja = 'El simulador no está recibiendo el CSV del HMI, así que la pantalla no representa nada de lo que pasa en la línea.';
+      arreglo = 'En la computadora de planta que sube los datos: abre la carpeta del <strong>Puente</strong> y haz doble clic en <code>INICIAR.bat</code>. Si eso no basta, revisa que esa computadora tenga internet.';
+    } else if (edadS > EDAD_ALERTA_S) {
+      titulo = 'Datos congelados · esto NO es la línea de ahora';
+      queja = `Lo que se ve en pantalla es una foto de <strong>${fmtFechaHora(fresh.ms)}</strong> (${fmtEdad(edadS)}). El CSV del HMI dejó de actualizarse.`;
+      arreglo = 'En la computadora de planta que sube los datos: abre la carpeta del <strong>Puente</strong> y haz doble clic en <code>INICIAR.bat</code>. En menos de un minuto este aviso debe desaparecer solo.';
+    }
+    if (!titulo) { alertaEl.className = 's2-alerta is-hidden'; return; }
+    alertaEl.className = 's2-alerta';
+    alertaEl.innerHTML = `<span class="ms">warning</span><span>`
+      + `<span class="s2-alerta__t">${titulo}</span>`
+      + `<span class="s2-alerta__q">${queja}</span>`
+      + `<span class="s2-alerta__fix">${arreglo}</span></span>`;
+  }
+
   function renderFresh() {
+    renderAlerta(fresh.ms == null ? Infinity : (Date.now() - fresh.ms) / 1000);
     if (!freshEl) return;
     if (fresh.ms == null) {
       freshEl.className = 's2-fresh is-none';
@@ -1256,7 +1292,7 @@ export function initHmiCsv({
 
   /* El "hace cuánto" envejece solo aunque no llegue ningún CSV nuevo: ese es
      justamente el caso que hay que ver (el archivo dejó de actualizarse). */
-  if (freshEl) { renderFresh(); setInterval(renderFresh, 1000); }
+  if (freshEl || alertaEl) { renderFresh(); setInterval(renderFresh, 1000); }
 
   /* ══ Estado del botón de conexión ═════════════════════════════════════ */
   const ESTADO_CONEXION = {
