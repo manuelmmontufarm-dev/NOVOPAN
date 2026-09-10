@@ -43,6 +43,7 @@ NOVOPAN-SLIDES/
 | Proceso encolados | `parte-2-aglomerados/encolados/PROCESO.md` |
 | Base conocimiento aglomerados | `parte-2-aglomerados/encolados/BASE_INFO_ENCOLADOS.md` |
 | Deck visual encolados | `parte-2-aglomerados/deck/Encolados.dc.html` |
+| Despliegue en planta (Puente + simulador local, quién corre qué compu) | [`bridge/DESPLIEGUE-PLANTA.md`](bridge/DESPLIEGUE-PLANTA.md) |
 | Bitácora | [`TODAY.md`](TODAY.md) |
 
 ## Contexto
