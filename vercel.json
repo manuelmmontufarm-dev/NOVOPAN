@@ -11,6 +11,13 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
       ]
+    },
+    {
+      "source": "/simulador-final/sw.js",
+      "headers": [
+        { "key": "Service-Worker-Allowed", "value": "/simulador-final" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
     }
   ],
   "rewrites": [

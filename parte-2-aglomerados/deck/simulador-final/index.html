@@ -64,6 +64,13 @@
     </div>
   </div>
 
+  <!-- Aviso GRANDE de dato congelado. El pill de frescura de la cabecera es
+       chico y en planta pasa desapercibido: alguien mira la pantalla, la ve
+       moverse y asume que es la línea de ahora. Este cartel dice sin rodeos
+       que lo que se ve es una foto vieja y qué hay que hacer para arreglarlo.
+       Lo muestra y lo oculta hmi-csv.js (renderFresh). -->
+  <div class="s2-alerta is-hidden" id="csvAlerta" role="status" aria-live="polite"></div>
+
   <!-- ══ STICKY TOOLBAR: tabs + mini-nav + transporte ══ -->
   <div class="s2-toolbar">
     <div class="s2-viewtabs" role="tablist">
@@ -1133,9 +1140,23 @@
 <script>
 (function () {
   // 1) Service worker: instala/actualiza el caché para funcionar sin internet.
+  //
+  //    El alcance se pide SIN la barra final ("/simulador-final" en vez de
+  //    "/simulador-final/") a propósito: Vercel sirve estas rutas sin barra
+  //    (cleanUrls + trailingSlash:false), así que con el alcance por defecto la
+  //    página que el operador ve en pantalla quedaba FUERA del service worker y
+  //    nunca era controlada por él — el "funciona sin internet" dependía en
+  //    realidad del caché normal de Chrome, que se borra solo. El alcance ancho
+  //    necesita la cabecera Service-Worker-Allowed (ver vercel.json); donde no
+  //    esté (el paquete local en localhost, que ya sirve la ruta con barra) se
+  //    cae al alcance por defecto, que ahí sí es el correcto.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').catch(function () { /* sin SW el simulador sigue igual, solo que no offline */ });
+      var dir = new URL('.', document.baseURI).pathname;          // /simulador-final/
+      var ancho = dir.length > 1 ? dir.replace(/\/$/, '') : dir;  // /simulador-final
+      navigator.serviceWorker.register('sw.js', { scope: ancho })
+        .catch(function () { return navigator.serviceWorker.register('sw.js'); })
+        .catch(function () { /* sin SW el simulador sigue igual, solo que no offline */ });
     });
   }
   // 2) Pantalla completa (por encima de las pestañas). Alterna entrar/salir.

@@ -1668,6 +1668,7 @@ function initSimulation() {
     fileInput: document.getElementById('hmiFileInput'),
     // Widget de la cabecera: antigüedad de la VERSIÓN del CSV (no de la lectura).
     freshEl: document.getElementById('csvFresh'),
+    alertaEl: document.getElementById('csvAlerta'),
     connectLabelEl: document.getElementById('hmiConnectLabel'),
     connectAddrEl: document.getElementById('hmiConnectAddr'),
     applyData: (data) => {
